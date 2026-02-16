@@ -1,0 +1,43 @@
+{
+  "name": "@kissmiklosjr/plugin-scaffolder-studio-agent-node",
+  "version": "0.0.7",
+  "license": "Apache-2.0",
+  "description": "Node.js library for the scaffolder-studio-agent plugin",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "publishConfig": {
+    "access": "restricted",
+    "main": "dist/index.cjs.js",
+    "types": "dist/index.d.ts"
+  },
+  "backstage": {
+    "role": "node-library",
+    "pluginId": "scaffolder-studio-agent",
+    "pluginPackages": [
+      "@kissmiklosjr/plugin-scaffolder-studio-agent-backend",
+      "@kissmiklosjr/plugin-scaffolder-studio-agent-node"
+    ]
+  },
+  "scripts": {
+    "build": "backstage-cli package build",
+    "lint": "backstage-cli package lint",
+    "test": "backstage-cli package test",
+    "clean": "backstage-cli package clean",
+    "prepack": "backstage-cli package prepack",
+    "postpack": "backstage-cli package postpack"
+  },
+  "devDependencies": {
+    "@backstage/cli": "^0.34.5",
+    "ai": "^6.0.27"
+  },
+  "files": [
+    "dist"
+  ],
+  "peerDependencies": {
+    "ai": "^6.0.27"
+  },
+  "dependencies": {
+    "@backstage/backend-plugin-api": "^1.5.0",
+    "zod": "^4.2.0"
+  }
+}

@@ -1,0 +1,10 @@
+backend:
+  baseUrl: http://localhost:7007
+  cors:
+    origin: http://localhost:7007
+  database:
+    connection:
+      port: 5432
+
+app:
+  baseUrl: http://localhost:7007

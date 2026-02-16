@@ -1,0 +1,169 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            **/node_modules
+            .yarn/cache
+            .yarn/install-state.gz
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: yarn install --immutable
+
+      - name: Build all packages
+        run: yarn build:all
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start backend
+        run: yarn start-backend &
+        env:
+          NODE_ENV: development
+          NODE_OPTIONS: --no-node-snapshot
+          APP_CONFIG_app_baseUrl: http://localhost:7007
+          APP_CONFIG_backend_baseUrl: http://localhost:7007
+          APP_CONFIG_backend_cors_origin: http://localhost:7007
+          APP_CONFIG_backend_database_connection_port: '5432'
+
+      - name: Wait for backend to be ready
+        run: |
+          echo "Waiting for backend to start..."
+          for i in $(seq 1 60); do
+            if curl -s http://localhost:7007/api/catalog/entities > /dev/null 2>&1; then
+              echo "Backend is ready!"
+              break
+            fi
+            echo "Attempt $i/60 - waiting..."
+            sleep 2
+          done
+
+      - name: Prepare Playwright auth cache dir
+        run: mkdir -p node_modules/.cache/e2e-auth
+
+      - name: Run E2E tests
+        run: yarn test:e2e
+        env:
+          CI: 'true'
+          PLAYWRIGHT_URL: http://localhost:7007
+
+      - name: Upload E2E test report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-report-main
+          path: e2e-test-report/
+          retention-days: 14
+
+      - name: Upload E2E test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results-main
+          path: node_modules/.cache/e2e-test-results/
+          retention-days: 14
+
+  release:
+    runs-on: ubuntu-latest
+    needs: e2e-tests
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write # Required for npm provenance
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Update npm
+        run: npm install -g npm@'>=11.5.1'
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            **/node_modules
+            .yarn/cache
+            .yarn/install-state.gz
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: yarn install --immutable
+
+      - name: Cache TypeScript build info
+        uses: actions/cache@v4
+        with:
+          path: |
+            dist-types
+            **/dist
+            **/.turbo
+          key: ${{ runner.os }}-tsc-${{ hashFiles('**/yarn.lock', '**/tsconfig*.json', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-tsc-
+
+      - name: Type check
+        run: yarn tsc
+
+      - name: Build all packages
+        run: yarn build:all
+
+      - name: Create Release Pull Request or Publish
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          commit: 'chore: version packages'
+          title: 'Release next version'
+          publish: yarn changeset:publish
+          version: yarn changeset:version
+          createGithubReleases: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

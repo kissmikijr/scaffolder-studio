@@ -1,0 +1,36 @@
+name: Manual Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_command:
+        description: 'Publish command (e.g., "npm publish", "npm publish --tag beta")'
+        required: true
+        default: 'npm publish'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build all packages
+        run: yarn build:all
+
+      - name: Configure npm for private packages
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+
+      - name: Publish to npm
+        run: yarn workspaces foreach -A -v -i --no-private bash -c "${{ github.event.inputs.publish_command }}"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
