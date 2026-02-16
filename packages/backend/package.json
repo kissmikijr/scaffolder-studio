@@ -40,7 +40,6 @@
     "@backstage/plugin-search-backend-module-techdocs": "^0.4.8",
     "@backstage/plugin-search-backend-node": "^1.3.17",
     "@backstage/plugin-techdocs-backend": "^2.1.2",
-    "@kissmiklosjr/plugin-scaffolder-studio-agent-backend-module-qwen3": "workspace:^",
     "@kissmiklosjr/plugin-scaffolder-studio-backend": "workspace:^",
     "@kissmiklosjr/plugin-scaffolder-studio-common": "workspace:^",
     "app": "0.0.0",

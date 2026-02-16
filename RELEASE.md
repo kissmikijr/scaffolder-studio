@@ -111,8 +111,6 @@ The following packages are published to npm under the `@kissmiklosjr` scope:
 
 - `@kissmiklosjr/plugin-scaffolder-studio` - Frontend plugin
 - `@kissmiklosjr/plugin-scaffolder-studio-backend` - Backend plugin
-- `@kissmiklosjr/plugin-scaffolder-studio-agent-backend` - Agent backend
-- `@kissmiklosjr/plugin-scaffolder-studio-agent-backend-module-qwen3` - Agent module
 - `@kissmiklosjr/plugin-scaffolder-studio-agent-node` - Node library
 - `@kissmiklosjr/plugin-scaffolder-studio-common` - Shared common library
 - `@kissmiklosjr/plugin-catalog-backend-module-scaffolder-studio-provider` - Catalog module

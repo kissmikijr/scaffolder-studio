@@ -32,30 +32,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ai-sdk/mistral@npm:^2.0.5":
-  version: 2.0.28
-  resolution: "@ai-sdk/mistral@npm:2.0.28"
-  dependencies:
-    "@ai-sdk/provider": "npm:2.0.1"
-    "@ai-sdk/provider-utils": "npm:3.0.21"
-  peerDependencies:
-    zod: ^3.25.76 || ^4.1.8
-  checksum: 10c0/dd993fe477da8e053c68e162a52f0fcbf7671b2a0f8dd4b9a9db57fe780f17cd7ef2b08512e85b0b97a5622f57e085000c56aab102cf381bba1e0e5043c67306
-  languageName: node
-  linkType: hard
-
-"@ai-sdk/openai-compatible@npm:^2.0.4":
-  version: 2.0.30
-  resolution: "@ai-sdk/openai-compatible@npm:2.0.30"
-  dependencies:
-    "@ai-sdk/provider": "npm:3.0.8"
-    "@ai-sdk/provider-utils": "npm:4.0.15"
-  peerDependencies:
-    zod: ^3.25.76 || ^4.1.8
-  checksum: 10c0/650d926223826bead721cf7d2bbdfb311debaaaa83a04b220b28a93ff99abc7c4914d0aa9a23441c396da00a41a214891a8e1ddfef7f4de320238947a28a8bb7
-  languageName: node
-  linkType: hard
-
 "@ai-sdk/provider-utils@npm:3.0.21":
   version: 3.0.21
   resolution: "@ai-sdk/provider-utils@npm:3.0.21"
@@ -7128,51 +7104,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@kissmiklosjr/plugin-scaffolder-studio-agent-backend-module-qwen3@workspace:^, @kissmiklosjr/plugin-scaffolder-studio-agent-backend-module-qwen3@workspace:plugins/scaffolder-studio-module-qwen3":
-  version: 0.0.0-use.local
-  resolution: "@kissmiklosjr/plugin-scaffolder-studio-agent-backend-module-qwen3@workspace:plugins/scaffolder-studio-module-qwen3"
-  dependencies:
-    "@ai-sdk/openai-compatible": "npm:^2.0.4"
-    "@backstage/backend-plugin-api": "npm:^1.5.0"
-    "@backstage/backend-test-utils": "npm:^1.10.0"
-    "@backstage/cli": "npm:^0.34.5"
-    "@kissmiklosjr/plugin-scaffolder-studio-agent-backend": "workspace:*"
-    "@kissmiklosjr/plugin-scaffolder-studio-agent-node": "workspace:*"
-    "@kissmiklosjr/plugin-scaffolder-studio-backend": "workspace:*"
-    "@kissmiklosjr/plugin-scaffolder-studio-common": "workspace:*"
-    "@xyflow/react": "npm:^12.5.5"
-    ai: "npm:^6.0.27"
-    js-yaml: "npm:^4.1.0"
-    zod: "npm:^4.2.0"
-  languageName: unknown
-  linkType: soft
-
-"@kissmiklosjr/plugin-scaffolder-studio-agent-backend@workspace:*, @kissmiklosjr/plugin-scaffolder-studio-agent-backend@workspace:plugins/scaffolder-studio-agent-backend":
-  version: 0.0.0-use.local
-  resolution: "@kissmiklosjr/plugin-scaffolder-studio-agent-backend@workspace:plugins/scaffolder-studio-agent-backend"
-  dependencies:
-    "@ai-sdk/mistral": "npm:^2.0.5"
-    "@ai-sdk/openai-compatible": "npm:^2.0.4"
-    "@backstage/backend-defaults": "npm:^0.13.1"
-    "@backstage/backend-plugin-api": "npm:^1.5.0"
-    "@backstage/backend-test-utils": "npm:^1.10.0"
-    "@backstage/catalog-client": "npm:^1.12.1"
-    "@backstage/cli": "npm:^0.34.5"
-    "@backstage/errors": "npm:^1.2.7"
-    "@backstage/plugin-catalog-node": "npm:^1.20.0"
-    "@kissmiklosjr/plugin-scaffolder-studio-agent-node": "workspace:^"
-    "@types/express": "npm:^4.17.6"
-    "@types/supertest": "npm:^2.0.12"
-    ai: "npm:^6.0.27"
-    express: "npm:^4.17.1"
-    express-promise-router: "npm:^4.1.0"
-    knex: "npm:^3.1.0"
-    supertest: "npm:^6.2.4"
-    zod: "npm:^4.2.0"
-  languageName: unknown
-  linkType: soft
-
-"@kissmiklosjr/plugin-scaffolder-studio-agent-node@workspace:*, @kissmiklosjr/plugin-scaffolder-studio-agent-node@workspace:^, @kissmiklosjr/plugin-scaffolder-studio-agent-node@workspace:plugins/scaffolder-studio-node":
+"@kissmiklosjr/plugin-scaffolder-studio-agent-node@workspace:plugins/scaffolder-studio-node":
   version: 0.0.0-use.local
   resolution: "@kissmiklosjr/plugin-scaffolder-studio-agent-node@workspace:plugins/scaffolder-studio-node"
   dependencies:
@@ -7185,7 +7117,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@kissmiklosjr/plugin-scaffolder-studio-backend@workspace:*, @kissmiklosjr/plugin-scaffolder-studio-backend@workspace:^, @kissmiklosjr/plugin-scaffolder-studio-backend@workspace:plugins/scaffolder-studio-backend":
+"@kissmiklosjr/plugin-scaffolder-studio-backend@workspace:^, @kissmiklosjr/plugin-scaffolder-studio-backend@workspace:plugins/scaffolder-studio-backend":
   version: 0.0.0-use.local
   resolution: "@kissmiklosjr/plugin-scaffolder-studio-backend@workspace:plugins/scaffolder-studio-backend"
   dependencies:
@@ -17408,7 +17340,6 @@ __metadata:
     "@backstage/plugin-search-backend-module-techdocs": "npm:^0.4.8"
     "@backstage/plugin-search-backend-node": "npm:^1.3.17"
     "@backstage/plugin-techdocs-backend": "npm:^2.1.2"
-    "@kissmiklosjr/plugin-scaffolder-studio-agent-backend-module-qwen3": "workspace:^"
     "@kissmiklosjr/plugin-scaffolder-studio-backend": "workspace:^"
     "@kissmiklosjr/plugin-scaffolder-studio-common": "workspace:^"
     app: "npm:0.0.0"
@@ -26448,7 +26379,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"knex@npm:3, knex@npm:^3.0.0, knex@npm:^3.1.0":
+"knex@npm:3, knex@npm:^3.0.0":
   version: 3.1.0
   resolution: "knex@npm:3.1.0"
   dependencies:

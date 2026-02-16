@@ -17,10 +17,6 @@ export default createBackendFeatureLoader({
     ) {
       yield import('./modules/eventPublisherModule');
     }
-    yield import('@kissmiklosjr/plugin-scaffolder-studio-agent-backend');
-    yield import(
-      '@kissmiklosjr/plugin-scaffolder-studio-agent-backend-module-qwen3'
-    );
 
     yield import(
       '@kissmiklosjr/plugin-permission-backend-module-scaffolder-studio'
