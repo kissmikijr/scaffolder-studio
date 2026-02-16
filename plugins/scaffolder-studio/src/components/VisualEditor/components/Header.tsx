@@ -21,6 +21,7 @@ import { AllNodeData } from '../types';
 import { Edge, Node } from '@xyflow/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
+import ArrowBackIosNewRoundedIcon from '@mui/icons-material/ArrowBackIosNewRounded';
 import { useApi } from '@backstage/core-plugin-api';
 import { scaffolderVisualApiRef } from '../../../api/ScaffolderVisualClient';
 
@@ -215,10 +216,10 @@ const HeaderSyncStatus = ({ status, lastSyncedAt }: HeaderSyncStatusProps) => {
     status === 'saved' && lastSyncedAt
       ? `Last synced: ${new Date(lastSyncedAt).toLocaleTimeString()}`
       : status === 'offline'
-      ? 'Changes are saved locally and will sync once online'
-      : status === 'error'
-      ? 'Will retry automatically'
-      : undefined;
+        ? 'Changes are saved locally and will sync once online'
+        : status === 'error'
+          ? 'Will retry automatically'
+          : undefined;
 
   return (
     <Tooltip title={tooltipText || ''} disableHoverListener={!tooltipText}>
@@ -305,6 +306,27 @@ const HeaderDryRunButton = ({
   );
 };
 
+const HeaderBackButton = ({ to }: { to?: string }) => {
+  const navigate = useNavigate();
+  return (
+    <StyledIconButton
+      onClick={() => (to ? navigate(to) : navigate(-1))}
+      size="small"
+      sx={{
+        mr: 1,
+        color: 'text.secondary',
+        opacity: 0.6,
+        '&:hover': {
+          opacity: 1,
+          backgroundColor: 'action.hover',
+        },
+      }}
+    >
+      <ArrowBackIosNewRoundedIcon sx={{ fontSize: '1rem' }} />
+    </StyledIconButton>
+  );
+};
+
 // Compound component pattern
 Header.Title = HeaderTitle;
 Header.Search = HeaderSearch;
@@ -313,5 +335,6 @@ Header.SaveButton = HeaderSaveButton;
 Header.SyncStatus = HeaderSyncStatus;
 Header.PublishButton = HeaderPublishButton;
 Header.DryRunButton = HeaderDryRunButton;
+Header.BackButton = HeaderBackButton;
 
 export default Header;

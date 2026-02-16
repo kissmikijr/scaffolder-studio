@@ -436,11 +436,7 @@ const AISideContentWithChat = ({
                               }}
                             >
                               <Streamdown
-                                shikiTheme={
-                                  theme.palette.mode === 'dark'
-                                    ? 'github-dark'
-                                    : 'github-light'
-                                }
+                                shikiTheme={['github-dark', 'github-light']}
                               >
                                 {part.text}
                               </Streamdown>

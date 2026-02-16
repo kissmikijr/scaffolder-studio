@@ -14,16 +14,41 @@ export const PrefabTreeView = ({
   const prefabsApi = useApi(prefabsApiRef);
   const dragPreviewRef = React.useRef<PrefabDragPreviewRef>(null);
 
+  const [searchQuery, setSearchQuery] = React.useState('');
+
   const {
-    prefabs,
-    isLoading,
-    searchQuery,
-    setSearchQuery,
+    prefabs: personalPrefabs,
+    isLoading: isPersonalLoading,
     isSearchExpanded,
     handleSearchToggle,
     handleSearchClose,
     searchInputRef,
-  } = usePrefabTree(prefabsApi);
+    refetch,
+  } = usePrefabTree(prefabsApi, 'template-prefabs-personal', {
+    fetchMethod: 'list',
+    searchQuery,
+    setSearchQuery,
+  });
+
+  const {
+    prefabs: libraryPrefabs,
+    isLoading: isLibraryLoading,
+  } = usePrefabTree(prefabsApi, 'template-prefabs-library', {
+    fetchMethod: 'listLibrary',
+    searchQuery,
+    setSearchQuery,
+  });
+
+  // Filter out personal prefabs that are also in library to avoid duplication if needed,
+  // but usually "is_published" already handles this in the API if we were using one list.
+  // Since we have two lists, let's just show them as groups.
+  // We want "Your Prefabs" to be those that have NEVER been published.
+  const unpublished = personalPrefabs.filter(p => !p.published_at);
+
+  const groups = [
+    { title: 'Your Prefabs', prefabs: unpublished },
+    { title: 'Library Prefabs', prefabs: libraryPrefabs },
+  ];
 
   return (
     <>
@@ -37,13 +62,15 @@ export const PrefabTreeView = ({
         header={true}
       />
       <PrefabList
-        prefabs={prefabs}
-        isLoading={isLoading}
+        prefabs={[]} // Not used when groups is provided
+        groups={groups}
+        isLoading={isPersonalLoading || isLibraryLoading}
         searchQuery={searchQuery}
         onPrefabClick={addPrefabNode || (() => { })}
         compact={true}
         draggable={true}
         dragPreviewRef={dragPreviewRef}
+        onDeleteSuccess={refetch}
       />
       <PrefabDragPreview ref={dragPreviewRef} />
     </>

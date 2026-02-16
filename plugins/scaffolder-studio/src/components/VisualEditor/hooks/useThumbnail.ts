@@ -8,6 +8,7 @@ type UseThumbnailProps = {
     nodes: any[];
     edges: any[];
     enabled?: boolean;
+    storageKeyPrefix?: string;
 };
 
 export const useThumbnail = ({
@@ -16,6 +17,7 @@ export const useThumbnail = ({
     nodes,
     edges,
     enabled = true,
+    storageKeyPrefix = 'project-thumbnail-',
 }: UseThumbnailProps) => {
     const takeScreenshot = useCallback(() => {
         if (!id || !reactFlowWrapper.current || !enabled) {
@@ -44,7 +46,7 @@ export const useThumbnail = ({
                     };
 
                     try {
-                        localStorage.setItem(`project-thumbnail-${id}`, JSON.stringify(cacheData));
+                        localStorage.setItem(`${storageKeyPrefix}${id}`, JSON.stringify(cacheData));
                     } catch (error) {
                         console.error('Failed to save thumbnail to localStorage:', error);
                     }

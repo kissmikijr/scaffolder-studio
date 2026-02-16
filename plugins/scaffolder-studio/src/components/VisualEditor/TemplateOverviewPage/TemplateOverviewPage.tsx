@@ -32,6 +32,8 @@ import { ImportTemplateDialog } from './components/ImportYamlSkeleton';
 import { prefabsApiRef, PrefabsClientApi } from '../../../api/PrefabsClient';
 import { usePermission } from '@backstage/plugin-permission-react';
 import { scaffolderStudioPrefabReadPermission } from '@kissmiklosjr/plugin-scaffolder-studio-common';
+import { useViewMode } from './hooks/useViewMode';
+import { ViewToggle } from './components/ViewToggle';
 
 const currentTabMap = {
   '/scaffolder-studio/published': 'Published',
@@ -108,6 +110,8 @@ export const ProjectOverviewPage = () => {
     '/scaffolder-studio/trash',
   ]);
   const currentTab = routeMatch?.pattern?.path ?? 'templates';
+  const pageKey = currentTab.split('/').pop() || 'templates';
+  const { viewMode, setViewMode } = useViewMode(pageKey);
 
   const handleCreateNew = async () => {
     if (currentTab.includes('prefabs')) {
@@ -424,11 +428,12 @@ export const ProjectOverviewPage = () => {
               </MenuItem>
             </Select>
           </FormControl>
+          <ViewToggle viewMode={viewMode} onChange={setViewMode} />
         </Box>
       </Box>
 
       <Box sx={{ padding: '0 32px' }}>
-        <Outlet context={{ sort, onSortChange: setSort, searchText }} />
+        <Outlet context={{ sort, onSortChange: setSort, searchText, viewMode }} />
       </Box>
       <ImportTemplateDialog
         open={openImportDialog}

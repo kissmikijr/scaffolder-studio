@@ -7,6 +7,10 @@ export class VisualEditorPage {
     this.page = page;
   }
 
+  public getPage() {
+    return this.page;
+  }
+
   async verifyLoaded() {
     await expect(this.page.getByTestId('toolbar-add-step-button')).toBeVisible({
       timeout: 15000,
@@ -147,6 +151,16 @@ export class VisualEditorPage {
   }
   async goToYamlTab() {
     await this.page.getByRole('tab', { name: 'Yaml' }).click();
+  }
+  async goToPrefabsTab() {
+    await this.page.getByRole('tab', { name: 'Prefabs' }).click();
+  }
+  async verifyPrefabVisible(title: string, sectionTitle?: string) {
+    if (sectionTitle) {
+      const section = this.page.locator('tr').filter({ hasText: sectionTitle.toUpperCase() });
+      await expect(section).toBeVisible();
+    }
+    await expect(this.page.getByText(title)).toBeVisible();
   }
 
   async getYamlContent() {

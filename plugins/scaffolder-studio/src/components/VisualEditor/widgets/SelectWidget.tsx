@@ -15,6 +15,7 @@ const SelectWidget = (props: WidgetProps) => {
 
   return (
     <Select
+      disabled={props.disabled || props.readonly}
       value={props.value ?? ''}
       onChange={handleChange}
       displayEmpty

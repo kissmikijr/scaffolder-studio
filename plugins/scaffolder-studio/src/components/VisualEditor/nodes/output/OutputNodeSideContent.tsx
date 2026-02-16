@@ -197,7 +197,6 @@ export const OutputNodeSideContent = ({
         flexDirection: 'column',
         gap: 3,
         opacity: disabled ? 0.7 : 1,
-        pointerEvents: disabled ? 'none' : 'auto',
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
@@ -232,6 +231,7 @@ export const OutputNodeSideContent = ({
           >
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
               <TextField
+                disabled={disabled}
                 label="Title"
                 value={link.title}
                 size="small"
@@ -249,15 +249,19 @@ export const OutputNodeSideContent = ({
                 }}
               />
               <Tooltip title="Delete">
-                <StyledIconButton
-                  size="small"
-                  onClick={() => handleDeleteLink(index)}
-                >
-                  <CloseIcon />
-                </StyledIconButton>
+                <span>
+                  <StyledIconButton
+                    size="small"
+                    onClick={() => handleDeleteLink(index)}
+                    disabled={disabled}
+                  >
+                    <CloseIcon />
+                  </StyledIconButton>
+                </span>
               </Tooltip>
             </Box>
             <TextField
+              disabled={disabled}
               label="Icon"
               value={link.icon || ''}
               fullWidth
@@ -278,6 +282,7 @@ export const OutputNodeSideContent = ({
                 URL
               </Typography>
               <StepNodeExpressionField
+                disabled={disabled}
                 value={link.url || ''}
                 onChange={val => {
                   const newLinks = [...(currentData.links || [])];
@@ -300,63 +305,65 @@ export const OutputNodeSideContent = ({
             </Box>
           </Box>
         ))}
-        <Box
-          data-testid="new-link-box"
-          sx={{
-            p: 2,
-            border: '1px dashed',
-            borderColor: 'divider',
-            borderRadius: 2,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2
-          }}
-        >
-          <Typography variant="subtitle2" color="text.secondary">New Link</Typography>
-          <TextField
-            label="Title"
-            value={newLink.title}
-            size="small"
-            fullWidth
-            error={!!errors.links?.[(currentData.links || []).length]?.title}
-            helperText={errors.links?.[(currentData.links || []).length]?.title}
-            onChange={e => setNewLink({ ...newLink, title: e.target.value })}
-          />
-          <Box>
-            <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
-              URL
-            </Typography>
-            <StepNodeExpressionField
-              value={newLink.url}
-              onChange={val => setNewLink({ ...newLink, url: val })}
-              parameters={parameters}
-              outputs={allParentStepsOutputs}
-              disableWrapper
-            />
-            {!!errors.links?.[(currentData.links || []).length]?.url && (
-              <Typography variant="caption" color="error">
-                {errors.links?.[(currentData.links || []).length]?.url}
-              </Typography>
-            )}
-          </Box>
-          <TextField
-            label="Icon"
-            value={newLink.icon || ''}
-            fullWidth
-            placeholder="e.g. catalog, external, github"
-            InputLabelProps={{ shrink: true }}
-            onChange={e => setNewLink({ ...newLink, icon: e.target.value || undefined })}
-          />
-          <StyledIconButton
-            data-testid="add-link-button"
-            size="small"
-            onClick={handleAddLink}
-            disabled={!newLink.title || !newLink.url}
-            sx={{ alignSelf: 'flex-end' }}
+        {!disabled && (
+          <Box
+            data-testid="new-link-box"
+            sx={{
+              p: 2,
+              border: '1px dashed',
+              borderColor: 'divider',
+              borderRadius: 2,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2
+            }}
           >
-            <AddIcon />
-          </StyledIconButton>
-        </Box>
+            <Typography variant="subtitle2" color="text.secondary">New Link</Typography>
+            <TextField
+              label="Title"
+              value={newLink.title}
+              size="small"
+              fullWidth
+              error={!!errors.links?.[(currentData.links || []).length]?.title}
+              helperText={errors.links?.[(currentData.links || []).length]?.title}
+              onChange={e => setNewLink({ ...newLink, title: e.target.value })}
+            />
+            <Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                URL
+              </Typography>
+              <StepNodeExpressionField
+                value={newLink.url}
+                onChange={val => setNewLink({ ...newLink, url: val })}
+                parameters={parameters}
+                outputs={allParentStepsOutputs}
+                disableWrapper
+              />
+              {!!errors.links?.[(currentData.links || []).length]?.url && (
+                <Typography variant="caption" color="error">
+                  {errors.links?.[(currentData.links || []).length]?.url}
+                </Typography>
+              )}
+            </Box>
+            <TextField
+              label="Icon"
+              value={newLink.icon || ''}
+              fullWidth
+              placeholder="e.g. catalog, external, github"
+              InputLabelProps={{ shrink: true }}
+              onChange={e => setNewLink({ ...newLink, icon: e.target.value || undefined })}
+            />
+            <StyledIconButton
+              data-testid="add-link-button"
+              size="small"
+              onClick={handleAddLink}
+              disabled={!newLink.title || !newLink.url}
+              sx={{ alignSelf: 'flex-end' }}
+            >
+              <AddIcon />
+            </StyledIconButton>
+          </Box>
+        )}
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Typography variant="subtitle1">Text Blocks</Typography>
@@ -376,15 +383,21 @@ export const OutputNodeSideContent = ({
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="subtitle2" color="text.secondary">Block {index + 1}</Typography>
-                <StyledIconButton
-                  size="small"
-                  onClick={() => handleDeleteText(index)}
-                >
-                  <CloseIcon fontSize="small" />
-                </StyledIconButton>
+                <Tooltip title="Delete">
+                  <span>
+                    <StyledIconButton
+                      size="small"
+                      onClick={() => handleDeleteText(index)}
+                      disabled={disabled}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </StyledIconButton>
+                  </span>
+                </Tooltip>
               </Box>
 
               <TextField
+                disabled={disabled}
                 label="Title"
                 value={text.title}
                 size="small"
@@ -404,6 +417,7 @@ export const OutputNodeSideContent = ({
               />
 
               <MarkdownEditor
+                disabled={disabled}
                 value={text.content}
                 onChange={val => {
                   const newTextArray = [...(currentData.text || [])];
@@ -421,45 +435,47 @@ export const OutputNodeSideContent = ({
             </Box>
           ))}
 
-          <Box
-            data-testid="new-text-box"
-            sx={{
-              p: 2,
-              border: '1px dashed',
-              borderColor: 'divider',
-              borderRadius: 2,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2
-            }}
-          >
-            <Typography variant="subtitle2" color="text.secondary">New Text Block</Typography>
-            <TextField
-              label="Title"
-              value={newText.title}
-              size="small"
-              fullWidth
-              onChange={e => setNewText({ ...newText, title: e.target.value })}
-            />
-            <Box>
-              <MarkdownEditor
-                value={newText.content}
-                onChange={val => setNewText({ ...newText, content: val })}
-                parameters={parameters}
-                outputs={allParentStepsOutputs}
-                minHeight={150}
-              />
-            </Box>
-            <StyledIconButton
-              data-testid="add-text-button"
-              size="small"
-              onClick={handleAddText}
-              disabled={!newText.title || !newText.content}
-              sx={{ alignSelf: 'flex-end', color: 'white' }}
+          {!disabled && (
+            <Box
+              data-testid="new-text-box"
+              sx={{
+                p: 2,
+                border: '1px dashed',
+                borderColor: 'divider',
+                borderRadius: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2
+              }}
             >
-              <AddIcon />
-            </StyledIconButton>
-          </Box>
+              <Typography variant="subtitle2" color="text.secondary">New Text Block</Typography>
+              <TextField
+                label="Title"
+                value={newText.title}
+                size="small"
+                fullWidth
+                onChange={e => setNewText({ ...newText, title: e.target.value })}
+              />
+              <Box>
+                <MarkdownEditor
+                  value={newText.content}
+                  onChange={val => setNewText({ ...newText, content: val })}
+                  parameters={parameters}
+                  outputs={allParentStepsOutputs}
+                  minHeight={150}
+                />
+              </Box>
+              <StyledIconButton
+                data-testid="add-text-button"
+                size="small"
+                onClick={handleAddText}
+                disabled={!newText.title || !newText.content}
+                sx={{ alignSelf: 'flex-end', color: 'white' }}
+              >
+                <AddIcon />
+              </StyledIconButton>
+            </Box>
+          )}
 
           {/* Variable Picker Menu */}
           <Menu

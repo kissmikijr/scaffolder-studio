@@ -7,6 +7,7 @@ import {
   NodeTypeColors,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
+import { prefabsApiRef } from '../../../../api/PrefabsClient';
 import { prefabLibraryApiRef } from '../../../../api/PrefabLibraryClient';
 
 import { useApi } from '@backstage/core-plugin-api';
@@ -33,7 +34,8 @@ const PrefabInstanceNode = ({
   selected,
 }: NodeProps<Node<PrefabInstanceNodeData>>) => {
   const theme = useTheme();
-  const api = useApi(prefabLibraryApiRef);
+  const libraryApi = useApi(prefabLibraryApiRef);
+  const personalApi = useApi(prefabsApiRef);
   const edges = useEdges();
   const [prefab, setPrefab] = useState<Prefab>();
   const [loadingState, setLoadingState] = useState<LoadingState>('loading');
@@ -53,20 +55,38 @@ const PrefabInstanceNode = ({
     }
 
     setLoadingState('loading');
-    api
-      .get(data.id, data.version)
-      .then(prefab => {
-        if (prefab) {
-          setPrefab(prefab);
+
+    const fetchPrefab = async () => {
+      try {
+        // Try personal api first (for unpublished prefabs)
+        if (!data.version) {
+          try {
+            const p = await personalApi.get({ id: data.id });
+            if (p) {
+              setPrefab(p as Prefab);
+              setLoadingState('loaded');
+              return;
+            }
+          } catch (e) {
+            // Ignore and try library
+          }
+        }
+
+        // Try library api
+        const p = await libraryApi.get(data.id, data.version);
+        if (p) {
+          setPrefab(p);
           setLoadingState('loaded');
         } else {
           setLoadingState('not-found');
         }
-      })
-      .catch(() => {
+      } catch (e) {
         setLoadingState('not-found');
-      });
-  }, [data?.id, data?.version, api]);
+      }
+    };
+
+    fetchPrefab();
+  }, [data?.id, data?.version, libraryApi, personalApi]);
 
   const getBorderColor = (nodeType: string) => {
     switch (nodeType) {
@@ -139,7 +159,7 @@ const PrefabInstanceNode = ({
       ...prefab.node,
       data: {
         ...prefab.node.data,
-        onChange: () => {},
+        onChange: () => { },
       },
     };
 
@@ -209,11 +229,10 @@ const PrefabInstanceNode = ({
             pointerEvents: 'none',
           }}
         >
-          {`${
-            prefab?.node?.type === 'templateOutput'
+          {`${prefab?.node?.type === 'templateOutput'
               ? 'Output'
               : prefab?.node?.type
-          }`}
+            }`}
         </Box>
       )}
       <Box
@@ -223,15 +242,14 @@ const PrefabInstanceNode = ({
           backgroundColor: theme.complimentBackground,
           position: 'relative',
           display: 'block',
-          border: `4px ${isError ? 'dashed' : 'solid'} ${
-            selected
+          border: `4px ${isError ? 'dashed' : 'solid'} ${selected
               ? SELECTED_BORDER_COLOR
               : isError
-              ? theme.palette.warning.main
-              : prefab?.node?.type
-              ? getBorderColor(prefab.node.type)
-              : NodeTypeColors.unknown
-          }`,
+                ? theme.palette.warning.main
+                : prefab?.node?.type
+                  ? getBorderColor(prefab.node.type)
+                  : NodeTypeColors.unknown
+            }`,
 
           overflow: 'visible',
           '&:hover': {

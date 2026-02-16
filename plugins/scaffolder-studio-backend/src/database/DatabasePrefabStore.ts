@@ -34,7 +34,7 @@ export class DatabasePrefabStore implements PrefabStore {
     return new DatabasePrefabStore(client);
   }
 
-  private constructor(private readonly db: Knex) {}
+  private constructor(private readonly db: Knex) { }
 
   private deserialize(row: RawDatabasePrefab): Prefab {
     return {
@@ -57,12 +57,65 @@ export class DatabasePrefabStore implements PrefabStore {
       throw new NotFoundError(`Prefab with id ${id} not found`);
     }
 
-    return this.deserialize(row);
+    const prefab = this.deserialize(row);
+
+    const latestPublished = await this.db('prefab_library')
+      .where({ prefab_id: id })
+      .orderBy('created_at', 'desc')
+      .first();
+
+    if (latestPublished) {
+      prefab.published_at = latestPublished.created_at;
+      // Compare content (node, title, description)
+      const isContentSame =
+        row.node === latestPublished.node &&
+        row.title === latestPublished.title &&
+        row.description === latestPublished.description;
+
+      prefab.is_published = isContentSame;
+      if (latestPublished.version) {
+        prefab.version = latestPublished.version;
+      }
+    } else {
+      prefab.is_published = false;
+      prefab.published_at = undefined;
+    }
+
+    return prefab;
   }
 
   async list(): Promise<Prefab[]> {
     const rows = await this.db('prefabs').select('*').where({ deleted: false });
-    return rows.map(row => this.deserialize(row));
+
+    // Fetch publication status for all prefabs
+    const prefabs = await Promise.all(
+      rows.map(async row => {
+        const prefab = this.deserialize(row);
+        const latestPublished = await this.db('prefab_library')
+          .where({ prefab_id: row.id })
+          .orderBy('created_at', 'desc')
+          .first();
+
+        if (latestPublished) {
+          prefab.published_at = latestPublished.created_at;
+          const isContentSame =
+            row.node === latestPublished.node &&
+            row.title === latestPublished.title &&
+            row.description === latestPublished.description;
+
+          prefab.is_published = isContentSame;
+          if (latestPublished.version) {
+            prefab.version = latestPublished.version;
+          }
+        } else {
+          prefab.is_published = false;
+          prefab.published_at = undefined;
+        }
+        return prefab;
+      }),
+    );
+
+    return prefabs;
   }
   async update({
     id,

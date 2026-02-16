@@ -12,19 +12,34 @@ import { PrefabLibraryClientApi, PrefabsClientApi } from '../../../../api';
 
 type PrefabApi = PrefabLibraryClientApi | PrefabsClientApi;
 
-export const usePrefabTree = (api: PrefabApi) => {
-  const [searchQuery, setSearchQuery] = useState('');
+export const usePrefabTree = (
+  api: PrefabApi,
+  queryKeyPrefix: string = 'prefabs',
+  options?: {
+    fetchMethod?: 'list' | 'listLibrary';
+    searchQuery?: string;
+    setSearchQuery?: (query: string) => void;
+  },
+) => {
+  const [internalSearchQuery, setInternalSearchQuery] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const searchQuery = options?.searchQuery !== undefined ? options.searchQuery : internalSearchQuery;
+  const setSearchQuery = options?.setSearchQuery || setInternalSearchQuery;
+
   const { data: prefabs, isLoading, refetch } = useQuery<Prefab[]>({
-    queryKey: ['prefabs', api], // Include api in queryKey to differentiate
-    queryFn: () => api.listLibrary ? api.listLibrary() : (api as any).list(), // Handle different API methods if they differ. 
-    // Wait, PrefabLibraryClient has listLibrary? PrefabsClient has list?
-    // I need to check the API interfaces.
+    queryKey: [queryKeyPrefix, options?.fetchMethod],
+    queryFn: () => {
+      if (options?.fetchMethod === 'listLibrary' && (api as any).listLibrary) {
+        return (api as any).listLibrary();
+      }
+      if (options?.fetchMethod === 'list' && (api as any).list) {
+        return (api as any).list();
+      }
+      return api.listLibrary ? api.listLibrary() : (api as any).list();
+    },
     refetchOnMount: true,
-    gcTime: 0,
-    staleTime: 0,
   });
 
   const filteredPrefabs = useMemo(() => {

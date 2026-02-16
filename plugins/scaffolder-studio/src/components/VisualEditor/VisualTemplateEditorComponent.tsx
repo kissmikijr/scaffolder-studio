@@ -323,7 +323,7 @@ export const VisualTemplateEditorComponent = () => {
           metadata: {
             name: project.metadata?.name || 'Untitled',
           },
-        });
+        }, project.updated);
         setIsProjectLoaded(true);
 
         // Initialize history with loaded state after a delay

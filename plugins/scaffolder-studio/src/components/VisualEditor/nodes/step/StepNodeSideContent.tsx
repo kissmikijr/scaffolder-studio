@@ -122,7 +122,8 @@ export const StepNodeSideContent = ({
         >
       >,
     ) => {
-      if (!currentData?.onChange) {
+      const current = currentData;
+      if (!current?.onChange) {
         return;
       }
 
@@ -130,12 +131,12 @@ export const StepNodeSideContent = ({
         StepNodeData,
         'name' | 'stepId' | 'if' | 'formData' | 'schema' | 'description'
       > = {
-        stepId: newData.stepId ?? currentData.stepId ?? formData.id,
-        name: newData.name ?? currentData.name ?? formData.name,
-        if: newData.if ?? currentData.if ?? formData.if,
-        formData: newData.formData ?? currentData.formData ?? {},
-        schema: newData.schema ?? currentData.schema,
-        description: newData.description ?? currentData.description,
+        stepId: newData.stepId ?? current.stepId ?? formData.id,
+        name: newData.name ?? current.name ?? formData.name,
+        if: newData.if ?? current.if ?? formData.if,
+        formData: newData.formData ?? current.formData ?? {},
+        schema: newData.schema ?? current.schema,
+        description: newData.description ?? current.description,
       };
 
       const payload =
@@ -143,9 +144,9 @@ export const StepNodeSideContent = ({
           ? { ...mergedData, actionId: newData.actionId }
           : mergedData;
 
-      currentData.onChange(id, payload as any);
+      current.onChange(id, payload as any);
     },
-    [currentData, formData.id, formData.if, formData.name, id],
+    [formData.id, formData.if, formData.name, id, currentData],
   );
 
   const handleActionChange = useCallback(
@@ -216,7 +217,6 @@ export const StepNodeSideContent = ({
     <Box
       sx={{
         opacity: disabled ? 0.7 : 1,
-        pointerEvents: disabled ? 'none' : 'auto',
         display: 'flex',
         flexDirection: 'column',
         gap: 1.5,
@@ -237,6 +237,7 @@ export const StepNodeSideContent = ({
         </Typography>
       </Box>
       <Autocomplete
+        disabled={disabled}
         options={[...(availableActions || [])].sort((a, b) => {
           const groupA = a.id.split(':')[0] ?? 'Other';
           const groupB = b.id.split(':')[0] ?? 'Other';
@@ -268,6 +269,7 @@ export const StepNodeSideContent = ({
         )}
       />
       <TextField
+        disabled={disabled}
         label="id"
         variant="outlined"
         size="small"
@@ -279,6 +281,7 @@ export const StepNodeSideContent = ({
         style={{ marginTop: 12 }}
       />
       <TextField
+        disabled={disabled}
         label="name"
         variant="outlined"
         size="medium"
@@ -294,6 +297,7 @@ export const StepNodeSideContent = ({
           if
         </Typography>
         <StepNodeExpressionField
+          disabled={disabled}
           value={formData.if || ''}
           onChange={val => validateAndSet('if', val)}
           parameters={parameters}
@@ -313,6 +317,7 @@ export const StepNodeSideContent = ({
       </Typography>
       {currentData?.schema && (
         <Form
+          disabled={disabled}
           schema={formSchema}
           formData={currentData?.formData}
           onChange={newData => {

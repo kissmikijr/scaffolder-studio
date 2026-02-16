@@ -503,6 +503,7 @@ const ScaffolderStudioEditor = ({
       alertApi.post({
         message: 'Failed to publish template',
         severity: 'error',
+        display: 'transient',
       });
     } finally {
       setPublishDialogOpen(false);
@@ -525,6 +526,7 @@ const ScaffolderStudioEditor = ({
             handleTabChange('form');
           }}
         >
+          <Header.BackButton to="/scaffolder-studio/templates" />
           <Header.Title />
           <Tooltip
             title={

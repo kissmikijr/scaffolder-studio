@@ -110,7 +110,12 @@ export class ScaffolderVisualTemplateEditorService {
           version: node.data.version,
         });
 
-        actualNodes.push({ ...prefab.node, id: node.id as string });
+        actualNodes.push({
+          ...prefab.node,
+          id: node.id as string,
+          parentId: node.parentId,
+          position: node.position,
+        });
       } else {
         actualNodes.push(node);
       }

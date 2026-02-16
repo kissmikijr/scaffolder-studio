@@ -7,11 +7,12 @@ import { useNavigate, useOutletContext } from 'react-router-dom';
 import { sortBy } from './sort';
 import { PublishedTemplate } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { PublishedTemplateCard } from './PublishedTemplateCard';
+import { PublishedTemplateListRow } from './PublishedTemplateListRow';
 import { usePermission } from '@backstage/plugin-permission-react';
 import { scaffolderStudioUnpublishPermission } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
 export const PublishedView = () => {
-  const { sort } = useOutletContext<{ sort: string }>();
+  const { sort, viewMode } = useOutletContext<{ sort: string; viewMode?: string }>();
   const { loading: isLoadingPermission, allowed: canUnpublish } = usePermission(
     {
       permission: scaffolderStudioUnpublishPermission,
@@ -76,23 +77,44 @@ export const PublishedView = () => {
   return (
     <>
       <Box sx={{ p: 3 }}>
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-            gap: 3,
-          }}
-        >
-          {publishedTemplates?.map(template => (
-            <PublishedTemplateCard
-              key={template.id}
-              publishedTemplate={template}
-              onContextMenu={e => handleContextMenu(e, template.id)}
-              isSelected={selectedTemplateId === template.id}
-              onSelect={() => setSelectedTemplateId(template.id)}
-            />
-          ))}
-        </Box>
+        {viewMode === 'list' ? (
+          <Box
+            sx={{
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: '12px',
+              overflow: 'hidden',
+            }}
+          >
+            {publishedTemplates?.map(template => (
+              <PublishedTemplateListRow
+                key={template.id}
+                publishedTemplate={template}
+                onContextMenu={e => handleContextMenu(e, template.id)}
+                isSelected={selectedTemplateId === template.id}
+                onSelect={() => setSelectedTemplateId(template.id)}
+              />
+            ))}
+          </Box>
+        ) : (
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+              gap: 3,
+            }}
+          >
+            {publishedTemplates?.map(template => (
+              <PublishedTemplateCard
+                key={template.id}
+                publishedTemplate={template}
+                onContextMenu={e => handleContextMenu(e, template.id)}
+                isSelected={selectedTemplateId === template.id}
+                onSelect={() => setSelectedTemplateId(template.id)}
+              />
+            ))}
+          </Box>
+        )}
       </Box>
       <Menu
         open={!!contextMenu}

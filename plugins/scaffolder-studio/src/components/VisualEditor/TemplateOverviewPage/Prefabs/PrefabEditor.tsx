@@ -1,34 +1,35 @@
 import React, { useMemo, useCallback, useRef } from 'react';
-import { useApi } from '@backstage/core-plugin-api';
+import { useApi, alertApiRef } from '@backstage/core-plugin-api';
 import {
   StoredPrefab,
   ScaffolderAction,
   StepNodeData,
-  TemplateNodeData,
-  ParametersNodeData,
   OutputNodeData,
   PropertyNodeData,
+  AllNodeData,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { prefabsApiRef } from '../../../../api/PrefabsClient';
 import { ReactFlow, ReactFlowProvider, Node } from '@xyflow/react';
-import { Box, FormControl, TextField, useTheme, Typography, Divider } from '@mui/material';
+import { Box, useTheme, Divider, Button } from '@mui/material';
 import '@xyflow/react/dist/style.css';
-import { Select } from '@mui/material';
 import { getNodeBase } from '../../nodeBase';
 import { scaffolderVisualApiRef } from '../../../../api/ScaffolderVisualClient';
+
 import PrefabQueenNode from '../../nodes/prefab/PrefabQueenNode';
-import { useDebouncedSave } from './useDebouncedSave';
 import { rehydrateNodes } from '../../rehydrateNodes';
 import { PrefabSideNodes } from './PrefabSideNodes';
+import {
+  usePrefabDraftPersistence,
+  readPrefabDraft,
+  isDraftNewerThanServer,
+} from './usePrefabDraftPersistence';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import { useThumbnail } from '../../hooks/useThumbnail';
+import { PrefabHeader } from './PrefabHeader';
 
-// Type for nodes that can be rehydrated (excludes PropertyNodeData)
-type RehydratableNodeData =
-  | StepNodeData
-  | TemplateNodeData
-  | ParametersNodeData
-  | OutputNodeData;
+
 
 export const PrefabEditor = () => {
   const { id } = useParams();
@@ -37,7 +38,7 @@ export const PrefabEditor = () => {
   const scaffolderVisualApi = useApi(scaffolderVisualApiRef);
   const [prefab, setPrefab] = useState<StoredPrefab | null>(null);
 
-  const [nodeType, setNodeType] = useState<string>('step');
+  const [nodeType, setNodeType] = useState<string>('');
   const [availableActions, setAvailableActions] = useState<ScaffolderAction[]>(
     [],
   );
@@ -59,6 +60,7 @@ export const PrefabEditor = () => {
 
         return {
           ...prev,
+          is_published: false,
           node: {
             ...prev.node,
             data: newNodeData,
@@ -176,7 +178,8 @@ export const PrefabEditor = () => {
     if (!nodeType || isLoading || !initialLoadComplete || !prefab) return;
 
     // Only create new node if the type is different from current node type
-    if (prefab.node.type === nodeType) return;
+    if (getDropdownValueFromNodeType(prefab.node.type || 'step') === nodeType)
+      return;
 
     const node = createNodeFromType(nodeType);
     if (!node) return;
@@ -207,14 +210,19 @@ export const PrefabEditor = () => {
     ];
   }, [prefab]);
 
-  useDebouncedSave({
-    projectId: id,
+  const {
+    isDirty,
+    syncStatus,
+    lastSyncedAt,
+    saveNow,
+    setPersistedState,
+  } = usePrefabDraftPersistence({
+    prefabId: id,
     state: prefab
       ? {
         node: prefab.node,
         title: prefab.title || '',
         description: prefab.description || '',
-        id: prefab.id,
       }
       : {
         node: {
@@ -225,9 +233,39 @@ export const PrefabEditor = () => {
         } as Node,
         title: '',
         description: '',
-        id: '',
       },
-    reactFlowWrapperRef,
+    enabled: initialLoadComplete,
+  });
+
+  const alertApi = useApi(alertApiRef); // Ensure alertApiRef is imported
+
+  useUnsavedChangesGuard({
+    when: Boolean(id) && isDirty,
+    shouldBlockInAppNavigation: pathname => {
+      if (!id) {
+        return true;
+      }
+      const prefabPrefix = `/scaffolder-studio/prefab/${id}`;
+      return !pathname.startsWith(prefabPrefix);
+    },
+    onAutoSave: () => saveNow(true),
+    onAutoSaveFailed: () => {
+      alertApi.post({
+        message:
+          'Failed to sync before leaving. Your local draft is kept and will retry.',
+        severity: 'warning',
+        display: 'transient',
+      });
+    },
+  });
+
+  useThumbnail({
+    id,
+    reactFlowWrapper: reactFlowWrapperRef,
+    nodes: nodes,
+    edges: [],
+    enabled: initialLoadComplete,
+    storageKeyPrefix: 'prefab-thumbnail-',
   });
   useEffect(() => {
     if (!id) return;
@@ -238,166 +276,196 @@ export const PrefabEditor = () => {
     api
       .get({ id })
       .then(loadedPrefab => {
-        if (loadedPrefab.node) {
-          // Existing prefab with a node - load it
-          // Type assertion is safe because we only use rehydrateNodes to add onChange handler
+        let prefabToLoad = loadedPrefab;
+        const localDraft = readPrefabDraft(id);
+
+        if (
+          localDraft &&
+          loadedPrefab.updated_at &&
+          isDraftNewerThanServer(localDraft, loadedPrefab.updated_at)
+        ) {
+          // Use local draft
+          prefabToLoad = {
+            ...loadedPrefab,
+            node: localDraft.state.node as Node<AllNodeData>,
+            title: localDraft.state.title,
+            description: localDraft.state.description,
+          };
+        }
+
+        if (prefabToLoad.node) {
           const rehydratedNodes = rehydrateNodes(
-            [loadedPrefab.node] as Node<RehydratableNodeData>[],
+            [prefabToLoad.node as any],
             {
               onChange: handlePrefabChange,
-              onAddProperty: () => { }, // Not used in prefab editor
+              onAddProperty: () => { },
             },
           );
-          setPrefab({ ...loadedPrefab, node: rehydratedNodes[0] });
+          setPrefab({ ...prefabToLoad, node: rehydratedNodes[0] });
           setNodeType(
-            getDropdownValueFromNodeType(loadedPrefab.node.type || 'step'),
+            getDropdownValueFromNodeType(prefabToLoad.node.type || 'step'),
           );
         } else {
-          // Prefab without node - create default step node
           const defaultNode = createNodeFromType('step');
           if (defaultNode) {
             setPrefab({
-              ...loadedPrefab,
+              ...prefabToLoad,
               node: defaultNode,
             });
           }
           setNodeType('step');
         }
+
+        // Initialize persisted state with server data (or what we just loaded as baseline)
+        // Actually, for correct dirty checking, we should set persisted state to what represents "synced"
+        // If we loaded a draft, we are dirty until synced.
+        // But `usePrefabDraftPersistence` initializes `persistedStateHash` to empty, so first render will be dirty if we don't set it.
+        // We should set `persistedState` to the *SERVER* state to correctly reflect dirty status if we loaded a draft.
+        setPersistedState({
+          node: (loadedPrefab.node || createNodeFromType('step')!) as unknown as Node<AllNodeData>,
+          title: loadedPrefab.title || '',
+          description: loadedPrefab.description || '',
+        });
+
         setIsLoading(false);
         setInitialLoadComplete(true);
       })
       .catch(() => {
-        // If prefab doesn't exist, don't set anything - stay in loading state
         setIsLoading(false);
         setInitialLoadComplete(true);
       });
-  }, [id, api, handlePrefabChange, createNodeFromType]);
+  }, [id, api, handlePrefabChange, createNodeFromType, setPersistedState]);
+  const handleMetadataChange = useCallback(
+    (_: string, data: Partial<StoredPrefab>) => {
+      setPrefab(prev => (prev ? { ...prev, ...data, is_published: false } : prev));
+    },
+    [],
+  );
+
   return (
     <ReactFlowProvider>
-      <div
-        style={{ flexDirection: 'row', display: 'flex', position: 'relative' }}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100vh',
+          width: '100%',
+        }}
       >
-        <Box
-          ref={reactFlowWrapperRef}
-          sx={{
-            height: '100vh',
-            width: '100%',
-            backgroundColor:
-              theme.palette.mode === 'dark' ? '#16161a' : '#fafafa',
-          }}
+        <PrefabHeader
+          prefab={prefab}
+          onPrefabChange={handleMetadataChange}
+          syncStatus={syncStatus}
+          lastSyncedAt={lastSyncedAt}
+          nodeType={nodeType}
+          onNodeTypeChange={setNodeType}
         >
-          <ReactFlow
-            panOnScroll={false}
-            panOnDrag={false}
-            selectionOnDrag={false}
-            nodesDraggable={false}
-            elementsSelectable={false}
-            zoomActivationKeyCode={null}
-            nodes={nodes}
-            zoomOnDoubleClick={false}
-            zoomOnPinch={false}
-            fitView
-            maxZoom={1}
-            zoomOnScroll={false}
-            nodeTypes={{ prefabQueen: PrefabQueenNode }}
-          />
-        </Box>
+          <Button
+            variant="contained"
+            color="primary"
+            size="small"
+            onClick={async () => {
+              if (!prefab) return;
+              try {
+                await api.addToLibrary({
+                  prefabId: prefab.id,
+                  owner: prefab.owner || 'unknown',
+                });
+                alertApi.post({
+                  message: 'Prefab published to library successfully',
+                  severity: 'success',
+                  display: 'transient',
+                });
+                // Refresh the prefab to get updated published status
+                const updatedPrefab = await api.get({ id: prefab.id });
+                if (updatedPrefab.node) {
+                  const rehydratedNodes = rehydrateNodes(
+                    [updatedPrefab.node as any],
+                    {
+                      onChange: handlePrefabChange,
+                      onAddProperty: () => { },
+                    },
+                  );
+                  setPrefab({ ...updatedPrefab, node: rehydratedNodes[0] });
+                } else {
+                  setPrefab(prev =>
+                    prev ? { ...prev, ...updatedPrefab } : updatedPrefab,
+                  );
+                }
+              } catch (error) {
+                alertApi.post({
+                  message: `Failed to publish prefab: ${(error as Error).message
+                    }`,
+                  severity: 'error',
+                  display: 'transient',
+                });
+              }
+            }}
+            disabled={!prefab || (prefab.is_published && !!prefab.published_at)}
+            sx={{ height: 32, width: 128 }}
+          >
+            {!prefab?.published_at
+              ? 'Publish'
+              : prefab.is_published
+                ? 'Published'
+                : 'Publish'}
+          </Button>
+        </PrefabHeader>
         <Box
           sx={{
             display: 'flex',
-            flexDirection: 'column',
-            minWidth: '700px',
-            maxWidth: '700px',
-            p: 2,
-            overflow: 'auto',
-            height: '100vh',
+            flex: 1,
+            minHeight: 0,
+            position: 'relative',
           }}
         >
-          <PrefabSideNodes
-            node={prefab?.node}
-            availableActions={availableActions}
+          <Box
+            ref={reactFlowWrapperRef}
+            sx={{
+              height: '100%',
+              width: '100%',
+              backgroundColor:
+                theme.palette.mode === 'dark' ? '#16161a' : '#fafafa',
+            }}
           >
-            <Box
-              sx={{
-                p: 2.5,
-                mb: 2,
-                borderRadius: 1,
-                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
-                border: '1px solid',
-                borderColor: 'divider',
-              }}
+            <ReactFlow
+              panOnScroll={false}
+              panOnDrag={false}
+              selectionOnDrag={false}
+              nodesDraggable={false}
+              elementsSelectable={false}
+              zoomActivationKeyCode={null}
+              nodes={nodes}
+              zoomOnDoubleClick={false}
+              zoomOnPinch={false}
+              fitView
+              maxZoom={1}
+              zoomOnScroll={false}
+              nodeTypes={{ prefabQueen: PrefabQueenNode }}
+            />
+          </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              minWidth: '700px',
+              maxWidth: '700px',
+              p: 2,
+              overflow: 'auto',
+              height: '100%',
+              borderLeft: `1px solid ${theme.palette.divider}`,
+              backgroundColor: theme.palette.background.paper,
+            }}
+          >
+            <PrefabSideNodes
+              node={prefab?.node}
+              availableActions={availableActions}
             >
-              <Typography
-                variant="overline"
-                sx={{
-                  color: 'text.secondary',
-                  display: 'block',
-                  mb: 2,
-                  fontWeight: 'bold',
-                  letterSpacing: '0.1em',
-                }}
-              >
-                Prefab Configuration
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                <FormControl fullWidth>
-                  <Typography variant="caption" sx={{ mb: 0.5, color: 'text.secondary', fontWeight: 500 }}>
-                    Node Type
-                  </Typography>
-                  <Select
-                    native
-                    value={nodeType}
-                    onChange={e => setNodeType(e.target.value)}
-                    displayEmpty
-                    defaultValue="step"
-                    sx={{
-                      '& .MuiSelect-select': {
-                        textTransform: 'none',
-                        padding: '8px 12px',
-                        fontSize: '0.875rem',
-                      },
-                    }}
-                  >
-                    <option value="step">Step</option>
-                    <option value="output">Output</option>
-                    <option value="property">Property</option>
-                  </Select>
-                </FormControl>
-                <TextField
-                  label="Title"
-                  variant="outlined"
-                  fullWidth
-                  value={prefab?.title || ''}
-                  onChange={e => {
-                    if (prefab) {
-                      setPrefab({ ...prefab, title: e.target.value });
-                    }
-                  }}
-                  disabled={!prefab}
-                  size="small"
-                />
-                <TextField
-                  variant="outlined"
-                  label="Description"
-                  fullWidth
-                  multiline
-                  minRows={3}
-                  maxRows={6}
-                  value={prefab?.description || ''}
-                  onChange={e => {
-                    if (prefab) {
-                      setPrefab({ ...prefab, description: e.target.value });
-                    }
-                  }}
-                  disabled={!prefab}
-                  size="small"
-                />
-              </Box>
-            </Box>
-            <Divider sx={{ mb: 3, opacity: 0.6 }} />
-          </PrefabSideNodes>
+              <Divider sx={{ mb: 3, opacity: 0.6 }} />
+            </PrefabSideNodes>
+          </Box>
         </Box>
-      </div>
+      </Box>
     </ReactFlowProvider>
   );
 };

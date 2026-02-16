@@ -166,46 +166,48 @@ export const useEditorHandlers = ({
         return false;
       }
 
+      const getEffectiveType = (node: Node<AllNodeData>) => {
+        if (isPrefabNode(node)) {
+          return (node.data as any).refType || node.type;
+        }
+        return node.type;
+      };
+
+      const sourceEffectiveType = getEffectiveType(sourceNode);
+      const targetEffectiveType = getEffectiveType(targetNode);
+
       const sourceOutgoingCount = countOutgoingConnections(edges, source);
       const targetIncomingCount = countIncomingConnections(edges, target);
 
-      if (!hasIncomingCapacity(targetNode.type, targetIncomingCount)) {
+      if (!hasIncomingCapacity(targetEffectiveType, targetIncomingCount)) {
         return false;
       }
 
       if (isTemplateNode(sourceNode)) {
         const templateSlots = getTemplateOutgoingSlots(source, edges, nodes);
         return (
-          (targetNode.type === 'step' && !templateSlots.hasStep) ||
-          (targetNode.type === 'parameters' && !templateSlots.hasParameters) ||
-          (targetNode.type === 'templateOutput' && !templateSlots.hasOutput)
+          (targetEffectiveType === 'step' && !templateSlots.hasStep) ||
+          (targetEffectiveType === 'parameters' && !templateSlots.hasParameters) ||
+          (targetEffectiveType === 'templateOutput' && !templateSlots.hasOutput)
         );
       }
 
-      if (!hasOutgoingCapacity(sourceNode.type, sourceOutgoingCount)) {
+      if (!hasOutgoingCapacity(sourceEffectiveType, sourceOutgoingCount)) {
         return false;
       }
 
-      if (isStepNode(sourceNode)) {
-        return targetNode.type === 'step';
+      if (sourceEffectiveType === 'step') {
+        return targetEffectiveType === 'step';
       }
 
-      if (isParametersNode(sourceNode)) {
+      if (sourceEffectiveType === 'parameters') {
         return (
-          targetNode.type === 'parameters' || targetNode.type === 'property'
+          targetEffectiveType === 'parameters' || targetEffectiveType === 'property'
         );
       }
 
-      if (isPropertyNode(sourceNode)) {
-        return targetNode.type === 'property';
-      }
-
-      if (isPrefabNode(sourceNode)) {
-        const refType = (sourceNode.data as any)?.refType;
-        if (refType === 'property' || refType === 'parameters') {
-          return targetNode.type === 'property';
-        }
-        return targetNode.type === 'step';
+      if (sourceEffectiveType === 'property') {
+        return targetEffectiveType === 'property';
       }
 
       return false;
@@ -515,6 +517,31 @@ export const useEditorHandlers = ({
             y: e.clientY,
           });
 
+          let parentId: string | undefined;
+          let relativePosition = position;
+          let extent: 'parent' | undefined;
+
+          // If it's a property prefab, check if dropped on a parameters node
+          if (refType === 'property') {
+            const parentNode = nodes.find(
+              n =>
+                isParametersNode(n) &&
+                position.x >= n.position.x &&
+                position.x <= n.position.x + (n.measured?.width ?? n.width ?? 0) &&
+                position.y >= n.position.y &&
+                position.y <= n.position.y + (n.measured?.height ?? n.height ?? 0)
+            );
+
+            if (parentNode) {
+              parentId = parentNode.id;
+              extent = 'parent';
+              relativePosition = {
+                x: position.x - parentNode.position.x,
+                y: position.y - parentNode.position.y,
+              };
+            }
+          }
+
           const nodeId = uuidv4();
           setNodes(nds => [
             ...nds,
@@ -522,14 +549,16 @@ export const useEditorHandlers = ({
               id: nodeId,
               type: 'prefab',
               name: '',
-              position,
+              position: relativePosition,
+              parentId,
+              extent,
               data: { id, type: 'prefab', version, refType, onChange },
             },
           ]);
         }
       }
     },
-    [screenToFlowPosition, setNodes, onChange],
+    [screenToFlowPosition, setNodes, onChange, nodes],
   );
 
   const onDragOver = useCallback((e: React.DragEvent) => {

@@ -13,7 +13,7 @@ import { scaffolderStudioPublishPermission } from '@kissmiklosjr/plugin-scaffold
 import { PublishDialog } from './PublishDialog';
 
 export const TemplatesView = () => {
-  const { sort, searchText } = useOutletContext<{ sort: string; searchText: string }>();
+  const { sort, searchText, viewMode } = useOutletContext<{ sort: string; searchText: string; viewMode?: string }>();
   const { confirm } = useConfirmationDialog();
   const navigate = useNavigate();
   const api = useApi(scaffolderVisualApiRef);
@@ -89,6 +89,7 @@ export const TemplatesView = () => {
       alertApi.post({
         message: 'Failed to publish template',
         severity: 'error',
+        display: 'transient',
       });
     } finally {
       setPublishDialogOpen(false);
@@ -125,6 +126,7 @@ export const TemplatesView = () => {
           selectedProjectIds={projectIds}
           setSelectedProjectIds={setProjectIds}
           setContextMenu={setContextMenu}
+          viewMode={viewMode as any}
         />
       </Box>
       <Menu

@@ -129,7 +129,10 @@ export const getOrderedProperties = (
 ): Node<AllNodeData>[] => {
   // 1. Get all property nodes belonging to this parameter group
   const groupProperties = nodes.filter(
-    n => n.parentId === parameterNodeId && n.type === 'property',
+    n =>
+      n.parentId === parameterNodeId &&
+      (n.type === 'property' ||
+        (n.type === 'prefab' && (n.data as any)?.refType === 'property')),
   );
 
   if (groupProperties.length === 0) return [];

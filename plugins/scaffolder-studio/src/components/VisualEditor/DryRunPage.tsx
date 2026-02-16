@@ -95,8 +95,8 @@ export const DryRunPage = () => {
         transform: isEntering
           ? 'translateY(8px)'
           : isClosing
-          ? 'translateY(-8px)'
-          : 'translateY(0)',
+            ? 'translateY(-8px)'
+            : 'translateY(0)',
         transition: 'opacity 160ms ease, transform 160ms ease',
       }}
     >

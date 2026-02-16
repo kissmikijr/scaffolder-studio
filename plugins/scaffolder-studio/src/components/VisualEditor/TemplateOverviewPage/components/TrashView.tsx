@@ -15,10 +15,11 @@ type TrashViewProps = {
   sort: string;
   onSortChange: (value: string) => void;
   searchText: string;
+  viewMode?: string;
 };
 
 export const TrashView = () => {
-  const { sort, searchText } = useOutletContext<TrashViewProps>();
+  const { sort, searchText, viewMode } = useOutletContext<TrashViewProps>();
   const api = useApi(scaffolderVisualApiRef);
   const [projects, setProjects] = useState<VisualTemplateProject[]>([]);
   const [projectIds, setProjectIds] = useState<string[]>([]);
@@ -87,6 +88,7 @@ export const TrashView = () => {
           selectedProjectIds={projectIds}
           setSelectedProjectIds={setProjectIds}
           setContextMenu={setContextMenu}
+          viewMode={viewMode as any}
         />
       </Box>
       <Menu

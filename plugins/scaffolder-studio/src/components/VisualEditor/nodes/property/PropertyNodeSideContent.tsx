@@ -115,9 +115,7 @@ export const PropertyNodeSideContent = ({
         display: 'flex',
         flexDirection: 'column',
         gap: 2,
-
         opacity: disabled ? 0.7 : 1,
-        pointerEvents: disabled ? 'none' : 'auto',
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
@@ -149,6 +147,7 @@ export const PropertyNodeSideContent = ({
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <TextField
+              disabled={disabled}
               label="Name"
               variant="outlined"
               size="small"
@@ -163,6 +162,7 @@ export const PropertyNodeSideContent = ({
               }}
             />
             <TextField
+              disabled={disabled}
               select
               label="Type"
               variant="outlined"
@@ -184,6 +184,7 @@ export const PropertyNodeSideContent = ({
             </TextField>
           </Box>
           <TextField
+            disabled={disabled}
             label="Title"
             variant="outlined"
             size="small"
@@ -197,6 +198,7 @@ export const PropertyNodeSideContent = ({
             fullWidth
           />
           <TextField
+            disabled={disabled}
             label="Description"
             variant="outlined"
             size="small"
@@ -212,6 +214,7 @@ export const PropertyNodeSideContent = ({
             rows={2}
           />
           <TextField
+            disabled={disabled}
             label="Pattern"
             variant="outlined"
             size="small"
@@ -225,6 +228,7 @@ export const PropertyNodeSideContent = ({
             fullWidth
           />
           <TextField
+            disabled={disabled}
             label="Enum (comma separated)"
             variant="outlined"
             size="small"
@@ -253,6 +257,7 @@ export const PropertyNodeSideContent = ({
             <FormControlLabel
               control={
                 <Checkbox
+                  disabled={disabled}
                   size="small"
                   checked={formData.required || false}
                   onChange={e => {
@@ -269,7 +274,7 @@ export const PropertyNodeSideContent = ({
           </Box>
         </Box>
       </Box>
-      <UIFieldConfig data={currentData} onChange={handleChange} />
+      <UIFieldConfig data={currentData} onChange={handleChange} disabled={disabled} />
     </Box>
   );
 

@@ -17,9 +17,14 @@ type UIFieldConfigProps = {
   onChange: (
     data: Partial<Pick<PropertyNodeData, 'ui:field' | 'ui:options'>>,
   ) => void;
+  disabled?: boolean;
 };
 
-export const UIFieldConfig = ({ data, onChange }: UIFieldConfigProps) => {
+export const UIFieldConfig = ({
+  data,
+  onChange,
+  disabled = false,
+}: UIFieldConfigProps) => {
   const [selectedField, setSelectedField] = useState<{
     label: string;
     schema: RJSFSchema;
@@ -55,6 +60,7 @@ export const UIFieldConfig = ({ data, onChange }: UIFieldConfigProps) => {
       </Box>
       <Box>
         <Autocomplete
+          disabled={disabled}
           value={selectedField}
           onChange={(_event, newValue) => {
             if (newValue) {
@@ -121,6 +127,7 @@ export const UIFieldConfig = ({ data, onChange }: UIFieldConfigProps) => {
       <Box>
         {selectedField?.schema && selectedField.schema.uiOptions && (
           <Form
+            disabled={disabled}
             schema={selectedField.schema.uiOptions as RJSFSchema}
             onChange={e => onChange({ 'ui:options': e.formData as string })}
             formData={data['ui:options']}

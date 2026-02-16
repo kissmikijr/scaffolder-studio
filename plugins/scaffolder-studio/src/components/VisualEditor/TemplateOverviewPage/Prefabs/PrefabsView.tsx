@@ -4,12 +4,13 @@ import { useApi } from '@backstage/core-plugin-api';
 import { prefabsApiRef } from '../../../../api/PrefabsClient';
 import { StoredPrefab } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { PrefabCard } from './PrefabCard';
+import { PrefabListRow } from './PrefabListRow';
 import { useCardSelection } from '../hooks/useCardSelection';
 
 import { useOutletContext } from 'react-router-dom';
 
 export const PrefabsView = () => {
-  const { searchText } = useOutletContext<{ searchText: string }>();
+  const { searchText, viewMode } = useOutletContext<{ searchText: string; viewMode?: string }>();
   const api = useApi(prefabsApiRef);
   const [prefabs, setPrefabs] = useState<StoredPrefab[]>([]);
 
@@ -59,20 +60,43 @@ export const PrefabsView = () => {
     }
   };
 
+  const filtered = prefabs.filter(p =>
+    (p.title ?? '').toLowerCase().includes(searchText?.toLowerCase() ?? ''),
+  );
+
   return (
     <Box>
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-          gap: 3,
-        }}
-      >
-        {prefabs
-          .filter(p =>
-            (p.title ?? '').toLowerCase().includes(searchText?.toLowerCase() ?? ''),
-          )
-          .map(prefab => (
+      {viewMode === 'list' ? (
+        <Box
+          sx={{
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: '12px',
+            overflow: 'hidden',
+          }}
+        >
+          {filtered.map(prefab => (
+            <PrefabListRow
+              key={prefab.id}
+              prefab={prefab}
+              isSelected={isSelected(prefab.id)}
+              onSelect={e => handleSelect(prefab.id, e)}
+              onContextMenu={e => {
+                e.preventDefault();
+                handleSelect(prefab.id, e);
+              }}
+            />
+          ))}
+        </Box>
+      ) : (
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+            gap: 3,
+          }}
+        >
+          {filtered.map(prefab => (
             <PrefabCard
               key={prefab.id}
               prefab={prefab}
@@ -83,7 +107,8 @@ export const PrefabsView = () => {
               onBulkDelete={handleBulkDelete}
             />
           ))}
-      </Box>
+        </Box>
+      )}
     </Box>
   );
 };

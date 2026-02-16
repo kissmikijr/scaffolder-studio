@@ -1,7 +1,7 @@
 import { Page, Locator } from '@playwright/test';
 
 export class PrefabListPage {
-  constructor(private readonly page: Page) {}
+  constructor(private readonly page: Page) { }
 
   async goto() {
     await this.page.goto('/scaffolder-studio/prefabs');
@@ -112,5 +112,9 @@ export class PrefabListPage {
     );
     await deleteMenuItem.click();
     await deletePromise;
+  }
+
+  getSectionHeader(title: string): Locator {
+    return this.page.getByRole('heading', { name: title });
   }
 }

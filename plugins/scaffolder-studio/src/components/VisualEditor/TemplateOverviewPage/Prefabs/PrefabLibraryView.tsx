@@ -20,7 +20,7 @@ export const PrefabLibraryView = () => {
     handleSearchClose,
     searchInputRef,
     refetch,
-  } = usePrefabTree(prefabLibraryApi);
+  } = usePrefabTree(prefabLibraryApi, 'library-prefabs', { fetchMethod: 'listLibrary' });
 
   return (
     <>
@@ -39,6 +39,7 @@ export const PrefabLibraryView = () => {
         onPrefabClick={id => navigate(`../prefab/${id}`)}
         prefabLibraryApi={prefabLibraryApi}
         onDeleteSuccess={refetch}
+        groupByPublished={false}
       />
     </>
   );

@@ -47,6 +47,8 @@ interface PrefabListProps {
     compact?: boolean;
     draggable?: boolean;
     dragPreviewRef?: React.RefObject<PrefabDragPreviewRef>;
+    groupByPublished?: boolean;
+    groups?: Array<{ title: string; prefabs: Prefab[] }>;
 }
 
 export const PrefabList = ({
@@ -59,6 +61,8 @@ export const PrefabList = ({
     compact = false,
     draggable = false,
     dragPreviewRef,
+    groupByPublished = false,
+    groups,
 }: PrefabListProps) => {
     const theme = useTheme();
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -250,7 +254,7 @@ export const PrefabList = ({
                             },
                         }}
                     >
-                        {!Array.isArray(prefabs) || prefabs.length === 0 ? (
+                        {((!Array.isArray(prefabs) || prefabs.length === 0) && (!groups || groups.every(g => g.prefabs.length === 0))) ? (
                             <TableRow>
                                 <TableCell colSpan={compact ? 4 : 7} align="center">
                                     <Typography
@@ -265,73 +269,62 @@ export const PrefabList = ({
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            Object.values(
-                                prefabs.reduce((acc, prefab) => {
-                                    const key = prefab.prefabId || prefab.id || 'unknown';
-                                    if (!acc[key]) {
-                                        acc[key] = [];
-                                    }
-                                    acc[key].push(prefab);
-                                    return acc;
-                                }, {} as Record<string, Prefab[]>),
-                            ).map(group => {
-                                // Sort by version descending
-                                const sortedGroup = group.sort((a, b) => {
-                                    const vA = parseInt(a.version || '0', 10);
-                                    const vB = parseInt(b.version || '0', 10);
-                                    return vB - vA;
-                                });
-                                const latestPrefab = sortedGroup[0];
-                                const versionCount = group.length;
-                                const groupId = latestPrefab.prefabId || latestPrefab.id || 'unknown';
-                                const isExpanded = expandedGroups.has(groupId);
+                            (() => {
+                                const groupedByPrefabId = (prefabsToList: Prefab[]) => Object.values(
+                                    prefabsToList.reduce((acc, prefab) => {
+                                        const key = prefab.prefabId || prefab.id || 'unknown';
+                                        if (!acc[key]) {
+                                            acc[key] = [];
+                                        }
+                                        acc[key].push(prefab);
+                                        return acc;
+                                    }, {} as Record<string, Prefab[]>),
+                                );
 
-                                return (
-                                    <React.Fragment key={latestPrefab.id}>
-                                        <TableRow
-                                            hover
-                                            draggable={draggable}
-                                            onDragStart={(e) => draggable && handleDragStart(e, latestPrefab)}
-                                            onMouseEnter={() => draggable && handlePrefabHover(latestPrefab)}
-                                            onDoubleClick={() => {
-                                                onPrefabClick(latestPrefab.prefabId || '', latestPrefab.version);
-                                            }}
-                                            onContextMenu={(e) => handleContextMenu(e, latestPrefab)}
-                                            sx={{
-                                                cursor: draggable ? 'grab' : 'default',
-                                            }}
-                                        >
-                                            <TableCell padding="checkbox">
-                                                <IconButton
-                                                    aria-label="expand row"
-                                                    size="small"
-                                                    onClick={e => toggleGroup(groupId, e)}
-                                                    sx={{
-                                                        visibility: versionCount > 1 ? 'visible' : 'hidden',
-                                                    }}
-                                                >
-                                                    {isExpanded ? (
-                                                        <KeyboardArrowDownIcon fontSize="small" />
-                                                    ) : (
-                                                        <KeyboardArrowRightIcon fontSize="small" />
-                                                    )}
-                                                </IconButton>
-                                            </TableCell>
-                                            <TableCell>{getPrefabPill(latestPrefab)}</TableCell>
-                                            <TableCell>
-                                                <Typography
-                                                    variant="body2"
-                                                    sx={{
-                                                        fontWeight: 'medium',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap',
-                                                    }}
-                                                >
-                                                    {latestPrefab.title}
-                                                </Typography>
-                                            </TableCell>
-                                            {!compact && (
+                                const renderGroup = (group: Prefab[]) => {
+                                    // Sort by version descending
+                                    const sortedGroup = group.sort((a, b) => {
+                                        const vA = parseInt(a.version || '0', 10);
+                                        const vB = parseInt(b.version || '0', 10);
+                                        return vB - vA;
+                                    });
+                                    const latestPrefab = sortedGroup[0];
+                                    const versionCount = group.length;
+                                    const groupId = latestPrefab.prefabId || latestPrefab.id || 'unknown';
+                                    const isExpanded = expandedGroups.has(groupId);
+
+                                    return (
+                                        <React.Fragment key={latestPrefab.id}>
+                                            <TableRow
+                                                hover
+                                                draggable={draggable}
+                                                onDragStart={(e) => draggable && handleDragStart(e, latestPrefab)}
+                                                onMouseEnter={() => draggable && handlePrefabHover(latestPrefab)}
+                                                onDoubleClick={() => {
+                                                    onPrefabClick(latestPrefab.prefabId || '', latestPrefab.version);
+                                                }}
+                                                onContextMenu={(e) => handleContextMenu(e, latestPrefab)}
+                                                sx={{
+                                                    cursor: draggable ? 'grab' : 'default',
+                                                }}
+                                            >
+                                                <TableCell padding="checkbox">
+                                                    <IconButton
+                                                        aria-label="expand row"
+                                                        size="small"
+                                                        onClick={e => toggleGroup(groupId, e)}
+                                                        sx={{
+                                                            visibility: versionCount > 1 ? 'visible' : 'hidden',
+                                                        }}
+                                                    >
+                                                        {isExpanded ? (
+                                                            <KeyboardArrowDownIcon fontSize="small" />
+                                                        ) : (
+                                                            <KeyboardArrowRightIcon fontSize="small" />
+                                                        )}
+                                                    </IconButton>
+                                                </TableCell>
+                                                <TableCell>{getPrefabPill(latestPrefab)}</TableCell>
                                                 <TableCell>
                                                     <Typography
                                                         variant="body2"
@@ -342,48 +335,10 @@ export const PrefabList = ({
                                                             whiteSpace: 'nowrap',
                                                         }}
                                                     >
-                                                        {latestPrefab.description}
+                                                        {latestPrefab.title}
                                                     </Typography>
                                                 </TableCell>
-                                            )}
-                                            {!compact && (
-                                                <TableCell>
-                                                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                                                        {latestPrefab.updated_at
-                                                            ? new Date(latestPrefab.updated_at).toLocaleDateString()
-                                                            : 'N/A'}
-                                                    </Typography>
-                                                </TableCell>
-                                            )}
-                                            <TableCell>
-                                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                                                    v{latestPrefab.version || 'N/A'}
-                                                </Typography>
-                                            </TableCell>
-                                            {!compact && (
-                                                <TableCell>
-                                                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                                                        {latestPrefab.owner}
-                                                    </Typography>
-                                                </TableCell>
-                                            )}
-                                        </TableRow>
-                                        {isExpanded &&
-                                            sortedGroup.slice(1).map(prefab => (
-                                                <TableRow
-                                                    key={prefab.id}
-                                                    hover
-                                                    draggable={draggable}
-                                                    onDragStart={(e) => draggable && handleDragStart(e, prefab)}
-                                                    onMouseEnter={() => draggable && handlePrefabHover(prefab)}
-                                                    onDoubleClick={() => onPrefabClick(prefab.prefabId || '', prefab.version)}
-                                                    onContextMenu={(e) => handleContextMenu(e, prefab)}
-                                                    sx={{
-                                                        cursor: draggable ? 'grab' : 'default',
-                                                    }}
-                                                >
-                                                    <TableCell />
-                                                    <TableCell />
+                                                {!compact && (
                                                     <TableCell>
                                                         <Typography
                                                             variant="body2"
@@ -392,13 +347,50 @@ export const PrefabList = ({
                                                                 overflow: 'hidden',
                                                                 textOverflow: 'ellipsis',
                                                                 whiteSpace: 'nowrap',
-                                                                pl: 2,
                                                             }}
                                                         >
-                                                            {prefab.title}
+                                                            {latestPrefab.description}
                                                         </Typography>
                                                     </TableCell>
-                                                    {!compact && (
+                                                )}
+                                                {!compact && (
+                                                    <TableCell>
+                                                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                                                            {latestPrefab.updated_at
+                                                                ? new Date(latestPrefab.updated_at).toLocaleDateString()
+                                                                : 'N/A'}
+                                                        </Typography>
+                                                    </TableCell>
+                                                )}
+                                                <TableCell>
+                                                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                                                        v{latestPrefab.version || 'N/A'}
+                                                    </Typography>
+                                                </TableCell>
+                                                {!compact && (
+                                                    <TableCell>
+                                                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                                                            {latestPrefab.owner}
+                                                        </Typography>
+                                                    </TableCell>
+                                                )}
+                                            </TableRow>
+                                            {isExpanded &&
+                                                sortedGroup.slice(1).map(prefab => (
+                                                    <TableRow
+                                                        key={prefab.id}
+                                                        hover
+                                                        draggable={draggable}
+                                                        onDragStart={(e) => draggable && handleDragStart(e, prefab)}
+                                                        onMouseEnter={() => draggable && handlePrefabHover(prefab)}
+                                                        onDoubleClick={() => onPrefabClick(prefab.prefabId || '', prefab.version)}
+                                                        onContextMenu={(e) => handleContextMenu(e, prefab)}
+                                                        sx={{
+                                                            cursor: draggable ? 'grab' : 'default',
+                                                        }}
+                                                    >
+                                                        <TableCell />
+                                                        <TableCell />
                                                         <TableCell>
                                                             <Typography
                                                                 variant="body2"
@@ -407,38 +399,113 @@ export const PrefabList = ({
                                                                     overflow: 'hidden',
                                                                     textOverflow: 'ellipsis',
                                                                     whiteSpace: 'nowrap',
+                                                                    pl: 2,
                                                                 }}
                                                             >
-                                                                {latestPrefab.description}
+                                                                {prefab.title}
                                                             </Typography>
                                                         </TableCell>
-                                                    )}
-                                                    {!compact && (
+                                                        {!compact && (
+                                                            <TableCell>
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    sx={{
+                                                                        fontWeight: 'medium',
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        whiteSpace: 'nowrap',
+                                                                    }}
+                                                                >
+                                                                    {latestPrefab.description}
+                                                                </Typography>
+                                                            </TableCell>
+                                                        )}
+                                                        {!compact && (
+                                                            <TableCell>
+                                                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                                                                    {prefab.updated_at
+                                                                        ? new Date(prefab.updated_at).toLocaleDateString()
+                                                                        : 'N/A'}
+                                                                </Typography>
+                                                            </TableCell>
+                                                        )}
                                                         <TableCell>
                                                             <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                                                                {prefab.updated_at
-                                                                    ? new Date(prefab.updated_at).toLocaleDateString()
-                                                                    : 'N/A'}
+                                                                v{prefab.version || 'N/A'}
                                                             </Typography>
                                                         </TableCell>
+                                                        {!compact && (
+                                                            <TableCell>
+                                                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                                                                    {prefab.owner}
+                                                                </Typography>
+                                                            </TableCell>
+                                                        )}
+                                                    </TableRow>
+                                                ))}
+                                        </React.Fragment>
+                                    );
+                                };
+
+                                if (groups) {
+                                    return (
+                                        <>
+                                            {groups.map((group, idx) => (
+                                                <React.Fragment key={group.title + idx}>
+                                                    {group.prefabs.length > 0 && (
+                                                        <>
+                                                            <TableRow sx={{ backgroundColor: 'rgba(255, 255, 255, 0.05) !important' }}>
+                                                                <TableCell colSpan={compact ? 4 : 7} sx={{ py: 1 }}>
+                                                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.7rem', opacity: 0.7, textTransform: 'uppercase' }}>
+                                                                        {group.title}
+                                                                    </Typography>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                            {groupedByPrefabId(group.prefabs).map(renderGroup)}
+                                                        </>
                                                     )}
-                                                    <TableCell>
-                                                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                                                            v{prefab.version || 'N/A'}
+                                                </React.Fragment>
+                                            ))}
+                                        </>
+                                    );
+                                }
+
+                                if (!groupByPublished || !prefabs) {
+                                    return groupedByPrefabId(prefabs || []).map(renderGroup);
+                                }
+
+                                const published = prefabs.filter(p => p.is_published);
+                                const unpublished = prefabs.filter(p => !p.is_published);
+
+                                return (
+                                    <>
+                                        {published.length > 0 && (
+                                            <>
+                                                <TableRow sx={{ backgroundColor: 'rgba(255, 255, 255, 0.05) !important' }}>
+                                                    <TableCell colSpan={compact ? 4 : 7} sx={{ py: 1 }}>
+                                                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.7rem', opacity: 0.7, textTransform: 'uppercase' }}>
+                                                            Library Prefabs
                                                         </Typography>
                                                     </TableCell>
-                                                    {!compact && (
-                                                        <TableCell>
-                                                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                                                                {prefab.owner}
-                                                            </Typography>
-                                                        </TableCell>
-                                                    )}
                                                 </TableRow>
-                                            ))}
-                                    </React.Fragment>
+                                                {groupedByPrefabId(published).map(renderGroup)}
+                                            </>
+                                        )}
+                                        {unpublished.length > 0 && (
+                                            <>
+                                                <TableRow sx={{ backgroundColor: 'rgba(255, 255, 255, 0.05) !important' }}>
+                                                    <TableCell colSpan={compact ? 4 : 7} sx={{ py: 1 }}>
+                                                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.7rem', opacity: 0.7, textTransform: 'uppercase' }}>
+                                                            Your Prefabs
+                                                        </Typography>
+                                                    </TableCell>
+                                                </TableRow>
+                                                {groupedByPrefabId(unpublished).map(renderGroup)}
+                                            </>
+                                        )}
+                                    </>
                                 );
-                            })
+                            })()
                         )}
                     </TableBody>
                 </Table>

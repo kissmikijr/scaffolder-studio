@@ -62,22 +62,19 @@ export const useGroupDragDrop = ({ nodes, setNodes }: UseGroupDragDropProps) => 
 
             // If we found a target group and the node is not already child of that group
             if (targetGroup && node.parentId !== targetGroup.id) {
-                setNodes(nds =>
-                    nds.map(n => {
-                        if (n.id === node.id) {
-                            return {
-                                ...n,
-                                parentId: targetGroup.id,
-                                extent: 'parent', // Constrain it to the parent
-                                position: {
-                                    x: nodeAbsolutePos.x - targetGroup.position.x,
-                                    y: nodeAbsolutePos.y - targetGroup.position.y,
-                                },
-                            };
-                        }
-                        return n;
-                    }),
-                );
+                setNodes(nds => {
+                    const otherNodes = nds.filter(n => n.id !== node.id);
+                    const updatedNode = {
+                        ...node,
+                        parentId: targetGroup.id,
+                        extent: 'parent' as const, // Constrain it to the parent
+                        position: {
+                            x: nodeAbsolutePos.x - targetGroup.position.x,
+                            y: nodeAbsolutePos.y - targetGroup.position.y,
+                        },
+                    };
+                    return [...otherNodes, updatedNode];
+                });
             }
 
             // Explicitly NO "else" block -> we do not detach if dragged out.

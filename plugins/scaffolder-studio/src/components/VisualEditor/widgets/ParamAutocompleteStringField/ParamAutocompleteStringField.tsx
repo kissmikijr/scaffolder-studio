@@ -5,7 +5,7 @@ import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
 import { ShowPopperPlugin } from './components/ShowPopperPlugin';
-import { styled } from '@mui/material/styles';
+import { styled, useTheme } from '@mui/material/styles';
 import { $getRoot } from 'lexical';
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
@@ -79,12 +79,15 @@ export const ParamAutocompleteStringField = ({
   formContext,
   formData,
   name,
+  disabled,
+  readonly,
 }: FieldProps) => {
   const allParams = formContext?.parameters || [];
   const allOutputs = formContext?.outputs || [];
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const fetchApi = useApi(fetchApiRef);
   const discoveryApi = useApi(discoveryApiRef);
+  const theme = useTheme();
 
   const { data: customFilters = [] } = useQuery<NunjucksFilter[]>({
     queryKey: ['templating-extensions'],
@@ -129,16 +132,19 @@ export const ParamAutocompleteStringField = ({
     });
   };
 
+  const isReadOnly = disabled || readonly;
+
   // Memoize initialConfig to prevent LexicalComposer from remounting on every render
   // This is critical to prevent cursor reset when parent state updates
   const initialConfig = useMemo(
     () => ({
       ...editorConfig,
+      editable: !isReadOnly,
       onError: (error: Error) => {
         console.error(error);
       },
     }),
-    [],
+    [isReadOnly],
   );
 
   return (
@@ -153,9 +159,19 @@ export const ParamAutocompleteStringField = ({
               position: 'relative',
               minHeight: '32px',
               padding: '8px',
-              border: '1px solid #ccc',
+              border: '1px solid',
+              borderColor: isReadOnly
+                ? theme.palette.action.disabled
+                : theme.palette.action.active,
               borderRadius: '4px',
-              backgroundColor: 'transparent',
+              backgroundColor: isReadOnly
+                ? theme.palette.action.hover
+                : 'transparent',
+              color: isReadOnly
+                ? theme.palette.text.disabled
+                : theme.palette.text.primary,
+              cursor: isReadOnly ? 'not-allowed' : 'text',
+              opacity: isReadOnly ? 0.7 : 1,
             }}
           />
         }
@@ -180,13 +196,15 @@ export const ParamAutocompleteStringField = ({
         parameters={allParams}
         outputs={allOutputs}
       />
-      <ShowPopperPlugin
-        parameters={allParams}
-        outputs={allOutputs}
-        showAutocomplete={showAutocomplete}
-        setShowAutocomplete={setShowAutocomplete}
-        customFilters={customFilters}
-      />
+      {!isReadOnly && (
+        <ShowPopperPlugin
+          parameters={allParams}
+          outputs={allOutputs}
+          showAutocomplete={showAutocomplete}
+          setShowAutocomplete={setShowAutocomplete}
+          customFilters={customFilters}
+        />
+      )}
     </StyledLexicalComposer>
   );
 };

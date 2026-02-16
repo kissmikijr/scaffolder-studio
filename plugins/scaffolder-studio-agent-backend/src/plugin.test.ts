@@ -2,7 +2,7 @@ import {
   mockCredentials,
   startTestBackend,
 } from '@backstage/backend-test-utils';
-import { scaffolderVisualEditorAgentPlugin } from './plugin';
+import { scaffolderStudioAgentPlugin } from './plugin';
 import request from 'supertest';
 import { catalogServiceMock } from '@backstage/plugin-catalog-node/testUtils';
 
@@ -14,7 +14,7 @@ import { catalogServiceMock } from '@backstage/plugin-catalog-node/testUtils';
 describe('plugin', () => {
   it('should create and read TODO items', async () => {
     const { server } = await startTestBackend({
-      features: [scaffolderVisualEditorAgentPlugin],
+      features: [scaffolderStudioAgentPlugin],
     });
 
     await request(server).get('/api/scaffolder-studio-agent/todos').expect(200, {
@@ -49,7 +49,7 @@ describe('plugin', () => {
   it('should create TODO item with catalog information', async () => {
     const { server } = await startTestBackend({
       features: [
-        scaffolderVisualEditorAgentPlugin,
+        scaffolderStudioAgentPlugin,
         catalogServiceMock.factory({
           entities: [
             {

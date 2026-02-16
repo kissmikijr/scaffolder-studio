@@ -292,6 +292,8 @@ export type Prefab = {
   version?: string;
   created_at?: string;
   updated_at?: string;
+  published_at?: string;
+  is_published?: boolean;
 };
 
 // For creating new prefabs (no ID, timestamps, etc.)

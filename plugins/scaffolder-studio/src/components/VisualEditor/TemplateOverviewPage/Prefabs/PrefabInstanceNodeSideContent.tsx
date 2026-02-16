@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Node } from '@xyflow/react';
 import { useApi } from '@backstage/core-plugin-api';
+import { prefabsApiRef } from '../../../../api/PrefabsClient';
 import { prefabLibraryApiRef } from '../../../../api/PrefabLibraryClient';
 import {
   Prefab,
@@ -30,7 +31,8 @@ export const PrefabInstanceNodeSideContent = ({
 }) => {
   const [prefab, setPrefab] = useState<Prefab>();
   const [error, setError] = useState<string | null>(null);
-  const prefabLibraryApi = useApi(prefabLibraryApiRef);
+  const libraryApi = useApi(prefabLibraryApiRef);
+  const personalApi = useApi(prefabsApiRef);
 
   useEffect(() => {
     if (!node.data.id) {
@@ -38,14 +40,38 @@ export const PrefabInstanceNodeSideContent = ({
       return;
     }
     setError(null);
-    prefabLibraryApi
-      .get(node.data.id, node.data.version)
-      .then(setPrefab)
-      .catch(() => {
+
+    const fetchPrefab = async () => {
+      try {
+        // Try personal api first (for unpublished prefabs)
+        if (!node.data.version) {
+          try {
+            const p = await personalApi.get({ id: node.data.id });
+            if (p) {
+              setPrefab(p as Prefab);
+              return;
+            }
+          } catch (e) {
+            // Ignore and try library
+          }
+        }
+
+        // Try library api
+        const p = await libraryApi.get(node.data.id, node.data.version);
+        if (p) {
+          setPrefab(p);
+        } else {
+          setError('This prefab may have been deleted or is no longer available.');
+          setPrefab(undefined);
+        }
+      } catch (e) {
         setError('This prefab may have been deleted or is no longer available.');
         setPrefab(undefined);
-      });
-  }, [node.data.id, node.data.version, prefabLibraryApi]);
+      }
+    };
+
+    fetchPrefab();
+  }, [node.data.id, node.data.version, libraryApi, personalApi]);
 
   if (error) {
     return (
