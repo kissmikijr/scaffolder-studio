@@ -8,13 +8,13 @@ import { sortBy } from './sort';
 import { PublishedTemplate } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { PublishedTemplateCard } from './PublishedTemplateCard';
 import { usePermission } from '@backstage/plugin-permission-react';
-import { visualScaffolderEditorUnpublishPermission } from '@kissmiklosjr/plugin-scaffolder-studio-common';
+import { scaffolderStudioUnpublishPermission } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
 export const PublishedView = () => {
   const { sort } = useOutletContext<{ sort: string }>();
   const { loading: isLoadingPermission, allowed: canUnpublish } = usePermission(
     {
-      permission: visualScaffolderEditorUnpublishPermission,
+      permission: scaffolderStudioUnpublishPermission,
     },
   );
   const navigate = useNavigate();

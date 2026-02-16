@@ -74,7 +74,7 @@ const SidePanelToggleIcon = ({ collapsed }: { collapsed: boolean }) => (
   </svg>
 );
 
-const VisualScaffolderEditor = ({
+const ScaffolderStudioEditor = ({
   setEdges,
   setNodes,
   setViewportState,
@@ -916,4 +916,4 @@ const VisualScaffolderEditor = ({
   );
 };
 
-export default VisualScaffolderEditor;
+export default ScaffolderStudioEditor;

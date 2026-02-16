@@ -1,24 +1,44 @@
 import {
     PolicyDecision,
     AuthorizeResult,
+    isPermission,
 } from '@backstage/plugin-permission-common';
 import {
     PermissionPolicy,
     PolicyQuery,
 } from '@backstage/plugin-permission-node';
-import { VISUAL_SCAFFOLDER_EDITOR_PERMISSIONS as PERMISSIONS } from './consts';
+import {
+    scaffolderStudioPublishPermission,
+    scaffolderStudioUnpublishPermission,
+    scaffolderStudioPrefabReadPermission,
+    scaffolderStudioPrefabCreatePermission,
+    scaffolderStudioPrefabDeletePermission,
+    scaffolderStudioPermanentlyDeletePermission,
+} from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
 export class ScaffolderVisualEditorPermissionPolicy implements PermissionPolicy {
     async handle(request: PolicyQuery): Promise<PolicyDecision> {
         const { permission } = request;
 
-        switch (permission.name) {
-            case PERMISSIONS.PUBLISH:
-            case PERMISSIONS.UNPUBLISH:
-                return { result: AuthorizeResult.ALLOW };
-
-            default:
-                return { result: AuthorizeResult.DENY };
+        if (isPermission(permission, scaffolderStudioPermanentlyDeletePermission)) {
+            return { result: AuthorizeResult.ALLOW };
         }
+        if (isPermission(permission, scaffolderStudioPublishPermission)) {
+            return { result: AuthorizeResult.ALLOW };
+        }
+        if (isPermission(permission, scaffolderStudioUnpublishPermission)) {
+            return { result: AuthorizeResult.ALLOW };
+        }
+        if (isPermission(permission, scaffolderStudioPrefabReadPermission)) {
+            return { result: AuthorizeResult.ALLOW };
+        }
+        if (isPermission(permission, scaffolderStudioPrefabCreatePermission)) {
+            return { result: AuthorizeResult.ALLOW };
+        }
+        if (isPermission(permission, scaffolderStudioPrefabDeletePermission)) {
+            return { result: AuthorizeResult.ALLOW };
+        }
+
+        return { result: AuthorizeResult.ALLOW };
     }
 }

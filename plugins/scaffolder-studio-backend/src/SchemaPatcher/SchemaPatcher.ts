@@ -54,7 +54,7 @@ export class SchemaPatcher {
     const patches: ScaffolderActionPatch[] = [];
 
     const configPatches = this.config.getOptionalConfigArray(
-      'scaffolderVisualEditor.schemaPatches',
+      'scaffolderStudio.schemaPatches',
     );
 
     if (!configPatches) {

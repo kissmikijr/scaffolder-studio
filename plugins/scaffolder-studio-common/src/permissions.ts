@@ -1,36 +1,36 @@
 import { createPermission } from '@backstage/plugin-permission-common';
 
-export const visualScaffolderEditorPublishPermission = createPermission({
-  name: 'visual-scaffolder-editor.publish',
+export const scaffolderStudioPublishPermission = createPermission({
+  name: 'scaffolder-studio.publish',
   attributes: { action: 'create' },
 });
 
-export const visualScaffolderEditorUnpublishPermission = createPermission({
-  name: 'visual-scaffolder-editor.unpublish',
+export const scaffolderStudioUnpublishPermission = createPermission({
+  name: 'scaffolder-studio.unpublish',
   attributes: { action: 'delete' },
 });
 
-export const visualScaffolderEditorReadPermission = createPermission({
-  name: 'visual-scaffolder-editor.read',
+export const scaffolderStudioReadPermission = createPermission({
+  name: 'scaffolder-studio.read',
   attributes: { action: 'read' },
 });
 
-export const visualScaffolderEditorPrefabReadPermission = createPermission({
-  name: 'visual-scaffolder-editor.prefab.read',
+export const scaffolderStudioPrefabReadPermission = createPermission({
+  name: 'scaffolder-studio.prefab.read',
   attributes: { action: 'read' },
 });
 
-export const visualScaffolderEditorPrefabCreatePermission = createPermission({
-  name: 'visual-scaffolder-editor.prefab.create',
+export const scaffolderStudioPrefabCreatePermission = createPermission({
+  name: 'scaffolder-studio.prefab.create',
   attributes: { action: 'create' },
 });
 
-export const visualScaffolderEditorPrefabDeletePermission = createPermission({
-  name: 'visual-scaffolder-editor.prefab.delete',
+export const scaffolderStudioPrefabDeletePermission = createPermission({
+  name: 'scaffolder-studio.prefab.delete',
   attributes: { action: 'delete' },
 });
-export const visualScaffolderEditorPermanentlyDeletePermission =
+export const scaffolderStudioPermanentlyDeletePermission =
   createPermission({
-    name: 'visual-scaffolder-editor.prefab.permanently-delete',
+    name: 'scaffolder-studio.prefab.permanently-delete',
     attributes: { action: 'delete' },
   });

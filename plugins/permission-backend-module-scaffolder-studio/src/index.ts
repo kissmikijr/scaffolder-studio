@@ -1,8 +1,8 @@
 /***/
 /**
- * The visual-scaffolder-editor backend module for the permission plugin.
+ * The scaffolder-studio backend module for the permission plugin.
  *
  * @packageDocumentation
  */
 
-export { permissionModuleVisualScaffolderEditor as default } from './module';
+export { permissionModuleScaffolderStudio as default } from './module';

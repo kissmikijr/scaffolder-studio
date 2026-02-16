@@ -5,4 +5,4 @@
  * @packageDocumentation
  */
 
-export { catalogModuleScaffolderVisualEditorProvider as default } from './module';
+export { catalogModuleScaffolderStudioProvider as default } from './module';

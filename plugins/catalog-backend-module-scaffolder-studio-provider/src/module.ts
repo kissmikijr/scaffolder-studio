@@ -3,10 +3,10 @@ import {
   createBackendModule,
 } from '@backstage/backend-plugin-api';
 import { catalogProcessingExtensionPoint } from '@backstage/plugin-catalog-node/alpha';
-import { ScaffolderVisualEditorEntityProvider } from './EntityProvider';
+import { ScaffolderStudioEntityProvider } from './EntityProvider';
 import { eventsServiceRef } from '@backstage/plugin-events-node';
 
-export const catalogModuleScaffolderVisualEditorProvider = createBackendModule({
+export const catalogModuleScaffolderStudioProvider = createBackendModule({
   pluginId: 'catalog',
   moduleId: 'scaffolder-studio-provider',
   register(reg) {
@@ -20,14 +20,14 @@ export const catalogModuleScaffolderVisualEditorProvider = createBackendModule({
         auth: coreServices.auth,
       },
       async init({ logger, processing, discovery, scheduler, events, auth }) {
-        const entityProvider = new ScaffolderVisualEditorEntityProvider(
+        const entityProvider = new ScaffolderStudioEntityProvider(
           logger,
           discovery,
           scheduler,
           events,
           auth,
         );
-        logger.info('Registering Scaffolder Visual Editor Entity Provider');
+        logger.info('Registering Scaffolder Studio Entity Provider');
         processing.addEntityProvider(entityProvider);
       },
     });

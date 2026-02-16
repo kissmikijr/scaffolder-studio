@@ -1,11 +1,11 @@
-export const VISUAL_SCAFFOLDER_EDITOR_PERMISSIONS = {
-    PUBLISH: 'visual-scaffolder-editor.publish',
-    UNPUBLISH: 'visual-scaffolder-editor.unpublish',
-    READ: 'visual-scaffolder-editor.read',
-    WRITE: 'visual-scaffolder-editor.write',
-    DELETE: 'visual-scaffolder-editor.delete',
-    CREATE: 'visual-scaffolder-editor.create',
-    UPDATE: 'visual-scaffolder-editor.update',
-    READ_TEMPLATE: 'visual-scaffolder-editor.read-template',
-    WRITE_TEMPLATE: 'visual-scaffolder-editor.write-template',
+export const SCAFFOLDER_STUDIO_PERMISSIONS = {
+    PUBLISH: 'scaffolder-studio.publish',
+    UNPUBLISH: 'scaffolder-studio.unpublish',
+    READ: 'scaffolder-studio.read',
+    WRITE: 'scaffolder-studio.write',
+    DELETE: 'scaffolder-studio.delete',
+    CREATE: 'scaffolder-studio.create',
+    UPDATE: 'scaffolder-studio.update',
+    READ_TEMPLATE: 'scaffolder-studio.read-template',
+    WRITE_TEMPLATE: 'scaffolder-studio.write-template',
 };

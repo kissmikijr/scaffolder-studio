@@ -11,12 +11,12 @@ import { ScaffolderVisualTemplateEditorService } from './service/ScaffolderVisua
 import { PrefabService } from './service/PrefabService';
 import { PrefabLibraryService } from './service/PrefabLibraryService';
 import {
-  visualScaffolderEditorPermanentlyDeletePermission,
-  visualScaffolderEditorPrefabCreatePermission,
-  visualScaffolderEditorPrefabDeletePermission,
-  visualScaffolderEditorPrefabReadPermission,
-  visualScaffolderEditorPublishPermission,
-  visualScaffolderEditorUnpublishPermission,
+  scaffolderStudioPermanentlyDeletePermission,
+  scaffolderStudioPrefabCreatePermission,
+  scaffolderStudioPrefabDeletePermission,
+  scaffolderStudioPrefabReadPermission,
+  scaffolderStudioPublishPermission,
+  scaffolderStudioUnpublishPermission,
   VisualTemplateProject,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { AuthorizeResult } from '@backstage/plugin-permission-common';
@@ -99,7 +99,7 @@ export async function createRouter({
     const credentials = await httpAuth.credentials(req, { allow: ['user'] });
     const decision = (
       await permissions.authorize(
-        [{ permission: visualScaffolderEditorPermanentlyDeletePermission }],
+        [{ permission: scaffolderStudioPermanentlyDeletePermission }],
         { credentials },
       )
     )[0];
@@ -251,7 +251,7 @@ export async function createRouter({
     const owner = credentials.principal.userEntityRef;
     const decision = (
       await permissions.authorize(
-        [{ permission: visualScaffolderEditorPublishPermission }],
+        [{ permission: scaffolderStudioPublishPermission }],
         { credentials },
       )
     )[0];
@@ -286,7 +286,7 @@ export async function createRouter({
     const credentials = await httpAuth.credentials(req, { allow: ['user'] });
     const decision = (
       await permissions.authorize(
-        [{ permission: visualScaffolderEditorUnpublishPermission }],
+        [{ permission: scaffolderStudioUnpublishPermission }],
         { credentials },
       )
     )[0];
@@ -375,7 +375,7 @@ export async function createRouter({
     const credentials = await httpAuth.credentials(req, { allow: ['user'] });
     const decision = (
       await permissions.authorize(
-        [{ permission: visualScaffolderEditorPrefabReadPermission }],
+        [{ permission: scaffolderStudioPrefabReadPermission }],
         { credentials },
       )
     )[0];
@@ -390,7 +390,7 @@ export async function createRouter({
     const credentials = await httpAuth.credentials(req, { allow: ['user'] });
     const decision = (
       await permissions.authorize(
-        [{ permission: visualScaffolderEditorPrefabReadPermission }],
+        [{ permission: scaffolderStudioPrefabReadPermission }],
         { credentials },
       )
     )[0];
@@ -405,7 +405,7 @@ export async function createRouter({
     const credentials = await httpAuth.credentials(req, { allow: ['user'] });
     const decision = (
       await permissions.authorize(
-        [{ permission: visualScaffolderEditorPrefabCreatePermission }],
+        [{ permission: scaffolderStudioPrefabCreatePermission }],
         { credentials },
       )
     )[0];
@@ -425,7 +425,7 @@ export async function createRouter({
     const credentials = await httpAuth.credentials(req, { allow: ['user'] });
     const decision = (
       await permissions.authorize(
-        [{ permission: visualScaffolderEditorPrefabCreatePermission }],
+        [{ permission: scaffolderStudioPrefabCreatePermission }],
         { credentials },
       )
     )[0];
@@ -450,7 +450,7 @@ export async function createRouter({
     const credentials = await httpAuth.credentials(req, { allow: ['user'] });
     const decision = (
       await permissions.authorize(
-        [{ permission: visualScaffolderEditorPrefabDeletePermission }],
+        [{ permission: scaffolderStudioPrefabDeletePermission }],
         { credentials },
       )
     )[0];

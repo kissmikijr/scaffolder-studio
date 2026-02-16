@@ -10,12 +10,12 @@ import {
 } from '@backstage/plugin-permission-node';
 import { policyExtensionPoint } from '@backstage/plugin-permission-node/alpha';
 import {
-  visualScaffolderEditorPublishPermission,
-  visualScaffolderEditorUnpublishPermission,
-  visualScaffolderEditorPrefabReadPermission,
-  visualScaffolderEditorPrefabCreatePermission,
-  visualScaffolderEditorPrefabDeletePermission,
-  visualScaffolderEditorPermanentlyDeletePermission,
+  scaffolderStudioPublishPermission,
+  scaffolderStudioUnpublishPermission,
+  scaffolderStudioPrefabReadPermission,
+  scaffolderStudioPrefabCreatePermission,
+  scaffolderStudioPrefabDeletePermission,
+  scaffolderStudioPermanentlyDeletePermission,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
 class TestPermissionPolicy implements PermissionPolicy {
@@ -24,27 +24,27 @@ class TestPermissionPolicy implements PermissionPolicy {
     if (
       isPermission(
         permission,
-        visualScaffolderEditorPermanentlyDeletePermission,
+        scaffolderStudioPermanentlyDeletePermission,
       )
     ) {
       return { result: AuthorizeResult.ALLOW };
     }
-    if (isPermission(permission, visualScaffolderEditorPublishPermission)) {
+    if (isPermission(permission, scaffolderStudioPublishPermission)) {
       return { result: AuthorizeResult.ALLOW };
     }
-    if (isPermission(permission, visualScaffolderEditorUnpublishPermission)) {
+    if (isPermission(permission, scaffolderStudioUnpublishPermission)) {
       return { result: AuthorizeResult.DENY };
     }
-    if (isPermission(permission, visualScaffolderEditorPrefabReadPermission)) {
+    if (isPermission(permission, scaffolderStudioPrefabReadPermission)) {
       return { result: AuthorizeResult.ALLOW };
     }
     if (
-      isPermission(permission, visualScaffolderEditorPrefabCreatePermission)
+      isPermission(permission, scaffolderStudioPrefabCreatePermission)
     ) {
       return { result: AuthorizeResult.ALLOW };
     }
     if (
-      isPermission(permission, visualScaffolderEditorPrefabDeletePermission)
+      isPermission(permission, scaffolderStudioPrefabDeletePermission)
     ) {
       return { result: AuthorizeResult.ALLOW };
     }

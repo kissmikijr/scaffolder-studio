@@ -1,1 +1,1 @@
-export { scaffolderVisualEditorAgentPlugin as default } from './plugin';
+export { scaffolderStudioAgentPlugin as default } from './plugin';

@@ -29,6 +29,7 @@
     "@backstage/backend-plugin-api": "^1.5.0",
     "@kissmiklosjr/plugin-scaffolder-studio-agent-backend": "workspace:*",
     "@kissmiklosjr/plugin-scaffolder-studio-agent-node": "workspace:*",
+    "@kissmiklosjr/plugin-scaffolder-studio-backend": "workspace:*",
     "@kissmiklosjr/plugin-scaffolder-studio-common": "workspace:*",
     "@xyflow/react": "^12.5.5",
     "ai": "^6.0.27",

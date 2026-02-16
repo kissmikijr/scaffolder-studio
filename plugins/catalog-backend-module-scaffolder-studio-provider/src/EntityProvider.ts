@@ -12,13 +12,13 @@ import {
 import { Entity } from '@backstage/catalog-model';
 import {
   PublishedTemplate,
-  SCAFFOLDER_VISUAL_EDITOR_EVENTS,
+  SCAFFOLDER_STUDIO_EVENTS,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import yaml from 'js-yaml';
 import { EventsService } from '@backstage/plugin-events-node';
 import { ScaffolderVisualTemplateEvents } from './types';
 
-export class ScaffolderVisualEditorEntityProvider implements EntityProvider {
+export class ScaffolderStudioEntityProvider implements EntityProvider {
   private connection?: EntityProviderConnection;
   constructor(
     private readonly logger: LoggerService,
@@ -146,20 +146,20 @@ export class ScaffolderVisualEditorEntityProvider implements EntityProvider {
       await this.events.subscribe({
         id: this.getProviderName(),
         topics: [
-          SCAFFOLDER_VISUAL_EDITOR_EVENTS.TEMPLATE_PUBLISHED,
-          SCAFFOLDER_VISUAL_EDITOR_EVENTS.TEMPLATE_UNPUBLISHED,
+          SCAFFOLDER_STUDIO_EVENTS.TEMPLATE_PUBLISHED,
+          SCAFFOLDER_STUDIO_EVENTS.TEMPLATE_UNPUBLISHED,
         ],
         onEvent: async event => {
           this.logger.info(`Received event: ${event.topic}`);
           const payload =
             event.eventPayload as ScaffolderVisualTemplateEvents.TemplatePublishedEvent;
           switch (event.topic) {
-            case SCAFFOLDER_VISUAL_EDITOR_EVENTS.TEMPLATE_PUBLISHED:
+            case SCAFFOLDER_STUDIO_EVENTS.TEMPLATE_PUBLISHED:
               await this.onTemplatePublish({
                 scaffolderTemplate: payload.scaffolderTemplate,
               });
               break;
-            case SCAFFOLDER_VISUAL_EDITOR_EVENTS.TEMPLATE_UNPUBLISHED:
+            case SCAFFOLDER_STUDIO_EVENTS.TEMPLATE_UNPUBLISHED:
               await this.onTemplateUnpublish({
                 scaffolderTemplate: payload.scaffolderTemplate,
               });

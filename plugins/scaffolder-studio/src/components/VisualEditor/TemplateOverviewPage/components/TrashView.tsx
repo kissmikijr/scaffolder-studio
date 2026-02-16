@@ -9,7 +9,7 @@ import { styledMenuProps } from '../../components/menuStyles';
 import { useConfirmationDialog } from '../../dialogs/ConfirmationDialogContext';
 import { sortBy } from './sort';
 import { usePermission } from '@backstage/plugin-permission-react';
-import { visualScaffolderEditorPermanentlyDeletePermission } from '@kissmiklosjr/plugin-scaffolder-studio-common';
+import { scaffolderStudioPermanentlyDeletePermission } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
 type TrashViewProps = {
   sort: string;
@@ -30,7 +30,7 @@ export const TrashView = () => {
   const alertApi = useApi(alertApiRef);
   const { loading: isLoadingPermission, allowed: canPermanentlyDelete } =
     usePermission({
-      permission: visualScaffolderEditorPermanentlyDeletePermission,
+      permission: scaffolderStudioPermanentlyDeletePermission,
     });
 
   useEffect(() => {

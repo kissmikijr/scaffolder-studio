@@ -31,7 +31,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ImportTemplateDialog } from './components/ImportYamlSkeleton';
 import { prefabsApiRef, PrefabsClientApi } from '../../../api/PrefabsClient';
 import { usePermission } from '@backstage/plugin-permission-react';
-import { visualScaffolderEditorPrefabReadPermission } from '@kissmiklosjr/plugin-scaffolder-studio-common';
+import { scaffolderStudioPrefabReadPermission } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
 const currentTabMap = {
   '/scaffolder-studio/published': 'Published',
@@ -77,7 +77,7 @@ export const ProjectOverviewPage = () => {
   const [openImportDialog, setOpenImportDialog] = useState(false);
   const [hasPublishers, setHasPublishers] = useState(false);
   const { allowed: canReadPrefabs } = usePermission({
-    permission: visualScaffolderEditorPrefabReadPermission,
+    permission: scaffolderStudioPrefabReadPermission,
   });
 
   const [sort, setSort] = useState('updated');

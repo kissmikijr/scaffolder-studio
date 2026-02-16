@@ -7138,6 +7138,7 @@ __metadata:
     "@backstage/cli": "npm:^0.34.5"
     "@kissmiklosjr/plugin-scaffolder-studio-agent-backend": "workspace:*"
     "@kissmiklosjr/plugin-scaffolder-studio-agent-node": "workspace:*"
+    "@kissmiklosjr/plugin-scaffolder-studio-backend": "workspace:*"
     "@kissmiklosjr/plugin-scaffolder-studio-common": "workspace:*"
     "@xyflow/react": "npm:^12.5.5"
     ai: "npm:^6.0.27"
@@ -7184,7 +7185,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@kissmiklosjr/plugin-scaffolder-studio-backend@workspace:^, @kissmiklosjr/plugin-scaffolder-studio-backend@workspace:plugins/scaffolder-studio-backend":
+"@kissmiklosjr/plugin-scaffolder-studio-backend@workspace:*, @kissmiklosjr/plugin-scaffolder-studio-backend@workspace:^, @kissmiklosjr/plugin-scaffolder-studio-backend@workspace:plugins/scaffolder-studio-backend":
   version: 0.0.0-use.local
   resolution: "@kissmiklosjr/plugin-scaffolder-studio-backend@workspace:plugins/scaffolder-studio-backend"
   dependencies:
@@ -17382,7 +17383,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "backend@workspace:packages/backend"
   dependencies:
-    "@backstage/backend-defaults": "npm:^0.13.1"
+    "@backstage/backend-defaults": "npm:^0.15.1"
     "@backstage/cli": "npm:^0.34.5"
     "@backstage/config": "npm:^1.3.6"
     "@backstage/plugin-app-backend": "npm:^0.5.8"
@@ -25172,13 +25173,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"isolated-vm@npm:^6.0.1":
-  version: 6.0.2
-  resolution: "isolated-vm@npm:6.0.2"
+"isolated-vm@npm:5.0.3":
+  version: 5.0.3
+  resolution: "isolated-vm@npm:5.0.3"
   dependencies:
     node-gyp: "npm:latest"
-    prebuild-install: "npm:^7.1.3"
-  checksum: 10c0/1c40cb52836a9bd9b6c2a410ee0156dc3bef528e04c8cfeec24a431625ed4d41c0f8e9930df893a577e10d6109f1f81070dc369e2b47a1d48f8695807a3adf0c
+    prebuild-install: "npm:^7.1.2"
+  checksum: 10c0/30c3f7b2cfa2fe09f3963dbb715ed3ac6e9dc15f18909ee4f70a3d5b476840db54920f889fd0f951a5e7bf40b01f3e3da7517290867c28cacfa0696974a11a87
   languageName: node
   linkType: hard
 
@@ -31494,7 +31495,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prebuild-install@npm:^7.1.1, prebuild-install@npm:^7.1.3":
+"prebuild-install@npm:^7.1.1, prebuild-install@npm:^7.1.2":
   version: 7.1.3
   resolution: "prebuild-install@npm:7.1.3"
   dependencies:

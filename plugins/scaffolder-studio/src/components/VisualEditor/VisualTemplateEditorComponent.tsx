@@ -6,7 +6,7 @@ import React, {
   useState,
 } from 'react';
 import { Grid } from '@mui/material';
-import VisualScaffolderEditor from './Editor';
+import ScaffolderStudioEditor from './Editor';
 import { Edge, Node, ReactFlowProvider } from '@xyflow/react';
 import { alertApiRef, useApi } from '@backstage/core-plugin-api';
 import { scaffolderVisualApiRef } from '../../api/ScaffolderVisualClient';
@@ -358,7 +358,7 @@ export const VisualTemplateEditorComponent = () => {
       <QueryClientProvider client={queryClient}>
         <Grid container spacing={0} direction="column">
           <Grid sx={{ position: 'relative', height: '100vh' }}>
-            <VisualScaffolderEditor
+            <ScaffolderStudioEditor
               nodes={nodes}
               edges={edges}
               viewport={viewport}

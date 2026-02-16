@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, Menu, MenuItem, Grid } from '@mui/material';
 import {
   StoredPrefab,
-  visualScaffolderEditorPrefabDeletePermission,
+  scaffolderStudioPrefabDeletePermission,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { useNavigate } from 'react-router-dom';
 import { alertApiRef, useApi } from '@backstage/core-plugin-api';
@@ -45,16 +45,16 @@ export const PrefabCard = ({
 
   const { loading: isLoadingPermission, allowed: canDeletePrefab } =
     usePermission({
-      permission: visualScaffolderEditorPrefabDeletePermission,
+      permission: scaffolderStudioPrefabDeletePermission,
     });
   const handleContextMenu = (event: React.MouseEvent) => {
     event.preventDefault();
     setContextMenu(
       contextMenu === null
         ? {
-            mouseX: event.clientX + 2,
-            mouseY: event.clientY - 6,
-          }
+          mouseX: event.clientX + 2,
+          mouseY: event.clientY - 6,
+        }
         : null,
     );
   };

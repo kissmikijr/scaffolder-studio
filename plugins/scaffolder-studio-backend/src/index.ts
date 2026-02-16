@@ -17,11 +17,14 @@ export default createBackendFeatureLoader({
     ) {
       yield import('./modules/eventPublisherModule');
     }
-    // yield import('@kissmiklosjr/plugin-scaffolder-studio-agent-backend');
+    yield import('@kissmiklosjr/plugin-scaffolder-studio-agent-backend');
+    yield import(
+      '@kissmiklosjr/plugin-scaffolder-studio-agent-backend-module-qwen3'
+    );
 
-    // yield import(
-    //   '@kissmiklosjr/plugin-permission-backend-module-visual-scaffolder-editor'
-    // );
+    yield import(
+      '@kissmiklosjr/plugin-permission-backend-module-scaffolder-studio'
+    );
 
     yield import(
       '@kissmiklosjr/plugin-catalog-backend-module-scaffolder-studio-provider'
@@ -29,6 +32,7 @@ export default createBackendFeatureLoader({
   },
 });
 
+export { ScaffolderStudioClient } from './clients/ScaffolderStudioClient';
 export { default as scaffolderVisualEditorPlugin } from './plugin';
 export { githubPublisherModule } from './modules/githubPublisherModule';
 export { eventPublisherModule } from './modules/eventPublisherModule';

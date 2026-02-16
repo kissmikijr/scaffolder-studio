@@ -12,7 +12,7 @@ import { RootLifecycleService } from '@backstage/backend-plugin-api';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import type { Node } from '@xyflow/react';
 import yaml from 'js-yaml';
-import { ScaffolderVisualEditorClient } from '@kissmiklosjr/plugin-scaffolder-studio-common';
+import { ScaffolderStudioClient } from '@kissmiklosjr/plugin-scaffolder-studio-backend';
 import { ScaffolderAgentInterface } from '@kissmiklosjr/plugin-scaffolder-studio-agent-node';
 import type { StreamTextResult } from 'ai';
 
@@ -29,22 +29,22 @@ const local = createOpenAICompatible({
 // });
 export class DefaultScaffolderAgent implements ScaffolderAgentInterface {
   private readonly actions: any[];
-  private readonly visualEditorClient: ScaffolderVisualEditorClient;
+  private readonly visualStudioClient: ScaffolderStudioClient;
   private readonly abortController: AbortController;
 
   constructor({
     actions,
-    visualEditorClient,
+    visualStudioClient,
     abortController,
     rootLifecycle,
   }: {
     actions: any[];
-    visualEditorClient: ScaffolderVisualEditorClient;
+    visualStudioClient: ScaffolderStudioClient;
     abortController: AbortController;
     rootLifecycle: RootLifecycleService;
   }) {
     this.actions = actions;
-    this.visualEditorClient = visualEditorClient;
+    this.visualStudioClient = visualStudioClient;
     this.abortController = abortController;
     // Add shutdown hook only once during construction
     rootLifecycle?.addShutdownHook(() => {
@@ -74,13 +74,13 @@ export class DefaultScaffolderAgent implements ScaffolderAgentInterface {
         once: true,
       });
     }
-    const contextObject = await this.visualEditorClient.getTemplate({
+    const contextObject = await this.visualStudioClient.getTemplate({
       id: projectId,
       token,
     });
     const context =
       contextObject.nodes.length > 0
-        ? await this.visualEditorClient.serializeScaffolderTemplateToYaml({
+        ? await this.visualStudioClient.serializeScaffolderTemplateToYaml({
           nodes: contextObject.nodes,
           edges: contextObject.edges,
           sourceNodeId: contextObject.nodes.find(
@@ -128,7 +128,7 @@ export class DefaultScaffolderAgent implements ScaffolderAgentInterface {
           execute: async ({ template }: { template: string }) => {
             const parsedTemplate = yaml.load(template) as object;
             const data =
-              await this.visualEditorClient.serializeScaffolderTemplate({
+              await this.visualStudioClient.serializeScaffolderTemplate({
                 template: parsedTemplate,
                 token,
               });

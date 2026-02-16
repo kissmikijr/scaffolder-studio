@@ -5,4 +5,4 @@
  * @packageDocumentation
  */
 
-export { scaffolderVisualEditorAgentModuleQwen3 as default } from './module';
+export { scaffolderStudioAgentModuleQwen3 as default } from './module';

@@ -263,7 +263,7 @@ export interface PublishedTemplatesStore {
   }): Promise<void>;
   unpublish(id: string): Promise<void>;
 }
-export enum SCAFFOLDER_VISUAL_EDITOR_EVENTS {
+export enum SCAFFOLDER_STUDIO_EVENTS {
   TEMPLATE_PUBLISHED = 'scaffolder-studio.template.published',
   TEMPLATE_UNPUBLISHED = 'scaffolder-studio.template.unpublished',
 }

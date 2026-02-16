@@ -9,7 +9,7 @@ import { useConfirmationDialog } from '../../dialogs/ConfirmationDialogContext';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { sortBy } from './sort';
 import { usePermission } from '@backstage/plugin-permission-react';
-import { visualScaffolderEditorPublishPermission } from '@kissmiklosjr/plugin-scaffolder-studio-common';
+import { scaffolderStudioPublishPermission } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { PublishDialog } from './PublishDialog';
 
 export const TemplatesView = () => {
@@ -24,7 +24,7 @@ export const TemplatesView = () => {
     mouseY: number;
   } | null>(null);
   const { loading: loadingPermission, allowed: canPublish } = usePermission({
-    permission: visualScaffolderEditorPublishPermission,
+    permission: scaffolderStudioPublishPermission,
   });
   const alertApi = useApi(alertApiRef);
 

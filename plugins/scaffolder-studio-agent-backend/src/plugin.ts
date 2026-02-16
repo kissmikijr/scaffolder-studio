@@ -8,14 +8,14 @@ import { scaffolderAgentServiceRef } from './service/ScaffolderAgentService';
 import {
   scaffolderAgentExtensionPoint,
   ScaffolderAgentInterface,
-} from '../../scaffolder-studio-agent-node/src/extensions';
+} from '@kissmiklosjr/plugin-scaffolder-studio-agent-node';
 
 /**
  * scaffolderVisualEditorAgentPlugin backend plugin
  *
  * @public
  */
-export const scaffolderVisualEditorAgentPlugin = createBackendPlugin({
+export const scaffolderStudioAgentPlugin = createBackendPlugin({
   pluginId: 'scaffolder-studio-agent',
   register(env) {
     let scaffolderAgent: ScaffolderAgentInterface;
