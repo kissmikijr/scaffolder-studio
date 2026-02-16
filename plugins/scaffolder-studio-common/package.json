@@ -1,0 +1,53 @@
+{
+  "name": "@kissmiklosjr/plugin-scaffolder-studio-common",
+  "version": "1.0.0-beta.5",
+  "license": "CC-BY-NC-4.0",
+  "description": "Common functionalities for the scaffolder-studio plugin",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "publishConfig": {
+    "access": "public",
+    "main": "dist/index.cjs.js",
+    "module": "dist/index.esm.js",
+    "types": "dist/index.d.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kissmikijr/scaffolder-studio",
+    "directory": "plugins/scaffolder-studio-common"
+  },
+  "homepage": "https://github.com/kissmikijr/scaffolder-studio/tree/main/plugins/scaffolder-studio-common",
+  "bugs": "https://github.com/kissmikijr/scaffolder-studio/issues",
+  "backstage": {
+    "role": "common-library",
+    "pluginId": "scaffolder-studio",
+    "pluginPackages": [
+      "@kissmiklosjr/plugin-scaffolder-studio",
+      "@kissmiklosjr/plugin-scaffolder-studio-backend",
+      "@kissmiklosjr/plugin-scaffolder-studio-common"
+    ]
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "backstage-cli package build",
+    "lint": "backstage-cli package lint",
+    "test": "backstage-cli package test",
+    "clean": "backstage-cli package clean",
+    "prepack": "backstage-cli package prepack",
+    "postpack": "backstage-cli package postpack"
+  },
+  "devDependencies": {
+    "@backstage/cli": "^0.35.4",
+    "@types/js-yaml": "^4"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@backstage/backend-plugin-api": "^1.7.0",
+    "@backstage/plugin-permission-common": "^0.9.6",
+    "@xyflow/react": "^12.0.0",
+    "js-yaml": "^4.1.1",
+    "uuid": "^13.0.0"
+  }
+}

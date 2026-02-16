@@ -1,0 +1,28 @@
+{
+  "mode": "exit",
+  "tag": "beta",
+  "initialVersions": {
+    "app": "0.0.0",
+    "backend": "0.0.0",
+    "@kissmiklosjr/plugin-catalog-backend-module-scaffolder-studio-provider": "1.0.0-beta.0",
+    "@kissmiklosjr/plugin-permission-backend-module-scaffolder-studio": "1.0.0-beta.0",
+    "@kissmiklosjr/plugin-scaffolder-studio": "1.0.0-beta.0",
+    "@kissmiklosjr/plugin-scaffolder-studio-backend": "1.0.0-beta.1",
+    "@kissmiklosjr/plugin-scaffolder-studio-common": "1.0.0-beta.0"
+  },
+  "changesets": [
+    "afraid-tables-run",
+    "bumpy-pots-bet",
+    "calm-pandas-hug",
+    "cozy-results-shave",
+    "curly-roses-smell",
+    "eighty-dots-tie",
+    "humble-goats-pay",
+    "nine-dancers-itch",
+    "public-meteors-worry",
+    "sixty-hoops-appear",
+    "thirty-pets-enjoy",
+    "tough-turtles-march",
+    "twelve-masks-feel"
+  ]
+}

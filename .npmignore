@@ -1,0 +1,14 @@
+# Files to ignore when publishing to npm
+node_modules/
+src/
+*.ts
+!*.d.ts
+.eslintrc.js
+.prettierrc.js
+tsconfig.json
+*.test.ts
+*.test.tsx
+*.spec.ts
+.gitignore
+.env*
+

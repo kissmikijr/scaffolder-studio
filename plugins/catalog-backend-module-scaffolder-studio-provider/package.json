@@ -1,0 +1,50 @@
+{
+  "name": "@kissmiklosjr/plugin-catalog-backend-module-scaffolder-studio-provider",
+  "version": "1.0.0-beta.4",
+  "license": "CC-BY-NC-4.0",
+  "description": "The scaffolder-studio-provider backend module for the catalog plugin.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "publishConfig": {
+    "access": "public",
+    "main": "dist/index.cjs.js",
+    "types": "dist/index.d.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kissmikijr/scaffolder-studio",
+    "directory": "plugins/catalog-backend-module-scaffolder-studio-provider"
+  },
+  "homepage": "https://github.com/kissmikijr/scaffolder-studio/tree/main/plugins/catalog-backend-module-scaffolder-studio-provider",
+  "bugs": "https://github.com/kissmikijr/scaffolder-studio/issues",
+  "backstage": {
+    "role": "backend-plugin-module",
+    "pluginId": "catalog",
+    "pluginPackage": "@backstage/plugin-catalog-backend"
+  },
+  "scripts": {
+    "start": "backstage-cli package start",
+    "build": "backstage-cli package build",
+    "lint": "backstage-cli package lint",
+    "test": "backstage-cli package test",
+    "clean": "backstage-cli package clean",
+    "prepack": "backstage-cli package prepack",
+    "postpack": "backstage-cli package postpack"
+  },
+  "dependencies": {
+    "@backstage/backend-plugin-api": "^1.7.0",
+    "@backstage/catalog-model": "^1.7.6",
+    "@backstage/plugin-catalog-node": "^2.0.0",
+    "@backstage/plugin-events-node": "^0.4.19",
+    "@kissmiklosjr/plugin-scaffolder-studio-common": "workspace:^",
+    "js-yaml": "^4.1.1"
+  },
+  "devDependencies": {
+    "@backstage/backend-test-utils": "^1.11.0",
+    "@backstage/cli": "^0.35.4",
+    "@types/js-yaml": "^4"
+  },
+  "files": [
+    "dist"
+  ]
+}
