@@ -135,12 +135,22 @@ export class DatabasePrefabStore implements PrefabStore {
   async create({
     node,
     owner,
+    title,
+    description,
   }: {
     node: Node<AllNodeData>;
     owner: string;
+    title?: string;
+    description?: string;
   }): Promise<{ id: string }> {
     const id = uuid();
-    await this.db('prefabs').insert({ node: JSON.stringify(node), owner, id });
+    await this.db('prefabs').insert({
+      node: JSON.stringify(node),
+      owner,
+      id,
+      title: title || 'Untitled',
+      description: description || 'No description',
+    });
     return { id };
   }
   async delete({ id }: { id: string }): Promise<void> {

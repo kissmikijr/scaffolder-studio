@@ -443,6 +443,8 @@ export async function createRouter({
     const result = await prefabService.create({
       node: req.body.node,
       owner: req.body.owner,
+      title: req.body.title,
+      description: req.body.description,
     });
     res.json(result);
   });

@@ -100,6 +100,8 @@ export interface PrefabStore {
   }: {
     node: Node;
     owner: string;
+    title?: string;
+    description?: string;
   }): Promise<{ id: string }>;
   delete({ id }: { id: string }): Promise<void>;
 }

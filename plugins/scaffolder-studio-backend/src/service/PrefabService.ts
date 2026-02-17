@@ -40,8 +40,18 @@ export class PrefabService {
   }) {
     return await this.prefabStore.update({ id, node, title, description });
   }
-  async create({ node, owner }: { node: Node; owner: string }) {
-    return await this.prefabStore.create({ node, owner });
+  async create({
+    node,
+    owner,
+    title,
+    description,
+  }: {
+    node: Node;
+    owner: string;
+    title?: string;
+    description?: string;
+  }) {
+    return await this.prefabStore.create({ node, owner, title, description });
   }
   async delete(id: string) {
     return await this.prefabStore.delete({ id });
