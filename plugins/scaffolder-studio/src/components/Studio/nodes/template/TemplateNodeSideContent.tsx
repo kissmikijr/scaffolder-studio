@@ -142,7 +142,7 @@ export const TemplateNodeSideContent = ({ id }: { id?: string }) => {
       } else {
         setErrors(prev => ({ ...prev, name: '' }));
       }
-    }, 500),
+    }, 300),
     [catalogApi, projects],
   );
 

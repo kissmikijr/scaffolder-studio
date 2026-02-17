@@ -27,7 +27,7 @@ export const templateSchema = (
     name: z
       .string()
       .min(1, { message: 'Template name is required' })
-      .regex(/^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/, {
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
         message:
           'Name must consist of lower-case alphanumeric characters or "-", and must start and end with an alphanumeric character.',
       })
