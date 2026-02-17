@@ -3,7 +3,7 @@ import {
   coreServices,
 } from '@backstage/backend-plugin-api';
 import { eventsServiceRef } from '@backstage/plugin-events-node';
-import { scaffolderVisualEditorPublisherExtensionPoint } from '../extensions/alpha';
+import { scaffolderStudioPublisherExtensionPoint } from '../extensions/alpha';
 import { EventPublisherExtension } from '../extensions/EventPublisherExtension';
 
 export const eventPublisherModule = createBackendModule({
@@ -14,7 +14,7 @@ export const eventPublisherModule = createBackendModule({
       deps: {
         logger: coreServices.logger,
         events: eventsServiceRef,
-        publisherExtensionPoint: scaffolderVisualEditorPublisherExtensionPoint,
+        publisherExtensionPoint: scaffolderStudioPublisherExtensionPoint,
       },
       async init({ events, publisherExtensionPoint }) {
         publisherExtensionPoint.addPublisher(new EventPublisherExtension(events));

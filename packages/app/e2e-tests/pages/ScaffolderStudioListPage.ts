@@ -1,6 +1,6 @@
 import { Page, expect } from '@playwright/test';
 
-export class ScaffolderVisualEditorListPage {
+export class ScaffolderStudioListPage {
   private readonly page: Page;
   private readonly createdTemplateIds: string[] = [];
   private authToken?: string;

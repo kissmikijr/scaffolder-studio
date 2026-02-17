@@ -1,7 +1,7 @@
 import { createBackendModule } from '@backstage/backend-plugin-api';
 
 import { policyExtensionPoint } from '@backstage/plugin-permission-node/alpha';
-import { ScaffolderVisualEditorPermissionPolicy } from './policies/ScaffolderVisualEditorPermissionPolicy';
+import { ScaffolderStudioPermissionPolicy } from './policies/ScaffolderStudioPermissionPolicy';
 
 
 export const permissionModuleScaffolderStudio = createBackendModule({
@@ -11,7 +11,7 @@ export const permissionModuleScaffolderStudio = createBackendModule({
     reg.registerInit({
       deps: { policy: policyExtensionPoint },
       async init({ policy }) {
-        policy.setPolicy(new ScaffolderVisualEditorPermissionPolicy());
+        policy.setPolicy(new ScaffolderStudioPermissionPolicy());
       },
     });
   },

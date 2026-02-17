@@ -1,6 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
-import { ScaffolderVisualEditorListPage } from '../pages/ScaffolderVisualEditorListPage';
-import { VisualEditorPage } from '../pages/VisualEditorPage';
+import { ScaffolderStudioListPage } from '../pages/ScaffolderStudioListPage';
+import { ScaffolderStudioPage } from '../pages/ScaffolderStudioPage';
 
 const DRY_RUN_RESULTS_TIMEOUT_MS = 30_000;
 
@@ -63,12 +63,12 @@ const ensureDryRunInputStep = async ({
 };
 
 test.describe('Dry Run Feature', () => {
-  let listPage: ScaffolderVisualEditorListPage;
-  let editorPage: VisualEditorPage;
+  let listPage: ScaffolderStudioListPage;
+  let editorPage: ScaffolderStudioPage;
 
   test.beforeEach(async ({ page }) => {
-    listPage = new ScaffolderVisualEditorListPage(page);
-    editorPage = new VisualEditorPage(page);
+    listPage = new ScaffolderStudioListPage(page);
+    editorPage = new ScaffolderStudioPage(page);
   });
 
   test.afterEach(async () => {

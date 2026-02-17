@@ -1,14 +1,14 @@
 import { test, expect } from '@playwright/test';
-import { ScaffolderVisualEditorListPage } from '../pages/ScaffolderVisualEditorListPage';
-import { VisualEditorPage } from '../pages/VisualEditorPage';
+import { ScaffolderStudioListPage } from '../pages/ScaffolderStudioListPage';
+import { ScaffolderStudioPage } from '../pages/ScaffolderStudioPage';
 
-test.describe('Scaffolder Visual Editor - Complex Template', () => {
-  let listPage: ScaffolderVisualEditorListPage;
-  let editorPage: VisualEditorPage;
+test.describe('Scaffolder Studio - Complex Template', () => {
+  let listPage: ScaffolderStudioListPage;
+  let editorPage: ScaffolderStudioPage;
 
   test.beforeEach(async ({ page }) => {
-    listPage = new ScaffolderVisualEditorListPage(page);
-    editorPage = new VisualEditorPage(page);
+    listPage = new ScaffolderStudioListPage(page);
+    editorPage = new ScaffolderStudioPage(page);
   });
 
   test.afterEach(async () => {

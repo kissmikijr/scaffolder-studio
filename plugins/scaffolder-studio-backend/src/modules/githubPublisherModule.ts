@@ -4,7 +4,7 @@ import {
 } from '@backstage/backend-plugin-api';
 import { ScmIntegrations } from '@backstage/integration';
 import { GithubPublisher } from '../extensions/GithubPublisher';
-import { scaffolderVisualEditorPublisherExtensionPoint } from '../extensions/alpha';
+import { scaffolderStudioPublisherExtensionPoint } from '../extensions/alpha';
 
 export const githubPublisherModule = createBackendModule({
   pluginId: 'scaffolder-studio',
@@ -13,7 +13,7 @@ export const githubPublisherModule = createBackendModule({
     env.registerInit({
       deps: {
         config: coreServices.rootConfig,
-        publisherExtensionPoint: scaffolderVisualEditorPublisherExtensionPoint,
+        publisherExtensionPoint: scaffolderStudioPublisherExtensionPoint,
       },
       async init({ config, publisherExtensionPoint }) {
         const scmIntegrations = ScmIntegrations.fromConfig(config);

@@ -16,7 +16,7 @@ import {
     scaffolderStudioPermanentlyDeletePermission,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
-export class ScaffolderVisualEditorPermissionPolicy implements PermissionPolicy {
+export class ScaffolderStudioPermissionPolicy implements PermissionPolicy {
     async handle(request: PolicyQuery): Promise<PolicyDecision> {
         const { permission } = request;
 

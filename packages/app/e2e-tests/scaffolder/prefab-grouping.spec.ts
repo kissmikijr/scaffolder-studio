@@ -1,22 +1,22 @@
 import { test, expect } from '@playwright/test';
 import { PrefabListPage } from '../pages/PrefabListPage';
-import { ScaffolderVisualEditorListPage } from '../pages/ScaffolderVisualEditorListPage';
-import { VisualEditorPage } from '../pages/VisualEditorPage';
+import { ScaffolderStudioListPage } from '../pages/ScaffolderStudioListPage';
+import { ScaffolderStudioPage } from '../pages/ScaffolderStudioPage';
 
 test.describe('Prefab Grouping', () => {
     let prefabListPage: PrefabListPage;
-    let visualEditorListPage: ScaffolderVisualEditorListPage;
-    let visualEditorPage: VisualEditorPage;
+    let scaffolderStudioListPage: ScaffolderStudioListPage;
+    let scaffolderStudioPage: ScaffolderStudioPage;
     const createdPrefabTitles: string[] = [];
 
     test.beforeEach(async ({ page }) => {
         prefabListPage = new PrefabListPage(page);
-        visualEditorListPage = new ScaffolderVisualEditorListPage(page);
-        visualEditorPage = new VisualEditorPage(page);
+        scaffolderStudioListPage = new ScaffolderStudioListPage(page);
+        scaffolderStudioPage = new ScaffolderStudioPage(page);
     });
 
     test.afterEach(async () => {
-        await visualEditorListPage.cleanupCreatedTemplates();
+        await scaffolderStudioListPage.cleanupCreatedTemplates();
         await prefabListPage.goto();
         for (const title of createdPrefabTitles) {
             try {
@@ -43,19 +43,19 @@ test.describe('Prefab Grouping', () => {
         createdPrefabTitles.push(title);
 
         // Navigate to editor
-        await visualEditorListPage.goto();
-        await visualEditorListPage.createNewTemplate();
-        await visualEditorPage.verifyLoaded();
+        await scaffolderStudioListPage.goto();
+        await scaffolderStudioListPage.createNewTemplate();
+        await scaffolderStudioPage.verifyLoaded();
 
         // Switch to Prefabs tab
-        await visualEditorPage.goToPrefabsTab();
+        await scaffolderStudioPage.goToPrefabsTab();
 
         // Verify "Your Prefabs" header and our new prefab
-        await visualEditorPage.verifyPrefabVisible(title, 'Your Prefabs');
+        await scaffolderStudioPage.verifyPrefabVisible(title, 'Your Prefabs');
 
         // Verify "Library Prefabs" header (should always be there if there are lib prefabs)
         // We'll just check for the header
-        await expect(visualEditorPage.getPage().locator('tr').filter({ hasText: 'LIBRARY PREFABS' })).toBeVisible();
+        await expect(scaffolderStudioPage.getPage().locator('tr').filter({ hasText: 'LIBRARY PREFABS' })).toBeVisible();
     });
 
     test('should render an unpublished prefab when added to a template', async () => {
@@ -64,13 +64,13 @@ test.describe('Prefab Grouping', () => {
         createdPrefabTitles.push(title);
 
         // Navigate to editor
-        await visualEditorListPage.goto();
-        await visualEditorListPage.createNewTemplate();
-        await visualEditorPage.verifyLoaded();
+        await scaffolderStudioListPage.goto();
+        await scaffolderStudioListPage.createNewTemplate();
+        await scaffolderStudioPage.verifyLoaded();
 
         // Switch to Prefabs tab and find our prefab
-        await visualEditorPage.goToPrefabsTab();
-        const prefabRow = visualEditorPage.getPage().getByText(title).first();
+        await scaffolderStudioPage.goToPrefabsTab();
+        const prefabRow = scaffolderStudioPage.getPage().getByText(title).first();
         await expect(prefabRow).toBeVisible();
 
         // We can't easily drag and drop in a generic way here without more complex setup,
@@ -79,7 +79,7 @@ test.describe('Prefab Grouping', () => {
         // but the sidebar usually works by dragging.
 
         // For now, let's verify that the PrefabRow exists under "Your Prefabs".
-        await visualEditorPage.verifyPrefabVisible(title, 'Your Prefabs');
+        await scaffolderStudioPage.verifyPrefabVisible(title, 'Your Prefabs');
 
         // Let's assume the user drags it. We want to verify that IF it's in the canvas, it renders.
         // I'll skip the actual drag-and-drop for now as it's complex, 

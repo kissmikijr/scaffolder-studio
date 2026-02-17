@@ -51,7 +51,7 @@ export type TemplateSyncStatus =
   | 'offline'
   | 'error';
 
-const STORAGE_PREFIX = 'visual-editor:draft:';
+const STORAGE_PREFIX = 'scaffolder-studio:draft:';
 
 const stripFunctions = (value: unknown): unknown => {
   if (Array.isArray(value)) {

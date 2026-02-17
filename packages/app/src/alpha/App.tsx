@@ -41,7 +41,7 @@ import {
     OwnedEntityPickerFieldExtension,
     RepoBranchPickerFieldExtension,
 } from '@backstage/plugin-scaffolder';
-import { ScaffolderVisualEditorPage } from '@kissmiklosjr/plugin-scaffolder-studio';
+import { ScaffolderStudioPage } from '@kissmiklosjr/plugin-scaffolder-studio';
 import { SelectFieldFromApiExtension } from '@roadiehq/plugin-scaffolder-frontend-module-http-request-field';
 
 // Local imports
@@ -82,14 +82,14 @@ const signInPage = SignInPageBlueprint.make({
 });
 
 // ============================================================================
-// Scaffolder Visual Editor Page Extension
+// Scaffolder Studio Page Extension
 // ============================================================================
 
-const visualEditorPage = PageBlueprint.make({
+const scaffolderStudioPage = PageBlueprint.make({
     params: {
         path: '/scaffolder-studio',
         loader: async () => (
-            <ScaffolderVisualEditorPage>
+            <ScaffolderStudioPage>
                 <ScaffolderFieldExtensions>
                     <SelectFieldFromApiExtension />
                     <EntityNamePickerFieldExtension />
@@ -102,7 +102,7 @@ const visualEditorPage = PageBlueprint.make({
                     <OwnedEntityPickerFieldExtension />
                     <RepoBranchPickerFieldExtension />
                 </ScaffolderFieldExtensions>
-            </ScaffolderVisualEditorPage>
+            </ScaffolderStudioPage>
         ),
     },
 });
@@ -113,7 +113,7 @@ const visualEditorPage = PageBlueprint.make({
 
 const appExtensionsModule = createFrontendModule({
     pluginId: 'app',
-    extensions: [scmIntegrationsApi, scmAuthApi, signInPage, visualEditorPage],
+    extensions: [scmIntegrationsApi, scmAuthApi, signInPage, scaffolderStudioPage],
 });
 
 // ============================================================================

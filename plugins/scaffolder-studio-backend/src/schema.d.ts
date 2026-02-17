@@ -6,7 +6,7 @@ export interface Config {
     /**
  * @visibility frontend
  */
-    visualEditor: {
+    studio: {
       /**
  * @visibility frontend
  */

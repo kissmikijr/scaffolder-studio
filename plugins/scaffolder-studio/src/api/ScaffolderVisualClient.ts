@@ -3,14 +3,14 @@ import {
   DiscoveryApi,
   FetchApi,
 } from '@backstage/core-plugin-api';
-import { VisualTemplateProject } from '../components/VisualEditor/types';
+import { VisualTemplateProject } from '../components/Studio/types';
 import {
   PublishedTemplate,
   ScaffolderAction,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { Edge, Node } from '@xyflow/react';
 
-export interface ScaffolderVisualEditorApi {
+export interface ScaffolderStudioApi {
   getProject(id: string): Promise<VisualTemplateProject>;
   importTemplate({
     template,
@@ -66,15 +66,15 @@ export interface ScaffolderVisualEditorApi {
   ): Promise<void>;
 }
 
-export const scaffolderVisualApiRef = createApiRef<ScaffolderVisualEditorApi>({
+export const scaffolderVisualApiRef = createApiRef<ScaffolderStudioApi>({
   id: 'plugin.scaffolder-studio.api',
 });
 
-export class ScaffolderVisualClient implements ScaffolderVisualEditorApi {
+export class ScaffolderVisualClient implements ScaffolderStudioApi {
   constructor(
     private readonly discoveryApi: DiscoveryApi,
     private readonly fetchApi: FetchApi,
-  ) {}
+  ) { }
 
   private async getBaseUrl(): Promise<string> {
     return this.discoveryApi.getBaseUrl('scaffolder-studio');
@@ -132,8 +132,7 @@ export class ScaffolderVisualClient implements ScaffolderVisualEditorApi {
 
   async listProjects(options: { trashed?: boolean; published?: boolean } = {}) {
     const res = await this.fetchApi.fetch(
-      `${await this.getBaseUrl()}/templates?trashed=${
-        options.trashed ?? false
+      `${await this.getBaseUrl()}/templates?trashed=${options.trashed ?? false
       }`,
     );
     if (!res.ok) throw new Error('Failed to list projects');

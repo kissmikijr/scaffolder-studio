@@ -1,4 +1,4 @@
-import { ScaffolderVisualTemplateEditorService } from './ScaffolderVisualTemplateEditorService';
+import { ScaffolderStudioService } from './ScaffolderVisualTemplateEditorService';
 import { PublisherExtension } from '../extensions/types';
 import { EventsService } from '@backstage/plugin-events-node';
 
@@ -40,11 +40,11 @@ const mockPublisher2: PublisherExtension = {
 };
 
 describe('ScaffolderVisualTemplateEditorService', () => {
-  let service: ScaffolderVisualTemplateEditorService;
+  let service: ScaffolderStudioService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new ScaffolderVisualTemplateEditorService({
+    service = new ScaffolderStudioService({
       events: mockEventService,
       visualTemplateProjectStore: mockVisualProjectStore,
       publishedTemplatesStore: mockStore,

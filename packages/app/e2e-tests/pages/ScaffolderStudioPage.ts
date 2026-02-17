@@ -1,6 +1,6 @@
 import { Page, expect } from '@playwright/test';
 
-export class VisualEditorPage {
+export class ScaffolderStudioPage {
   private readonly page: Page;
 
   constructor(page: Page) {

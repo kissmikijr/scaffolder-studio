@@ -4,7 +4,7 @@ import { serializeToYaml } from '../utils/serializeToYaml';
 import type { Edge, Node } from '@xyflow/react';
 import { AllNodeData } from '../types';
 
-export class ScaffolderVisualEditorClient {
+export class ScaffolderStudioClient {
   private readonly discovery: DiscoveryService;
 
   constructor({ discovery }: { discovery: DiscoveryService }) {

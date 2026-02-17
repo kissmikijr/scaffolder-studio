@@ -86,7 +86,7 @@ export class GithubPublisher implements PublisherExtension {
     const { data: commitData } = await octokit.rest.git.createCommit({
       owner,
       repo,
-      message: `Add template.yaml via Scaffolder Visual Editor\n\nPublished by ${user}`,
+      message: `Add template.yaml via Scaffolder Studio\n\nPublished by ${user}`,
       tree: treeData.sha,
       parents: [defaultBranchSha],
     });
@@ -104,7 +104,7 @@ export class GithubPublisher implements PublisherExtension {
       owner,
       repo,
       title: 'Add template.yaml',
-      body: `This PR adds a new template created with the Scaffolder Visual Editor.\n\nPublished by: ${user}`,
+      body: `This PR adds a new template created with the Scaffolder Studio.\n\nPublished by: ${user}`,
       head: branchName,
       base: defaultBranch,
     });

@@ -72,11 +72,11 @@ cd plugins/scaffolder-studio
 yarn changeset
 # Choose: @kissmiklosjr/plugin-scaffolder-studio
 # Version: patch
-# Summary: "Fix visual editor bug"
+# Summary: "Fix scaffolder-studio bug"
 
 # 3. Commit and push
 git add .
-git commit -m "Fix visual editor bug"
+git commit -m "Fix scaffolder-studio bug"
 git push origin main
 
 # 4. After merge, a version PR is created

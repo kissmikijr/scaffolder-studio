@@ -1,2 +1,2 @@
-export { editorPlugin, ScaffolderVisualEditorPage } from './plugin';
-export { Router as ScaffolderVisualEditorPageComponent } from './components/Router/Router';
+export { editorPlugin, ScaffolderStudioPage } from './plugin';
+export { Router as ScaffolderStudioPageComponent } from './components/Router/Router';

@@ -1,12 +1,12 @@
-# Scaffolder Visual Editor Plugin
+# Scaffolder Studio Plugin
 
-The Scaffolder Visual Editor plugin provides a visual interface for creating and editing Backstage Scaffolder templates. It offers a drag-and-drop experience for defining template parameters and steps, making it easier for developers to build and maintain software templates.
+The Scaffolder Studio plugin provides a visual interface for creating and editing Backstage Scaffolder templates. It offers a drag-and-drop experience for defining template parameters and steps, making it easier for developers to build and maintain software templates.
 
 ## Features
 
-- **Visual Editor**: Drag-and-drop interface for composing Scaffolder templates.
+- **Studio**: Drag-and-drop interface for composing Scaffolder templates.
 - **Form Preview**: Real-time preview of the template form as you build it.
-- **YAML Support**: Bi-directional syncing between the visual editor and the underlying YAML definition.
+- **YAML Support**: Bi-directional syncing between the Studio and the underlying YAML definition.
 - **Prefab Support**: Create and reuse components (prefabs) across multiple templates.
 - **Backend Integration**: Seamless integration with the Backstage Scaffolder backend.
 
@@ -59,7 +59,7 @@ If you want to enable the GitHub publisher to create Pull Requests directly from
 # app-config.yaml
 
 scaffolder:
-  visualEditor:
+  studio:
     publishers:
       github:
         enabled: true
@@ -72,30 +72,31 @@ You can extend or modify the schema of existing Scaffolder actions using schema 
 ```yaml
 # app-config.yaml
 
-scaffolderVisualEditor:
-  schemaPatches:
-    - id: 'catalog:register' # The action ID to patch
-      patch:
-        input:
-          properties:
+scaffolder:
+  studio:
+    schemaPatches:
+      - id: 'catalog:register' # The action ID to patch
+        patch:
+          input:
+            properties:
             customField:
               type: string
               title: Custom Field
               description: A custom field added via patch
-        output:
-          properties:
-            customOutput:
-              type: string
+          output:
+            properties:
+              customOutput:
+                type: string
 ```
 
 ### 3. Configure the Frontend
 
-In your `packages/app/src/App.tsx`, add the route for the visual editor. You should also register any custom field extensions you want to be available in the editor.
+In your `packages/app/src/App.tsx`, add the route for the Studio. You should also register any custom field extensions you want to be available in the editor.
 
 ```tsx
 // packages/app/src/App.tsx
 
-import { ScaffolderVisualEditorPage } from '@kissmiklosjr/plugin-scaffolder-studio';
+import { ScaffolderStudioPage } from '@kissmiklosjr/plugin-scaffolder-studio';
 import { ScaffolderFieldExtensions } from '@backstage/plugin-scaffolder-react';
 import {
   EntityPickerFieldExtension,
@@ -113,14 +114,14 @@ const routes = (
     <Route
       path="/scaffolder-studio/*"
       element={
-        <ScaffolderVisualEditorPage>
+        <ScaffolderStudioPage>
           {/* Register field extensions here so they appear in the editor */}
           <ScaffolderFieldExtensions>
             <EntityPickerFieldExtension />
             <RepoUrlPickerFieldExtension />
             <OwnerPickerFieldExtension />
           </ScaffolderFieldExtensions>
-        </ScaffolderVisualEditorPage>
+        </ScaffolderStudioPage>
       }
     />
   </FlatRoutes>
@@ -145,7 +146,7 @@ export const Root = ({ children }: PropsWithChildren<{}>) => (
       <SidebarItem
         icon={CreateComponentIcon}
         to="scaffolder-studio"
-        text="Visual Editor"
+        text="Studio"
       />
       {/* ... */}
     </Sidebar>

@@ -42,7 +42,7 @@ export class ScaffolderStudioEntityProvider implements EntityProvider {
     return 'scaffolder-studio';
   }
   async run() {
-    this.logger.info('Run Scaffolder Visual Editor Entity Provider');
+    this.logger.info('Run Scaffolder Studio Entity Provider');
     if (!this.connection) {
       throw new Error('Not initalized!');
     }
@@ -85,7 +85,7 @@ export class ScaffolderStudioEntityProvider implements EntityProvider {
     }
   }
   async scheduleFn() {
-    this.logger.info('Schedule Scaffolder Visual Editor Entity Provider');
+    this.logger.info('Schedule Scaffolder Studio Entity Provider');
     this.scheduler
       .createScheduledTaskRunner({
         frequency: { minutes: 60 },

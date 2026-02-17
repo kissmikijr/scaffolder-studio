@@ -14,7 +14,7 @@ import { PrefabLibraryStore } from '../database/types';
 import type { Edge, Node } from '@xyflow/react';
 import { PublisherExtension } from '../extensions/types';
 
-export class ScaffolderVisualTemplateEditorService {
+export class ScaffolderStudioService {
   private static readonly ENTITY_PROVIDER_PUBLISHER_ID = 'event-publisher';
   private readonly visualTemplateProjectStore: VisualTemplateProjectStore;
   private readonly publishedTemplatesStore: PublishedTemplatesStore;
@@ -89,7 +89,7 @@ export class ScaffolderVisualTemplateEditorService {
     const hasEntityProviderPublisher = this.publishers.some(
       publisher =>
         publisher.id ===
-        ScaffolderVisualTemplateEditorService.ENTITY_PROVIDER_PUBLISHER_ID,
+        ScaffolderStudioService.ENTITY_PROVIDER_PUBLISHER_ID,
     );
 
     return serializeToYaml({

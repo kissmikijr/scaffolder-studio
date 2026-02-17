@@ -108,4 +108,4 @@
 
 ### Minor Changes
 
-- 833f41e: Initial release of Backstage scaffolder visual editor plugins with npm publishing configured. All packages are published as private packages with restricted access.
+- 833f41e: Initial release of Backstage scaffolder studio plugins with npm publishing configured. All packages are published as private packages with restricted access.

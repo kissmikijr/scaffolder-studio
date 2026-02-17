@@ -1,23 +1,23 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { ConfirmationDialogProvider } from '../VisualEditor/dialogs/ConfirmationDialogContext';
+import { ConfirmationDialogProvider } from '../Studio/dialogs/ConfirmationDialogContext';
 import { useCustomFieldExtensions } from '@backstage/plugin-scaffolder-react';
 import { FieldExtensionsContext } from '../../context/FieldExtensionsContext';
 
 // Overview/List Components
-import { TemplatesView } from '../VisualEditor/TemplateOverviewPage/components/TemplatesView';
-import { TrashView } from '../VisualEditor/TemplateOverviewPage/components/TrashView';
-import { PublishedView } from '../VisualEditor/TemplateOverviewPage/components/PublishedView';
+import { TemplatesView } from '../Studio/TemplateOverviewPage/components/TemplatesView';
+import { TrashView } from '../Studio/TemplateOverviewPage/components/TrashView';
+import { PublishedView } from '../Studio/TemplateOverviewPage/components/PublishedView';
 import {
   PrefabsView,
   PrefabLibraryView,
-} from '../VisualEditor/TemplateOverviewPage/Prefabs';
-import { ProjectOverviewPage } from '../VisualEditor/TemplateOverviewPage/TemplateOverviewPage';
+} from '../Studio/TemplateOverviewPage/Prefabs';
+import { ProjectOverviewPage } from '../Studio/TemplateOverviewPage/TemplateOverviewPage';
 
 // Editor Components
-import { PrefabEditor } from '../VisualEditor/TemplateOverviewPage/Prefabs/PrefabEditor';
-import { DryRunPage } from '../VisualEditor/DryRunPage';
-import { VisualTemplateEditorComponent } from '../VisualEditor/VisualTemplateEditorComponent';
+import { PrefabEditor } from '../Studio/TemplateOverviewPage/Prefabs/PrefabEditor';
+import { DryRunPage } from '../Studio/DryRunPage';
+import { VisualTemplateEditorComponent } from '../Studio/VisualTemplateEditorComponent';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { createTheme, useTheme, ThemeProvider } from '@mui/material/styles';

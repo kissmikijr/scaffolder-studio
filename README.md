@@ -71,7 +71,7 @@ The alpha frontend is **fully migrated** to the new frontend system:
 - APIs as `ApiBlueprint` extensions
 - Sign-in page as `SignInPageBlueprint`
 - Custom sidebar as `NavContentBlueprint`  
-- Visual Editor as `PageBlueprint`
+- Scaffolder Studio as `PageBlueprint`
 - Feature discovery enabled
 
 No compatibility helpers (`convertLegacyAppOptions`, `convertLegacyAppRoot`) are used.

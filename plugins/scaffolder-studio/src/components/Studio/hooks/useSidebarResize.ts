@@ -1,15 +1,16 @@
 import { useState, useCallback } from 'react';
+const key = "scaffolderStudioRightSideContentWidth"
 
 export const useSidebarResize = (initialWidth: number = 540) => {
     const [width, setWidth] = useState(() => {
-        const savedWidth = localStorage.getItem('visualEditorRightSideContentWidth');
+        const savedWidth = localStorage.getItem(key);
         return savedWidth ? Number(savedWidth) : initialWidth;
     });
 
     const onPointerMove = useCallback((e: PointerEvent) => {
         const newWidth = window.innerWidth - e.clientX;
         setWidth(newWidth);
-        localStorage.setItem('visualEditorRightSideContentWidth', String(newWidth));
+        localStorage.setItem(key, String(newWidth));
         e.preventDefault();
     }, []);
 

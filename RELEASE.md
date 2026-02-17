@@ -40,11 +40,11 @@ This interactive command will:
 **Example:**
 
 ```bash
-# You're fixing a bug in the visual editor
+# You're fixing a bug in the scaffolder-studio
 yarn changeset
 # Select: @kissmiklosjr/plugin-scaffolder-studio
 # Choose: patch
-# Write summary: "Fix visual editor rendering bug"
+# Write summary: "Fix scaffolder-studio rendering bug"
 ```
 
 ### 2. Versioning and Publishing

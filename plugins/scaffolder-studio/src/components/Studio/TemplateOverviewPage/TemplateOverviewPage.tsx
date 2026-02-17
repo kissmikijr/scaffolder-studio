@@ -25,7 +25,7 @@ import {
 import { useApi } from '@backstage/core-plugin-api';
 import {
   scaffolderVisualApiRef,
-  ScaffolderVisualEditorApi,
+  ScaffolderStudioApi,
 } from '../../../api/ScaffolderVisualClient';
 import { v4 as uuidv4 } from 'uuid';
 import { ImportTemplateDialog } from './components/ImportYamlSkeleton';
@@ -71,7 +71,7 @@ function useRouteMatch(patterns: readonly string[]) {
 }
 
 export const ProjectOverviewPage = () => {
-  const api = useApi<ScaffolderVisualEditorApi>(scaffolderVisualApiRef);
+  const api = useApi<ScaffolderStudioApi>(scaffolderVisualApiRef);
   const prefabsApi = useApi<PrefabsClientApi>(prefabsApiRef);
 
   const navigate = useNavigate();

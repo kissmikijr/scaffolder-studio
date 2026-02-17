@@ -29,7 +29,7 @@ import {
   isPropertyNode,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { useApi } from '@backstage/core-plugin-api';
-import { ScaffolderVisualEditorApi } from '../../api/ScaffolderVisualClient';
+import { ScaffolderStudioApi } from '../../api/ScaffolderVisualClient';
 import { scaffolderVisualApiRef } from '../../api/ScaffolderVisualClient';
 import Header from './components/Header';
 import { PrefabTreeView } from './TemplateOverviewPage/Prefabs/PrefabTreeView';
@@ -121,7 +121,7 @@ const ScaffolderStudioEditor = ({
   >(undefined);
   const connectSourceNodeIdRef = useRef<string | null>(null);
   const contextMenuNodeIdRef = useRef<string | null>(null);
-  const api = useApi<ScaffolderVisualEditorApi>(scaffolderVisualApiRef);
+  const api = useApi<ScaffolderStudioApi>(scaffolderVisualApiRef);
   const alertApi = useApi(alertApiRef);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [isSideContentCollapsed, setIsSideContentCollapsed] = useState(false);

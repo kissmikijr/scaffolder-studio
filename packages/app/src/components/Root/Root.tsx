@@ -78,7 +78,7 @@ export const Root = ({ children }: PropsWithChildren<{}>) => (
         <SidebarItem
           icon={CreateComponentIcon}
           to="/scaffolder-studio"
-          text="Visual Editor"
+          text="Scaffolder Studio"
         />
         {/* End global nav */}
         <SidebarDivider />

@@ -1,11 +1,11 @@
 import { createExtensionPoint } from '@backstage/backend-plugin-api';
 import { PublisherExtension } from './types';
 
-export interface ScaffolderVisualEditorPublisherExtensionPoint {
+export interface ScaffolderStudioPublisherExtensionPoint {
   addPublisher(publisher: PublisherExtension): void;
 }
 
-export const scaffolderVisualEditorPublisherExtensionPoint =
-  createExtensionPoint<ScaffolderVisualEditorPublisherExtensionPoint>({
+export const scaffolderStudioPublisherExtensionPoint =
+  createExtensionPoint<ScaffolderStudioPublisherExtensionPoint>({
     id: 'scaffolder-studio/publisher',
   });

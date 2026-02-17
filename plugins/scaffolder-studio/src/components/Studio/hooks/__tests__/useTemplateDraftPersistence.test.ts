@@ -95,7 +95,7 @@ describe('useTemplateDraftPersistence', () => {
 
   it('reads draft and compares draft recency', () => {
     localStorage.setItem(
-      'visual-editor:draft:template-3',
+      'scaffolder-studio:draft:template-3',
       JSON.stringify({
         version: 1,
         updated: '2026-02-11T10:00:00.000Z',

@@ -49,7 +49,7 @@ import { AppRouter, FlatRoutes } from '@backstage/core-app-api';
 import { CatalogGraphPage } from '@backstage/plugin-catalog-graph';
 import { RequirePermission } from '@backstage/plugin-permission-react';
 import { catalogEntityCreatePermission } from '@backstage/plugin-catalog-common/alpha';
-import { ScaffolderVisualEditorPage } from '@kissmiklosjr/plugin-scaffolder-studio';
+import { ScaffolderStudioPage } from '@kissmiklosjr/plugin-scaffolder-studio';
 import { SelectFieldFromApiExtension } from '@roadiehq/plugin-scaffolder-frontend-module-http-request-field';
 
 const app = createApp({
@@ -113,7 +113,7 @@ const routes = (
     <Route
       path="/scaffolder-studio/*"
       element={
-        <ScaffolderVisualEditorPage>
+        <ScaffolderStudioPage>
           <ScaffolderFieldExtensions>
             <SelectFieldFromApiExtension />
             <EntityNamePickerFieldExtension />
@@ -126,7 +126,7 @@ const routes = (
             <OwnedEntityPickerFieldExtension />
             <RepoBranchPickerFieldExtension />
           </ScaffolderFieldExtensions>
-        </ScaffolderVisualEditorPage>
+        </ScaffolderStudioPage>
       }
     />
   </FlatRoutes>

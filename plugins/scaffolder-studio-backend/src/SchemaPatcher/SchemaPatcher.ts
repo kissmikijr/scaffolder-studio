@@ -37,18 +37,19 @@ export class SchemaPatcher {
    * Load schema patches from app-config.yaml
    * Example config:
    * 
-   * scaffolderVisualEditor:
-   *   schemaPatches:
-   *     - id: 'catalog:register'
-   *       patch:
-   *         input:
-   *           type: object
-   *           properties:
-   *             customField:
-   *               type: string
-   *         output:
-   *           type: object
-   *           properties: {}
+   * scaffolder:
+   *   studio:
+   *     schemaPatches:
+   *       - id: 'catalog:register'
+   *         patch:
+   *           input:
+   *             type: object
+   *             properties:
+   *               customField:
+   *                 type: string
+   *          output:
+   *             type: object
+   *             properties: {}
    */
   private loadPatchesFromConfig(): ScaffolderActionPatch[] {
     const patches: ScaffolderActionPatch[] = [];

@@ -25,7 +25,7 @@ type UsePrefabDraftPersistenceProps = {
     enabled?: boolean;
 };
 
-const STORAGE_PREFIX = 'visual-editor:prefab-draft:';
+const STORAGE_PREFIX = 'scaffolder-studio:prefab-draft:';
 
 // We might not need deep stripping for prefabs if they don't contain functions in data
 // but keeping it safe is good practice.

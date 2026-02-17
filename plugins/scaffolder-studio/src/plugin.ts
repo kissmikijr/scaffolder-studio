@@ -58,9 +58,9 @@ export const editorPlugin = createPlugin({
   ],
 });
 
-export const ScaffolderVisualEditorPage = editorPlugin.provide(
+export const ScaffolderStudioPage = editorPlugin.provide(
   createRoutableExtension({
-    name: 'ScaffolderVisualEditorPage',
+    name: 'ScaffolderStudioPage',
     component: () => {
       return import('./components/Router/Router').then(m => m.Router);
     },

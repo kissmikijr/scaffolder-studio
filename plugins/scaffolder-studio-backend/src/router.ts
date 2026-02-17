@@ -7,7 +7,7 @@ import {
   PermissionsService,
 } from '@backstage/backend-plugin-api';
 
-import { ScaffolderVisualTemplateEditorService } from './service/ScaffolderVisualTemplateEditorService';
+import { ScaffolderStudioService } from './service/ScaffolderVisualTemplateEditorService';
 import { PrefabService } from './service/PrefabService';
 import { PrefabLibraryService } from './service/PrefabLibraryService';
 import {
@@ -42,19 +42,19 @@ const importTemplateSchema = z.object({
 
 export async function createRouter({
   httpAuth,
-  scaffolderVisualEditorService,
+  scaffolderStudioService,
   prefabService,
   prefabLibraryService,
   permissions,
 }: {
   httpAuth: HttpAuthService;
-  scaffolderVisualEditorService: ScaffolderVisualTemplateEditorService;
+  scaffolderStudioService: ScaffolderStudioService;
   prefabService: PrefabService;
   prefabLibraryService: PrefabLibraryService;
   permissions: PermissionsService;
 }): Promise<express.Router> {
   const { visualTemplateProjectStore, publishedTemplatesStore } =
-    scaffolderVisualEditorService.stores;
+    scaffolderStudioService.stores;
   const router = Router();
   router.use(express.json());
 
@@ -172,7 +172,7 @@ export async function createRouter({
           },
         ];
 
-    await scaffolderVisualEditorService.createOrUpdateTemplate({
+    await scaffolderStudioService.createOrUpdateTemplate({
       data: {
         ...parsed.data,
         nodes: nodesWithDefaultTemplate,
@@ -196,7 +196,7 @@ export async function createRouter({
 
     await visualTemplateProjectStore.get(req.params.id);
 
-    await scaffolderVisualEditorService.createOrUpdateTemplate({
+    await scaffolderStudioService.createOrUpdateTemplate({
       data: {
         ...parsed.data,
         owner,
@@ -209,7 +209,7 @@ export async function createRouter({
   });
 
   router.get('/actions', async (_req, res) => {
-    const actions = await scaffolderVisualEditorService.getActions();
+    const actions = await scaffolderStudioService.getActions();
     res.json(actions);
   });
 
@@ -237,7 +237,7 @@ export async function createRouter({
   });
 
   router.get('/publishers', async (_req, res) => {
-    const publishers = await scaffolderVisualEditorService.getPublishers();
+    const publishers = await scaffolderStudioService.getPublishers();
     res.json(publishers);
   });
 
@@ -269,7 +269,7 @@ export async function createRouter({
       throw new InputError('Not authorized to publish this template');
     }
     try {
-      await scaffolderVisualEditorService.publishTemplate({
+      await scaffolderStudioService.publishTemplate({
         visualTemplateId: req.params.id,
         publishedBy: owner,
         scaffolderTemplate: parsed.data.scaffolderTemplate,
@@ -300,7 +300,7 @@ export async function createRouter({
       throw new InputError(parsed.error.toString());
     }
 
-    await scaffolderVisualEditorService.unpublishTemplate({
+    await scaffolderStudioService.unpublishTemplate({
       id: req.params.id,
       scaffolderTemplate: parsed.data.scaffolderTemplate,
       publisherId: parsed.data.publisherId,
@@ -313,9 +313,9 @@ export async function createRouter({
       throw new InputError(parsed.error.toString());
     }
     const data =
-      await scaffolderVisualEditorService.serializeScaffolderTemplate({
+      await scaffolderStudioService.serializeScaffolderTemplate({
         template: parsed.data.template,
-        actions: await scaffolderVisualEditorService.getActions(),
+        actions: await scaffolderStudioService.getActions(),
       });
     const credentials = await httpAuth.credentials(req, {
       allow: ['user', 'service'],
@@ -329,7 +329,7 @@ export async function createRouter({
     if (!owner) {
       throw new InputError('No owner found');
     }
-    await scaffolderVisualEditorService.createOrUpdateTemplate({
+    await scaffolderStudioService.createOrUpdateTemplate({
       data: {
         id: parsed.data.id,
         owner,
@@ -363,7 +363,7 @@ export async function createRouter({
     if (!parsed.success) {
       throw new InputError(parsed.error.toString());
     }
-    const yaml = await scaffolderVisualEditorService.nodesToYaml({
+    const yaml = await scaffolderStudioService.nodesToYaml({
       nodes: parsed.data.nodes,
       edges: parsed.data.edges,
       sourceNodeId: parsed.data.sourceNodeId,
@@ -441,7 +441,7 @@ export async function createRouter({
     res.json(result);
   });
   router.post('/prefabs/resolve', async (req, res) => {
-    const result = await scaffolderVisualEditorService.resolve({
+    const result = await scaffolderStudioService.resolve({
       nodes: req.body.nodes,
     });
     res.json(result);

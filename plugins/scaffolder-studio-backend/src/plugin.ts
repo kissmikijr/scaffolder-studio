@@ -10,16 +10,16 @@ import {
 } from './database';
 import { SchemaPatcher } from './SchemaPatcher/SchemaPatcher';
 import { eventsServiceRef } from '@backstage/plugin-events-node';
-import { ScaffolderVisualTemplateEditorService } from './service/ScaffolderVisualTemplateEditorService';
+import { ScaffolderStudioService } from './service/ScaffolderVisualTemplateEditorService';
 import { PrefabService } from './service/PrefabService';
 import { DatabasePrefabStore } from './database/DatabasePrefabStore';
 import { DatabasePrefabLibraryStore } from './database/DatabasePrefabLibraryStore';
 import { PrefabLibraryService } from './service/PrefabLibraryService';
-import { scaffolderVisualEditorPublisherExtensionPoint } from './extensions/alpha';
+import { scaffolderStudioPublisherExtensionPoint } from './extensions/alpha';
 import { PublisherExtension } from './extensions/types';
 
-export const scaffolderVisualEditorServiceRef =
-  createServiceRef<ScaffolderVisualTemplateEditorService>({
+export const scaffolderStudioServiceRef =
+  createServiceRef<ScaffolderStudioService>({
     id: 'scaffolder-studio',
   });
 
@@ -28,7 +28,7 @@ export default createBackendPlugin({
   register(env) {
     const publishers: PublisherExtension[] = [];
 
-    env.registerExtensionPoint(scaffolderVisualEditorPublisherExtensionPoint, {
+    env.registerExtensionPoint(scaffolderStudioPublisherExtensionPoint, {
       addPublisher(publisher) {
         publishers.push(publisher);
       },
@@ -72,8 +72,8 @@ export default createBackendPlugin({
             database,
           });
 
-        const scaffolderVisualEditorService =
-          new ScaffolderVisualTemplateEditorService({
+        const scaffolderStudioService =
+          new ScaffolderStudioService({
             events,
             visualTemplateProjectStore,
             publishedTemplatesStore,
@@ -88,7 +88,7 @@ export default createBackendPlugin({
         rootLifecycle.addShutdownHook(async () => {
           logger.info('Cleaning up editor backend plugin...');
           try {
-            await scaffolderVisualEditorService.cleanup();
+            await scaffolderStudioService.cleanup();
             logger.info('Editor backend plugin cleaned up successfully');
           } catch (error) {
             logger.error(
@@ -113,7 +113,7 @@ export default createBackendPlugin({
         httpRouter.use(
           await createRouter({
             httpAuth,
-            scaffolderVisualEditorService,
+            scaffolderStudioService,
             prefabService,
             prefabLibraryService,
             permissions,

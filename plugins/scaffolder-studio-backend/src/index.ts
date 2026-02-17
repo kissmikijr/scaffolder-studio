@@ -8,12 +8,12 @@ export default createBackendFeatureLoader({
   *loader({ config }) {
     yield import('./plugin');
     if (
-      config.getOptionalBoolean('scaffolder.visualEditor.publishers.github.enabled')
+      config.getOptionalBoolean('scaffolder.studio.publishers.github.enabled')
     ) {
       yield import('./modules/githubPublisherModule');
     }
     if (
-      config.getOptionalBoolean('scaffolder.visualEditor.publishers.event.enabled')
+      config.getOptionalBoolean('scaffolder.studio.publishers.event.enabled')
     ) {
       yield import('./modules/eventPublisherModule');
     }
@@ -29,8 +29,8 @@ export default createBackendFeatureLoader({
 });
 
 export { ScaffolderStudioClient } from './clients/ScaffolderStudioClient';
-export { default as scaffolderVisualEditorPlugin } from './plugin';
+export { default as scaffolderStudioPlugin } from './plugin';
 export { githubPublisherModule } from './modules/githubPublisherModule';
 export { eventPublisherModule } from './modules/eventPublisherModule';
-export { scaffolderVisualEditorPublisherExtensionPoint } from './extensions/alpha';
-export type { ScaffolderVisualEditorPublisherExtensionPoint } from './extensions/alpha';
+export { scaffolderStudioPublisherExtensionPoint } from './extensions/alpha';
+export type { ScaffolderStudioPublisherExtensionPoint } from './extensions/alpha';
