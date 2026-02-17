@@ -63,6 +63,7 @@ export async function createRouter({
     metadata: z
       .object({
         name: z.string().optional(),
+        description: z.string().optional(),
       })
       .optional(),
     viewport: z.object({
@@ -177,7 +178,7 @@ export async function createRouter({
         ...parsed.data,
         nodes: nodesWithDefaultTemplate,
         owner,
-        metadata: { name: parsed.data.metadata?.name || '' },
+        metadata: { name: parsed.data.metadata?.name || '', description: parsed.data.metadata?.description || '' },
         published_at: parsed.data.published_at ?? null,
       },
     });
@@ -200,7 +201,7 @@ export async function createRouter({
       data: {
         ...parsed.data,
         owner,
-        metadata: { name: parsed.data.metadata?.name || '' },
+        metadata: { name: parsed.data.metadata?.name || '', description: parsed.data.metadata?.description || '' },
         published_at: parsed.data.published_at ?? null,
       },
     });
@@ -347,6 +348,11 @@ export async function createRouter({
               (parsed.data.template as Record<string, unknown>)
                 ?.metadata as Record<string, unknown>
             )?.name as string) || '',
+          description:
+            ((
+              (parsed.data.template as Record<string, unknown>)
+                ?.metadata as Record<string, unknown>
+            )?.description as string) || '',
         },
         published_at: null,
       },

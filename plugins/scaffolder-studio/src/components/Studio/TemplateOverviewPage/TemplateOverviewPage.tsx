@@ -118,8 +118,18 @@ export const ProjectOverviewPage = () => {
       const { id: prefabId } = await prefabsApi.create({
         node: {
           id: uuidv4(),
+          type: 'step',
           position: { x: 0, y: 0 },
-          data: {},
+          data: {
+            type: 'step',
+            name: '',
+            stepId: '',
+            if: '',
+            actionId: '',
+            description: '',
+            schema: null,
+            formData: {},
+          },
         },
         owner: 'system',
         title: 'New Prefab',

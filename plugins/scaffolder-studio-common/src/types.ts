@@ -187,6 +187,7 @@ export type VisualTemplateProject = {
   id: string;
   metadata: {
     name: string;
+    description?: string;
   };
   nodes: Node<
     ParametersNodeData | TemplateNodeData | OutputNodeData | StepNodeData

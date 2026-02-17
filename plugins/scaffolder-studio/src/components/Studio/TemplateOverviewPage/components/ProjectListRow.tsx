@@ -74,7 +74,7 @@ export const ProjectListRow = ({
                 variant="body2"
                 fontWeight={500}
                 sx={{
-                    flex: 1,
+                    flexShrink: 0,
                     minWidth: 0,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -83,6 +83,22 @@ export const ProjectListRow = ({
             >
                 {project?.metadata?.name || 'Untitled'}
             </Typography>
+
+            {project?.metadata?.description && (
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{
+                        flex: 1,
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                    }}
+                >
+                    — {project.metadata.description}
+                </Typography>
+            )}
 
             <Typography
                 variant="caption"

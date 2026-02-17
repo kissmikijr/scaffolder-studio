@@ -278,3 +278,106 @@ spec:
     }
   });
 });
+
+test.describe('Template Description Display', () => {
+  let templateListPage: TemplateListPage;
+  let createdTemplateIds: string[];
+
+  test.beforeEach(async ({ page }) => {
+    templateListPage = new TemplateListPage(page);
+    createdTemplateIds = [];
+  });
+
+  test.afterEach(async () => {
+    for (const id of createdTemplateIds) {
+      try {
+        await templateListPage.deleteTemplate(id);
+      } catch {
+        // Best effort cleanup.
+      }
+    }
+  });
+
+  test('should display template description in list view', async ({
+    page,
+  }) => {
+    const templateName = `e2e-desc-test-${Date.now()}`;
+    const description = 'A helpful template description';
+
+    const id =
+      await templateListPage.createTemplateWithDescriptionViaApi(
+        templateName,
+        description,
+      );
+    createdTemplateIds.push(id);
+
+    await templateListPage.goto();
+
+    // Switch to list view
+    const listViewButton = page.getByTestId('list-view-button').or(
+      page.locator('button[aria-label="List view"]'),
+    );
+    await listViewButton.click();
+    await page.waitForTimeout(500);
+
+    // In list view, find the row containing our template name
+    const row = page.getByTestId('template-list-row').filter({
+      hasText: templateName,
+    });
+    await expect(row).toBeVisible();
+
+    // The description should appear with an em-dash separator
+    await expect(row).toContainText('—');
+    await expect(row).toContainText(description);
+  });
+
+  test('should display template description in card view', async ({
+    page,
+  }) => {
+    const templateName = `e2e-desc-card-${Date.now()}`;
+    const description = 'Card view description test';
+
+    const id =
+      await templateListPage.createTemplateWithDescriptionViaApi(
+        templateName,
+        description,
+      );
+    createdTemplateIds.push(id);
+
+    await templateListPage.goto();
+
+    // Card view should show the description as secondary text
+    const card = page
+      .getByTestId('template-card')
+      .filter({ hasText: templateName });
+    await expect(card).toBeVisible();
+    await expect(card).toContainText(description);
+  });
+
+  test('should not show description separator when no description exists', async ({
+    page,
+  }) => {
+    const templateName = `e2e-no-desc-${Date.now()}`;
+
+    const id = await templateListPage.createTemplateViaApi(templateName);
+    createdTemplateIds.push(id);
+
+    await templateListPage.goto();
+
+    // Switch to list view
+    const listViewButton = page.getByTestId('list-view-button').or(
+      page.locator('button[aria-label="List view"]'),
+    );
+    await listViewButton.click();
+    await page.waitForTimeout(500);
+
+    const row = page.getByTestId('template-list-row').filter({
+      hasText: templateName,
+    });
+    await expect(row).toBeVisible();
+
+    // Should NOT contain the em-dash separator since there's no description
+    await expect(row).not.toContainText('—');
+  });
+});
+

@@ -53,6 +53,7 @@ export const ProjectLayout = ({
           borderColor: 'divider',
           borderRadius: '12px',
           overflow: 'hidden',
+          mx: 16,
         }}
       >
         {projects?.map(project => (

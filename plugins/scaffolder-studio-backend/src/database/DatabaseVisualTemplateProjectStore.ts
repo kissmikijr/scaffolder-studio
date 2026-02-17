@@ -220,7 +220,7 @@ export class DatabaseVisualTemplateProjectStore
   ): VisualTemplateProject {
     return {
       id: row.id,
-      metadata: row.metadata as { name: string },
+      metadata: row.metadata as { name: string; description?: string },
       owner: row.owner,
       nodes: JSON.parse(row.nodes) as VisualTemplateProject['nodes'],
       edges: JSON.parse(row.edges),

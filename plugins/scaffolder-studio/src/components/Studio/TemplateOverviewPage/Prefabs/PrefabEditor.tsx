@@ -38,7 +38,7 @@ export const PrefabEditor = () => {
   const scaffolderVisualApi = useApi(scaffolderVisualApiRef);
   const [prefab, setPrefab] = useState<StoredPrefab | null>(null);
 
-  const [nodeType, setNodeType] = useState<string>('');
+  const [nodeType, setNodeType] = useState<string>('step');
   const [availableActions, setAvailableActions] = useState<ScaffolderAction[]>(
     [],
   );

@@ -15,6 +15,7 @@ export type TemplateDraftState = {
   };
   metadata: {
     name: string;
+    description?: string;
   };
 };
 
@@ -28,6 +29,7 @@ type SerializedTemplateDraftState = {
   };
   metadata: {
     name: string;
+    description?: string;
   };
 };
 
@@ -174,6 +176,17 @@ const getTemplateName = (state: SerializedTemplateDraftState): string => {
   );
 };
 
+const getTemplateDescription = (state: SerializedTemplateDraftState): string => {
+  const templateNode = state.nodes.find(node => isTemplateNode(node as any));
+  return (
+    (
+      templateNode?.data as Record<string, unknown> | undefined
+    )?.description?.toString() ||
+    state.metadata.description ||
+    ''
+  );
+};
+
 export const readTemplateDraft = (
   templateId: string,
 ): StoredTemplateDraft | null => {
@@ -222,7 +235,7 @@ export const useTemplateDraftPersistence = ({
 
   const serializedState = useMemo(
     () => toSerializableState(state),
-    [state.nodes, state.edges, state.viewport, state.metadata.name],
+    [state.nodes, state.edges, state.viewport, state.metadata.name, state.metadata.description],
   );
   const currentStateHash = useMemo(
     () => toStateHash(serializedState),
@@ -334,6 +347,7 @@ export const useTemplateDraftPersistence = ({
           published_at: publishedAt,
           metadata: {
             name: getTemplateName(latestSerializedState),
+            description: getTemplateDescription(latestSerializedState),
           },
         } as any);
 

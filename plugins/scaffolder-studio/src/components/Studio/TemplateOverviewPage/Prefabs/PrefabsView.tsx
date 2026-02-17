@@ -73,6 +73,7 @@ export const PrefabsView = () => {
             borderColor: 'divider',
             borderRadius: '12px',
             overflow: 'hidden',
+            mx: 16,
           }}
         >
           {filtered.map(prefab => (
@@ -85,6 +86,7 @@ export const PrefabsView = () => {
                 e.preventDefault();
                 handleSelect(prefab.id, e);
               }}
+              onDelete={handleDeletePrefab}
             />
           ))}
         </Box>

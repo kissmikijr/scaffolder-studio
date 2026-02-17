@@ -37,9 +37,18 @@ export class PrefabListPage {
       throw new Error('Failed to extract prefab id from URL');
     }
 
-    const titleInput = this.page.getByLabel('Title');
+    const titleInput = this.page.getByPlaceholder('Prefab Title');
     await titleInput.fill(title);
-    await this.page.waitForTimeout(1500);
+
+    // Wait for the auto-save PUT request to complete before navigating away
+    await this.page.waitForResponse(
+      resp =>
+        resp.url().includes('/prefabs/') &&
+        resp.request().method() === 'PUT' &&
+        resp.ok(),
+      { timeout: 10000 },
+    );
+
     await this.goto();
 
     return prefabId;

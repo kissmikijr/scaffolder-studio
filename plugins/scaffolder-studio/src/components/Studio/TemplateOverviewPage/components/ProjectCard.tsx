@@ -126,6 +126,23 @@ export const ProjectCard = ({
             {project?.metadata?.name || 'Untitled'}
           </Typography>
 
+          {project?.metadata?.description && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                maxWidth: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                display: 'block',
+                lineHeight: 1.4,
+              }}
+            >
+              {project.metadata.description}
+            </Typography>
+          )}
+
           <Box display="flex" justifyContent="space-between">
             <Typography variant="caption" color="text.secondary">
               Edited {formatElapsedTime(project.updated)}

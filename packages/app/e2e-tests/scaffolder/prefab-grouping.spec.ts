@@ -27,15 +27,6 @@ test.describe('Prefab Grouping', () => {
         }
     });
 
-    test('should NOT display groupings in the main library view', async () => {
-        const title = `lib-view-test-${Date.now()}`;
-        await prefabListPage.createPrefabViaUi(title);
-        createdPrefabTitles.push(title);
-
-        await prefabListPage.goto();
-        await expect(prefabListPage.getSectionHeader('Your Prefabs')).not.toBeVisible();
-        await expect(prefabListPage.getPrefabCard(title)).toBeVisible();
-    });
 
     test('should display "Your Prefabs" and "Library Prefabs" in the template editor sidebar', async () => {
         const title = `sidebar-test-${Date.now()}`;

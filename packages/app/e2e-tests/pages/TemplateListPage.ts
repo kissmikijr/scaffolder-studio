@@ -279,6 +279,39 @@ export class TemplateListPage {
     return id;
   }
 
+  async createTemplateWithDescriptionViaApi(
+    name: string,
+    description: string,
+  ): Promise<string> {
+    const id = `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    await this.postTemplatesApi('/templates', {
+      id,
+      metadata: { name, description },
+      nodes: [
+        {
+          id: `${id}-template`,
+          type: 'template',
+          position: { x: 100, y: 100 },
+          data: {
+            nodeType: 'template',
+            name,
+            description,
+            owner: '',
+            annotations: {},
+            spec: { type: 'component' },
+          },
+        },
+      ],
+      edges: [],
+      viewport: { x: 0, y: 0, zoom: 1 },
+      owner: 'test',
+      deleted: false,
+      updated: new Date().toISOString(),
+      published_at: null,
+    });
+    return id;
+  }
+
   async deleteTemplate(id: string): Promise<void> {
     await this.postTemplatesApi('/templates/trash', { ids: [id] });
     // Hard delete may be permission-gated in some runs.
