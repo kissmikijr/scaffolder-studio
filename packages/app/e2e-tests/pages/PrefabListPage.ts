@@ -47,7 +47,7 @@ export class PrefabListPage {
       { timeout: 10000 },
     );
 
-    await this.goto();
+
 
     return prefabId;
   }
