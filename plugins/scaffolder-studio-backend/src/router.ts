@@ -56,7 +56,13 @@ export async function createRouter({
   const { visualTemplateProjectStore, publishedTemplatesStore } =
     scaffolderStudioService.stores;
   const router = Router();
-  router.use(express.json());
+  router.use((req, res, next) => {
+    if (req.body !== undefined) {
+      next();
+      return;
+    }
+    express.json()(req, res, next);
+  });
 
   const projectSchema = z.object({
     id: z.string(),

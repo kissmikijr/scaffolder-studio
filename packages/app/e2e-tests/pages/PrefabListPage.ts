@@ -127,26 +127,78 @@ export class PrefabListPage {
     await deletePromise;
   }
 
+  private authToken?: string;
+
+  private getBackendBaseCandidates(): string[] {
+    const configuredBase = process.env.PLAYWRIGHT_URL?.replace(/\/$/, '');
+    const candidates = [configuredBase, 'http://localhost:7007'].filter(
+      Boolean,
+    ) as string[];
+    return [...new Set(candidates)];
+  }
+
+  private async getAuthToken(): Promise<string> {
+    if (this.authToken) {
+      return this.authToken;
+    }
+
+    for (const base of this.getBackendBaseCandidates()) {
+      const res = await this.page.request.get(`${base}/api/auth/guest/refresh`);
+      if (!res.ok()) {
+        continue;
+      }
+      try {
+        const body = await res.json();
+        const token = body?.backstageIdentity?.token as string | undefined;
+        if (token) {
+          this.authToken = token;
+          return token;
+        }
+      } catch {
+        // Not JSON/token response, continue.
+      }
+    }
+
+    throw new Error('Failed to get backend auth token');
+  }
+
   async createPrefabViaApi(title: string, data: any = {}): Promise<string> {
-    const response = await this.page.request.post(
-      'http://localhost:7007/api/scaffolder-studio/prefabs',
-      {
-        data: {
-          title,
-          owner: 'test-owner',
-          node: {
-            id: 'root-node',
-            type: 'step',
-            data: {
-              name: 'test-step',
+    const token = await this.getAuthToken();
+    const baseCandidates = this.getBackendBaseCandidates();
+    let response;
+
+    for (const base of baseCandidates) {
+      response = await this.page.request.post(
+        `${base}/api/scaffolder-studio/prefabs`,
+        {
+          data: {
+            title,
+            owner: 'test-owner',
+            node: {
+              id: 'root-node',
+              type: 'step',
+              data: {
+                name: 'test-step',
+              },
+              position: { x: 0, y: 0 },
+              ...data.node,
             },
-            position: { x: 0, y: 0 },
-            ...data.node,
+            ...data,
           },
-          ...data,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-      },
-    );
+      );
+      if (response.status() !== 404) {
+        break;
+      }
+    }
+
+    if (!response) {
+      throw new Error('Failed to create prefab via API: No response');
+    }
+
 
     if (!response.ok()) {
       throw new Error(`Failed to create prefab via API: ${response.statusText()}`);
