@@ -297,6 +297,10 @@ export const VisualTemplateEditorComponent = () => {
           },
         });
 
+        if (id) {
+          setIsProjectLoaded(false);
+          // clear existing state before loading new
+        }
         const localDraft = readTemplateDraft(id);
         const shouldUseLocalDraft =
           !!localDraft && isDraftNewerThanServer(localDraft, project.updated);
@@ -339,10 +343,7 @@ export const VisualTemplateEditorComponent = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, api, setPersistedState]);
 
-  // Reset loading state when id changes
-  useEffect(() => {
-    setIsProjectLoaded(false);
-  }, [id]);
+
 
   // Cleanup timeout on unmount
   useEffect(() => {

@@ -73,14 +73,15 @@ export const DryRunPage = () => {
     }, 140);
   };
 
+  const { data: project, isLoading } = useQuery({
+    queryKey: ['dry-run', id],
+    queryFn: () => scaffolderVisualApi.getProject(id!),
+    enabled: !!id,
+  });
+
   if (!id) {
     return <div>No ID</div>;
   }
-
-  const { data: project, isLoading } = useQuery({
-    queryKey: ['dry-run', id],
-    queryFn: () => scaffolderVisualApi.getProject(id),
-  });
   if (isLoading) {
     return <div>Loading...</div>;
   }

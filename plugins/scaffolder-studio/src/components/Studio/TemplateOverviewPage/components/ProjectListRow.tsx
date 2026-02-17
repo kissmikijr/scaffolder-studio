@@ -11,6 +11,8 @@ type ProjectListRowProps = {
     onSelect: (e: React.MouseEvent) => void;
 };
 
+import { TemplateVisualSummary } from './TemplateVisualSummary';
+
 const formatElapsedTime = (dateString: string) => {
     const date = DateTime.fromISO(dateString);
     if (!date.isValid) return 'Invalid date';
@@ -70,6 +72,10 @@ export const ProjectListRow = ({
                 },
             }}
         >
+            <Box sx={{ width: 140, flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                <TemplateVisualSummary nodes={project.nodes} />
+            </Box>
+
             <Typography
                 variant="body2"
                 fontWeight={500}

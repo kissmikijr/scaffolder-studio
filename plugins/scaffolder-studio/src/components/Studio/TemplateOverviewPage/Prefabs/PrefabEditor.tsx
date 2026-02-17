@@ -34,7 +34,7 @@ import { PrefabHeader } from './PrefabHeader';
 export const PrefabEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  if (!id) return null;
+
   const api = useApi(prefabsApiRef);
   const scaffolderVisualApi = useApi(scaffolderVisualApiRef);
   const [prefab, setPrefab] = useState<StoredPrefab | null>(null);
@@ -342,6 +342,8 @@ export const PrefabEditor = () => {
     },
     [],
   );
+
+  if (!id) return null;
 
   return (
     <ReactFlowProvider>

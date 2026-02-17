@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Box, useTheme, Button } from '@mui/material';
 import { StyledIconButton } from './StyledIconButton';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -37,15 +37,10 @@ export const CodeEditor = ({
   readOnlyRanges = [],
 }: CodeEditorProps) => {
   const theme = useTheme();
-  const [editedCode, setEditedCode] = useState<string>(code);
 
-  // Sync editedCode with code prop when it changes
-  useEffect(() => {
-    setEditedCode(code);
-  }, [code]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(editedCode);
+    navigator.clipboard.writeText(code);
     if (onCopy) {
       onCopy();
     }
@@ -53,7 +48,9 @@ export const CodeEditor = ({
 
   const handleImport = () => {
     if (onImport) {
-      onImport(editedCode);
+      if (onImport) {
+        onImport(code);
+      }
     }
   };
 
@@ -92,7 +89,7 @@ export const CodeEditor = ({
         }}
       >
         <CodeMirror
-          value={editedCode}
+          value={code}
           height="100%"
           maxHeight={maxHeight}
           lang={"yaml"}
@@ -108,7 +105,6 @@ export const CodeEditor = ({
           ]}
           editable={editable}
           onChange={value => {
-            setEditedCode(value);
             if (onChange) {
               onChange(value);
             }

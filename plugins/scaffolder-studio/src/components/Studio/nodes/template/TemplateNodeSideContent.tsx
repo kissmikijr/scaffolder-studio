@@ -21,9 +21,7 @@ import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 const MAX_OWNERS_DISPLAY = 100;
 
 export const TemplateNodeSideContent = ({ id }: { id?: string }) => {
-  if (!id) {
-    return <></>;
-  }
+
   const nodes = useNodes();
   const currentNode = useMemo(() => nodes.find(n => n.id === id), [nodes, id]);
   const currentData = currentNode?.data as TemplateNodeData;
@@ -181,14 +179,16 @@ export const TemplateNodeSideContent = ({ id }: { id?: string }) => {
             ? stringToAnnotations(newValue)
             : currentData.annotations || {};
 
-        currentData.onChange?.(id, {
-          ...currentData,
-          name: updated.name,
-          owner: updated.owner,
-          description: updated.description || '',
-          spec: { type: updated.type },
-          annotations: parsedAnnotations,
-        });
+        if (id) {
+          currentData.onChange?.(id, {
+            ...currentData,
+            name: updated.name,
+            owner: updated.owner,
+            description: updated.description || '',
+            spec: { type: updated.type },
+            annotations: parsedAnnotations,
+          });
+        }
       };
 
   // Generate helper text for owner field
@@ -199,6 +199,10 @@ export const TemplateNodeSideContent = ({ id }: { id?: string }) => {
     }
     return undefined;
   };
+
+  if (!id) {
+    return <></>;
+  }
 
   return (
     <Grid>

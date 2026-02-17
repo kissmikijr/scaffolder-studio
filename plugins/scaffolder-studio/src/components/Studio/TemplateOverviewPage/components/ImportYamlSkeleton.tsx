@@ -72,22 +72,6 @@ export const ImportTemplateDialog = ({
     }
   };
 
-  // Always show the CodeEditor
-  const InputEditor = () => {
-    return (
-      <CodeEditor
-        code={inputText}
-        language={format}
-        onChange={setInputText}
-        showCopyButton={false}
-        showImportButton={false}
-        maxHeight="350px"
-      />
-    );
-  };
-
-  // No longer need paste handler since we have a proper editor
-
   return (
     <Dialog
       open={open}
@@ -133,7 +117,14 @@ export const ImportTemplateDialog = ({
             minHeight: '250px',
           }}
         >
-          <InputEditor />
+          <CodeEditor
+            code={inputText}
+            language={format}
+            onChange={setInputText}
+            showCopyButton={false}
+            showImportButton={false}
+            maxHeight="350px"
+          />
         </Box>
 
         {error && (

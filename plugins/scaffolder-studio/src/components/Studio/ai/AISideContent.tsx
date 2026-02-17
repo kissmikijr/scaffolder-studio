@@ -70,76 +70,77 @@ export const AISideContent = ({
   availableActions: ScaffolderAction[];
   conversationId?: string;
 }) => {
-  const [baseUrl, setBaseUrl] = useState<string>('');
-  const [chatTransport, setChatTransport] =
-    useState<DefaultChatTransport<UIMessage> | null>(null);
   const { id } = useParams();
   const discoveryApi = useApi(discoveryApiRef);
   const fetchApi = useApi(fetchApiRef);
-  const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
-  const [messagesLoaded, setMessagesLoaded] = useState(false);
-  const [chatTitle, setChatTitle] = useState<string | undefined>(undefined);
+
+  const [state, setState] = useState<{
+    baseUrl: string;
+    chatTransport: DefaultChatTransport<UIMessage> | null;
+    initialMessages: UIMessage[];
+    messagesLoaded: boolean;
+    chatTitle: string | undefined;
+  }>({
+    baseUrl: '',
+    chatTransport: null,
+    initialMessages: [],
+    messagesLoaded: false,
+    chatTitle: undefined,
+  });
+
   // Load existing messages for the conversation
   useEffect(() => {
     const loadMessages = async () => {
+      // Create updates object to batch updates
+      const updates: Partial<typeof state> = { messagesLoaded: false };
+
       try {
-        setMessagesLoaded(false);
-        const baseUrl = await discoveryApi.getBaseUrl(
-          'scaffolder-studio-agent',
-        );
-        const response = await fetchApi.fetch(
-          `${baseUrl}/${id}/conversations/${conversationId}`,
-        );
-        if (response.ok) {
-          const conversation = (await response.json()) as ConversationResponse;
-          if (conversation?.messages) {
-            setInitialMessages(conversation.messages);
-            setChatTitle(conversation.title);
+        const baseUrl = await discoveryApi.getBaseUrl('scaffolder-studio-agent');
+
+        if (conversationId) {
+          const response = await fetchApi.fetch(
+            `${baseUrl}/${id}/conversations/${conversationId}`,
+          );
+          if (response.ok) {
+            const conversation = (await response.json()) as ConversationResponse;
+            if (conversation?.messages) {
+              updates.initialMessages = conversation.messages;
+              updates.chatTitle = conversation.title;
+            }
           }
+        } else {
+          updates.initialMessages = [];
         }
       } catch (error) {
         console.error('Failed to load conversation messages:', error);
       } finally {
-        setMessagesLoaded(true);
+        updates.messagesLoaded = true;
+        setState(prev => ({ ...prev, ...updates }));
       }
     };
 
-    if (conversationId) {
-      loadMessages();
-    } else {
-      // No conversation ID means new conversation, so no messages to load
-      setInitialMessages([]);
-      setMessagesLoaded(true);
-    }
+    loadMessages();
   }, [conversationId, discoveryApi, id]);
 
   useEffect(() => {
-    const getBaseUrl = async () => {
+    const initTransport = async () => {
       try {
-        const url = await discoveryApi.getBaseUrl(
-          'scaffolder-studio-agent',
-        );
-        setBaseUrl(url);
+        const url = await discoveryApi.getBaseUrl('scaffolder-studio-agent');
+        const transport = new DefaultChatTransport({
+          api: `${url}/chat/message`,
+          fetch: fetchApi.fetch,
+        });
+        setState(prev => ({ ...prev, baseUrl: url, chatTransport: transport }));
       } catch (error) {
-        console.error('Failed to get base URL:', error);
+        console.error('Failed to init chat transport:', error);
       }
     };
 
-    getBaseUrl();
+    initTransport();
   }, [discoveryApi]);
 
-  useEffect(() => {
-    if (baseUrl) {
-      const transport = new DefaultChatTransport({
-        api: `${baseUrl}/chat/message`,
-        fetch: fetchApi.fetch,
-      });
-      setChatTransport(transport);
-    }
-  }, [baseUrl]);
-
   // Don't render chat until we have the chat transport ready and messages loaded
-  if (!chatTransport || !messagesLoaded) {
+  if (!state.chatTransport || !state.messagesLoaded) {
     return (
       <Box
         sx={{
@@ -158,11 +159,11 @@ export const AISideContent = ({
   return (
     <AISideContentWithChat
       key={conversationId} // Force re-render when conversation changes
-      transport={chatTransport}
+      transport={state.chatTransport}
       availableActions={availableActions}
       conversationId={conversationId}
-      initialMessages={initialMessages}
-      chatTitle={chatTitle}
+      initialMessages={state.initialMessages}
+      chatTitle={state.chatTitle}
     />
   );
 };
@@ -190,7 +191,7 @@ const AISideContentWithChat = ({
   const inputRef = React.useRef<HTMLDivElement>(null);
   const [lastUserMessageIndex, setLastUserMessageIndex] = useState<number>(0);
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const { messages, sendMessage, status, stop, setMessages } = useChat({
+  const { messages, sendMessage, status, stop } = useChat({
     id: conversationId,
     transport,
     messages: initialMessages,
@@ -222,11 +223,7 @@ const AISideContentWithChat = ({
     },
   });
 
-  useEffect(() => {
-    if (initialMessages.length > 0) {
-      setMessages(initialMessages);
-    }
-  }, [initialMessages]);
+
 
   // Auto-scroll behavior when messages change
   useEffect(() => {

@@ -207,9 +207,8 @@ const ScaffolderStudioEditor = ({
 
   const { onNodeDragStop } = useGroupDragDrop({ nodes, setNodes });
 
-  if (!id) return null;
 
-  // Update selected node after paste operation
+
   useEffect(() => {
     if (pastedNodeId) {
       const pastedNode = nodes.find(n => n.id === pastedNodeId);
@@ -509,6 +508,8 @@ const ScaffolderStudioEditor = ({
       setPublishDialogOpen(false);
     }
   };
+
+  if (!id) return null;
 
   return (
     <>

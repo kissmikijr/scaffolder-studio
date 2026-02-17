@@ -34,17 +34,15 @@ export const TemplatesView = () => {
   });
   const alertApi = useApi(alertApiRef);
 
-  useEffect(() => {
-    if (sort) {
-      setProjects(prev => [...prev.sort(sortBy(sort))]);
-    }
-  }, [sort]);
+  const sortedProjects = React.useMemo(() => {
+    return [...projects].sort(sortBy(sort));
+  }, [projects, sort]);
 
   useEffect(() => {
     api
       .listProjects({ trashed: false })
       .then(projects => {
-        setProjects(projects.sort(sortBy(sort)));
+        setProjects(projects);
       })
       .finally(() => {
         setIsLoading(false);
@@ -131,7 +129,7 @@ export const TemplatesView = () => {
     <>
       <Box>
         <ProjectLayout
-          projects={projects.filter(p =>
+          projects={sortedProjects.filter(p =>
             p.metadata.name.toLowerCase().includes(searchText.toLowerCase()),
           )}
           selectedProjectIds={projectIds}
