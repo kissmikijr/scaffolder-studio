@@ -16,6 +16,8 @@ type ProjectLayoutProprs = {
   selectedProjectIds: string[];
   setSelectedProjectIds: Dispatch<SetStateAction<string[]>>;
   viewMode?: ViewMode;
+  emptyState?: React.ReactNode;
+  isLoading?: boolean;
 };
 
 export const ProjectLayout = ({
@@ -24,6 +26,8 @@ export const ProjectLayout = ({
   selectedProjectIds,
   setSelectedProjectIds,
   viewMode = 'card',
+  emptyState,
+  isLoading,
 }: ProjectLayoutProprs) => {
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -44,6 +48,14 @@ export const ProjectLayout = ({
       setSelectedProjectIds([projectId]);
     }
   };
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (projects.length === 0 && emptyState) {
+    return <>{emptyState}</>;
+  }
 
   if (viewMode === 'list') {
     return (

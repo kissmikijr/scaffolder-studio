@@ -379,5 +379,13 @@ test.describe('Template Description Display', () => {
     // Should NOT contain the em-dash separator since there's no description
     await expect(row).not.toContainText('—');
   });
+
+  test('should display empty state when no templates match search', async ({ page }) => {
+    await templateListPage.goto();
+    await templateListPage.searchForTemplate('non-existent-template-xyz');
+
+    await expect(page.getByText('No templates match your search')).toBeVisible();
+    await expect(page.getByText("Try adjusting your search terms to find what you're looking for.")).toBeVisible();
+  });
 });
 

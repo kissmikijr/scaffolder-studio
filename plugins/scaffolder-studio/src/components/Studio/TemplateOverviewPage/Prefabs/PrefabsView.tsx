@@ -8,11 +8,15 @@ import { PrefabListRow } from './PrefabListRow';
 import { useCardSelection } from '../hooks/useCardSelection';
 
 import { useOutletContext } from 'react-router-dom';
+import { EmptyState } from '../components/EmptyState';
+import { usePrefabCreator } from '../hooks/usePrefabCreator';
 
 export const PrefabsView = () => {
   const { searchText, viewMode } = useOutletContext<{ searchText: string; viewMode?: string }>();
   const api = useApi(prefabsApiRef);
   const [prefabs, setPrefabs] = useState<StoredPrefab[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { createPrefab } = usePrefabCreator();
 
   const {
     selectedIds,
@@ -23,7 +27,9 @@ export const PrefabsView = () => {
   } = useCardSelection(prefabs);
 
   useEffect(() => {
-    api.list().then(setPrefabs);
+    api.list()
+      .then(setPrefabs)
+      .finally(() => setIsLoading(false));
   }, []);
 
   const handleDeletePrefab = (prefabId: string) => {
@@ -63,6 +69,36 @@ export const PrefabsView = () => {
   const filtered = prefabs.filter(p =>
     (p.title ?? '').toLowerCase().includes(searchText?.toLowerCase() ?? ''),
   );
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (prefabs.length === 0) {
+    return (
+      <EmptyState
+        title={
+          searchText
+            ? 'No prefabs match your search'
+            : 'No prefabs found'
+        }
+        description={
+          searchText
+            ? `Try adjusting your search terms to find what you're looking for.`
+            : 'Get started by creating your first prefab.'
+        }
+        action={
+          !searchText
+            ? {
+              label: 'Create Prefab',
+              onClick: createPrefab,
+            }
+            : undefined
+        }
+        missing="content"
+      />
+    );
+  }
 
   return (
     <Box>

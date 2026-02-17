@@ -10,6 +10,8 @@ import { useConfirmationDialog } from '../../dialogs/ConfirmationDialogContext';
 import { sortBy } from './sort';
 import { usePermission } from '@backstage/plugin-permission-react';
 import { scaffolderStudioPermanentlyDeletePermission } from '@kissmiklosjr/plugin-scaffolder-studio-common';
+import { EmptyState } from './EmptyState';
+
 
 type TrashViewProps = {
   sort: string;
@@ -22,6 +24,7 @@ export const TrashView = () => {
   const { sort, searchText, viewMode } = useOutletContext<TrashViewProps>();
   const api = useApi(scaffolderVisualApiRef);
   const [projects, setProjects] = useState<VisualTemplateProject[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [projectIds, setProjectIds] = useState<string[]>([]);
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
@@ -37,6 +40,8 @@ export const TrashView = () => {
   useEffect(() => {
     api.listProjects({ trashed: true }).then(projects => {
       setProjects(projects.sort(sortBy(sort)));
+    }).finally(() => {
+      setIsLoading(false);
     });
   }, []);
 
@@ -89,6 +94,22 @@ export const TrashView = () => {
           setSelectedProjectIds={setProjectIds}
           setContextMenu={setContextMenu}
           viewMode={viewMode as any}
+          isLoading={isLoading}
+          emptyState={
+            <EmptyState
+              title={
+                searchText
+                  ? 'No templates match your search'
+                  : 'Trash is empty'
+              }
+              description={
+                searchText
+                  ? `Try adjusting your search terms to find what you're looking for.`
+                  : 'Items you delete will show up here.'
+              }
+              missing="content"
+            />
+          }
         />
       </Box>
       <Menu

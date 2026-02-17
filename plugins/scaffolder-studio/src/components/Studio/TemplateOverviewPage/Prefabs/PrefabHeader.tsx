@@ -26,6 +26,7 @@ interface PrefabHeaderProps {
     nodeType: string;
     onNodeTypeChange: (type: string) => void;
     children?: React.ReactNode;
+    onBack?: () => void;
 }
 
 export const PrefabHeader = ({
@@ -36,6 +37,7 @@ export const PrefabHeader = ({
     nodeType,
     onNodeTypeChange,
     children,
+    onBack,
 }: PrefabHeaderProps) => {
     const theme = useTheme();
     const navigate = useNavigate();
@@ -55,8 +57,15 @@ export const PrefabHeader = ({
             }}
         >
             <IconButton
-                onClick={() => navigate('/scaffolder-studio/prefabs')}
+                onClick={() => {
+                    if (onBack) {
+                        onBack();
+                    } else {
+                        navigate('/scaffolder-studio/prefabs');
+                    }
+                }}
                 size="small"
+
                 sx={{
                     mr: 1,
                     color: 'text.secondary',

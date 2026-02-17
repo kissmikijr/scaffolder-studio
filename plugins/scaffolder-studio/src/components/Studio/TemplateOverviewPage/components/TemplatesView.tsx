@@ -11,13 +11,19 @@ import { sortBy } from './sort';
 import { usePermission } from '@backstage/plugin-permission-react';
 import { scaffolderStudioPublishPermission } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { PublishDialog } from './PublishDialog';
+import { EmptyState } from './EmptyState';
+
+import { useTemplateCreator } from '../hooks/useTemplateCreator';
+
 
 export const TemplatesView = () => {
   const { sort, searchText, viewMode } = useOutletContext<{ sort: string; searchText: string; viewMode?: string }>();
   const { confirm } = useConfirmationDialog();
   const navigate = useNavigate();
   const api = useApi(scaffolderVisualApiRef);
+  const { createTemplate } = useTemplateCreator();
   const [projects, setProjects] = useState<VisualTemplateProject[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [projectIds, setProjectIds] = useState<string[]>([]);
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
@@ -37,7 +43,12 @@ export const TemplatesView = () => {
   useEffect(() => {
     api
       .listProjects({ trashed: false })
-      .then(projects => setProjects(projects.sort(sortBy(sort))));
+      .then(projects => {
+        setProjects(projects.sort(sortBy(sort)));
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, []);
 
 
@@ -127,6 +138,30 @@ export const TemplatesView = () => {
           setSelectedProjectIds={setProjectIds}
           setContextMenu={setContextMenu}
           viewMode={viewMode as any}
+          isLoading={isLoading}
+          emptyState={
+            <EmptyState
+              title={
+                searchText
+                  ? 'No templates match your search'
+                  : 'No templates found'
+              }
+              description={
+                searchText
+                  ? `Try adjusting your search terms to find what you're looking for.`
+                  : 'Get started by creating your first template.'
+              }
+              action={
+                !searchText
+                  ? {
+                    label: 'Create Template',
+                    onClick: createTemplate,
+                  }
+                  : undefined
+              }
+              missing="content"
+            />
+          }
         />
       </Box>
       <Menu

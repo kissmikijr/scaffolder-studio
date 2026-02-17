@@ -9,7 +9,7 @@ import {
   AllNodeData,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { prefabsApiRef } from '../../../../api/PrefabsClient';
 import { ReactFlow, ReactFlowProvider, Node } from '@xyflow/react';
 import { Box, useTheme, Divider, Button } from '@mui/material';
@@ -33,6 +33,7 @@ import { PrefabHeader } from './PrefabHeader';
 
 export const PrefabEditor = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   if (!id) return null;
   const api = useApi(prefabsApiRef);
   const scaffolderVisualApi = useApi(scaffolderVisualApiRef);
@@ -359,7 +360,14 @@ export const PrefabEditor = () => {
           lastSyncedAt={lastSyncedAt}
           nodeType={nodeType}
           onNodeTypeChange={setNodeType}
+          onBack={async () => {
+            if (isDirty) {
+              await saveNow(true);
+            }
+            navigate('/scaffolder-studio/prefabs');
+          }}
         >
+
           <Button
             variant="contained"
             color="primary"

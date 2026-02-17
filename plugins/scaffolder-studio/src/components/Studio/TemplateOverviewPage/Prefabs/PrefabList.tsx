@@ -51,6 +51,8 @@ interface PrefabListProps {
     groups?: Array<{ title: string; prefabs: Prefab[] }>;
 }
 
+import { EmptyState } from '../components/EmptyState';
+
 export const PrefabList = ({
     prefabs,
     isLoading,
@@ -256,16 +258,20 @@ export const PrefabList = ({
                     >
                         {((!Array.isArray(prefabs) || prefabs.length === 0) && (!groups || groups.every(g => g.prefabs.length === 0))) ? (
                             <TableRow>
-                                <TableCell colSpan={compact ? 4 : 7} align="center">
-                                    <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                        sx={{ fontStyle: 'italic', py: 2 }}
-                                    >
-                                        {searchQuery.trim()
-                                            ? 'No prefabs match your search'
-                                            : 'No prefabs available'}
-                                    </Typography>
+                                <TableCell colSpan={compact ? 4 : 7} align="center" sx={{ borderBottom: 'none' }}>
+                                    <EmptyState
+                                        title={
+                                            searchQuery.trim()
+                                                ? 'No prefabs match your search'
+                                                : 'No prefabs available'
+                                        }
+                                        description={
+                                            searchQuery.trim()
+                                                ? `Try adjusting your search terms to find what you're looking for.`
+                                                : 'Prefabs you create or install will show up here.'
+                                        }
+                                        missing="content"
+                                    />
                                 </TableCell>
                             </TableRow>
                         ) : (

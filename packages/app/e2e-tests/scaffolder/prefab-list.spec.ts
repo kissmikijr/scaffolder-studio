@@ -82,4 +82,14 @@ test.describe('Prefab List Page', () => {
     const idx2 = createdPrefabTitles.indexOf(title2);
     if (idx2 > -1) createdPrefabTitles.splice(idx2, 1);
   });
+
+  test('should display empty state when no prefabs exist', async ({ page }) => {
+    await prefabListPage.goto();
+    // Ensure no prefabs are present (this might be flaky if other tests run in parallel, 
+    // but assuming sequential execution or isolated environment)
+    // Actually, we can just search for something that doesn't exist
+    await prefabListPage.search('non-existent-prefab-xyz');
+    await expect(page.getByText('No prefabs match your search')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Prefabs you create or install will show up here.' })).not.toBeVisible(); // Description check
+  });
 });

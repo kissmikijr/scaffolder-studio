@@ -36,18 +36,20 @@ export class PrefabListPage {
       throw new Error('Failed to extract prefab id from URL');
     }
 
-    const titleInput = this.page.getByPlaceholder('Prefab Title');
-    await titleInput.fill(title);
-
-    await this.page.waitForResponse(
-      resp =>
-        resp.url().includes('/prefabs/') &&
-        resp.request().method() === 'PUT' &&
-        resp.ok(),
-      { timeout: 10000 },
+    // Wait for editor to be ready and initial data loaded (title 'New Prefab') to avoid race condition
+    await this.page.waitForFunction(
+      () => {
+        const input = document.querySelector(
+          'input[placeholder="Prefab Title"]',
+        ) as HTMLInputElement;
+        return input?.value === 'New Prefab';
+      },
+      null,
+      { timeout: 15000 },
     );
 
-
+    const titleInput = this.page.getByPlaceholder('Prefab Title');
+    await titleInput.fill(title);
 
     return prefabId;
   }
@@ -68,7 +70,9 @@ export class PrefabListPage {
   async publishPrefab(title: string) {
     const card = this.getPrefabCard(title);
     await card.first().click({ button: 'right' });
-    await this.page.getByRole('menuitem', { name: 'Publish to Library' }).click();
+    await this.page
+      .getByRole('menuitem', { name: 'Publish to Library' })
+      .click();
 
     await this.page.waitForFunction(() => {
       const alerts = document.querySelectorAll('[class*="MuiAlert-message"]');
@@ -199,9 +203,10 @@ export class PrefabListPage {
       throw new Error('Failed to create prefab via API: No response');
     }
 
-
     if (!response.ok()) {
-      throw new Error(`Failed to create prefab via API: ${response.statusText()}`);
+      throw new Error(
+        `Failed to create prefab via API: ${response.statusText()}`,
+      );
     }
 
     const json = await response.json();

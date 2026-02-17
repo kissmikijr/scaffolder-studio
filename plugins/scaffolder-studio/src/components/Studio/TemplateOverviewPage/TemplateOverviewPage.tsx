@@ -29,11 +29,12 @@ import {
 } from '../../../api/ScaffolderVisualClient';
 import { v4 as uuidv4 } from 'uuid';
 import { ImportTemplateDialog } from './components/ImportYamlSkeleton';
-import { prefabsApiRef, PrefabsClientApi } from '../../../api/PrefabsClient';
 import { usePermission } from '@backstage/plugin-permission-react';
 import { scaffolderStudioPrefabReadPermission } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { useViewMode } from './hooks/useViewMode';
 import { ViewToggle } from './components/ViewToggle';
+import { useTemplateCreator } from './hooks/useTemplateCreator';
+import { usePrefabCreator } from './hooks/usePrefabCreator';
 
 const currentTabMap = {
   '/scaffolder-studio/published': 'Published',
@@ -72,7 +73,7 @@ function useRouteMatch(patterns: readonly string[]) {
 
 export const ProjectOverviewPage = () => {
   const api = useApi<ScaffolderStudioApi>(scaffolderVisualApiRef);
-  const prefabsApi = useApi<PrefabsClientApi>(prefabsApiRef);
+
 
   const navigate = useNavigate();
   const theme = useTheme();
@@ -81,6 +82,8 @@ export const ProjectOverviewPage = () => {
   const { allowed: canReadPrefabs } = usePermission({
     permission: scaffolderStudioPrefabReadPermission,
   });
+  const { createTemplate } = useTemplateCreator();
+  const { createPrefab } = usePrefabCreator();
 
   const [sort, setSort] = useState('updated');
   const [searchText, setSearchText] = useState('');
@@ -115,63 +118,9 @@ export const ProjectOverviewPage = () => {
 
   const handleCreateNew = async () => {
     if (currentTab.includes('prefabs')) {
-      const { id: prefabId } = await prefabsApi.create({
-        node: {
-          id: uuidv4(),
-          type: 'step',
-          position: { x: 0, y: 0 },
-          data: {
-            type: 'step',
-            name: '',
-            stepId: '',
-            if: '',
-            actionId: '',
-            description: '',
-            schema: null,
-            formData: {},
-          },
-        },
-        owner: 'system',
-        title: 'New Prefab',
-      });
-      navigate(`/scaffolder-studio/prefab/${prefabId}`);
+      await createPrefab();
     } else {
-      const templateId = uuidv4();
-      const templateNodeId = uuidv4();
-      await api.create({
-        id: templateId,
-        nodes: [
-          {
-            id: templateNodeId,
-            type: 'template',
-            position: { x: 100, y: 100 },
-            selected: true,
-            data: {
-              nodeType: 'template',
-              name: 'Untitled',
-              owner: '',
-              description: 'This is an example template',
-              annotations: {},
-              spec: { type: 'component' },
-              onChange: () => { },
-            },
-          },
-        ],
-        edges: [],
-        updated: new Date().toISOString(),
-        published_at: null,
-        viewport: {
-          x: 0,
-          y: 0,
-          zoom: 1,
-        },
-        metadata: {
-          name: 'New Template',
-        },
-        owner: 'system',
-        deleted: false,
-      });
-      navigate(`/scaffolder-studio/templates/${templateId}/form`);
+      await createTemplate();
     }
   };
   return (
