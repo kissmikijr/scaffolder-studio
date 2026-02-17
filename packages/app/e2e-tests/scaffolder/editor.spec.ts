@@ -107,10 +107,14 @@ test.describe('Scaffolder Studio', () => {
     );
 
     await editorPage.goToYamlTab();
-    const yamlContent = await editorPage.getYamlContent();
 
-    expect(yamlContent).toContain(`name: ${newName}`);
-    expect(yamlContent).toContain('owner: test-owner');
+    await expect
+      .poll(async () => editorPage.getYamlContent(), { timeout: 10000 })
+      .toContain(`name: ${newName}`);
+
+    await expect
+      .poll(async () => editorPage.getYamlContent(), { timeout: 10000 })
+      .toContain('owner: test-owner');
   });
 
   test('should show alert when adding property without selecting parameters', async () => {

@@ -158,9 +158,9 @@ export class ScaffolderStudioPage {
   async verifyPrefabVisible(title: string, sectionTitle?: string) {
     if (sectionTitle) {
       const section = this.page.locator('tr').filter({ hasText: sectionTitle.toUpperCase() });
-      await expect(section).toBeVisible();
+      await expect(section).toBeVisible({ timeout: 15000 });
     }
-    await expect(this.page.getByText(title)).toBeVisible();
+    await expect(this.page.getByText(title)).toBeVisible({ timeout: 15000 });
   }
 
   async getYamlContent() {

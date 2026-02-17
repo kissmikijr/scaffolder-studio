@@ -61,16 +61,16 @@ test.describe('Prefab Grouping', () => {
 
         // Switch to Prefabs tab and find our prefab
         await scaffolderStudioPage.goToPrefabsTab();
-        const prefabRow = scaffolderStudioPage.getPage().getByText(title).first();
-        await expect(prefabRow).toBeVisible();
+
+        // Verify that the PrefabRow exists under "Your Prefabs"
+        await scaffolderStudioPage.verifyPrefabVisible(title, 'Your Prefabs');
 
         // We can't easily drag and drop in a generic way here without more complex setup,
         // but we can click it if there's an action, or verify that we CAN find it.
         // Actually, let's just use the addPrefabNode prop if it were exposed as an action,
         // but the sidebar usually works by dragging.
 
-        // For now, let's verify that the PrefabRow exists under "Your Prefabs".
-        await scaffolderStudioPage.verifyPrefabVisible(title, 'Your Prefabs');
+
 
         // Let's assume the user drags it. We want to verify that IF it's in the canvas, it renders.
         // I'll skip the actual drag-and-drop for now as it's complex, 

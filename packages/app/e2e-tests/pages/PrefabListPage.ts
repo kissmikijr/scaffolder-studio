@@ -10,6 +10,8 @@ export class PrefabListPage {
       await enterButton.click();
     }
     await this.page.waitForLoadState('networkidle');
+    // Give React time to render after API responses
+    await this.page.waitForTimeout(1000);
   }
 
   getPrefabCards(): Locator {

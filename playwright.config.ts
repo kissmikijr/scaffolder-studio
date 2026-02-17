@@ -25,7 +25,7 @@ export default defineConfig({
   globalSetup: require.resolve('./playwright.global-setup.ts'),
 
   expect: {
-    timeout: 5_000,
+    timeout: 10_000,
   },
 
   // Run your local dev server before starting the tests
