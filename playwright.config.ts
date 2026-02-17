@@ -32,18 +32,18 @@ export default defineConfig({
   webServer: process.env.CI
     ? []
     : [
-        {
-          command: 'yarn dev',
-          port: 3000,
-          reuseExistingServer: true,
-          timeout: 60_000,
-        },
-      ],
+      {
+        command: 'yarn dev',
+        port: 3000,
+        reuseExistingServer: true,
+        timeout: 60_000,
+      },
+    ],
 
   forbidOnly: !!process.env.CI,
 
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 4 : 2,
+  workers: process.env.CI ? 1 : 2,
 
   reporter: [['html', { open: 'never', outputFolder: 'e2e-test-report' }]],
 
