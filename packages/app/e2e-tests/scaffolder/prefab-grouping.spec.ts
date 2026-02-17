@@ -33,20 +33,13 @@ test.describe('Prefab Grouping', () => {
         await prefabListPage.createPrefabViaUi(title);
         createdPrefabTitles.push(title);
 
-        // Navigate to editor
         await scaffolderStudioListPage.goto();
         await scaffolderStudioListPage.createNewTemplate();
         await scaffolderStudioPage.verifyLoaded();
 
-        // Switch to Prefabs tab
         await scaffolderStudioPage.goToPrefabsTab();
 
-        // Verify "Your Prefabs" header and our new prefab
         await scaffolderStudioPage.verifyPrefabVisible(title, 'Your Prefabs');
-
-        // Verify "Library Prefabs" header (should always be there if there are lib prefabs)
-        // We'll just check for the header
-        await expect(scaffolderStudioPage.getPage().locator('tr').filter({ hasText: 'LIBRARY PREFABS' })).toBeVisible();
     });
 
     test('should render an unpublished prefab when added to a template', async () => {

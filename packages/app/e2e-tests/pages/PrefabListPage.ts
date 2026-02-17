@@ -70,6 +70,20 @@ export class PrefabListPage {
     await this.page.waitForTimeout(500);
   }
 
+  async publishPrefab(title: string) {
+    const card = this.getPrefabCard(title);
+    await card.first().click({ button: 'right' });
+    await this.page.getByRole('menuitem', { name: 'Publish to Library' }).click();
+
+    // Wait for the success alert to appear
+    await this.page.waitForFunction(() => {
+      const alerts = document.querySelectorAll('[class*="MuiAlert-message"]');
+      return Array.from(alerts).some(alert =>
+        alert.textContent?.includes('Prefab published to library successfully'),
+      );
+    });
+  }
+
   async search(query: string) {
     const searchInput = this.page.getByPlaceholder('Search');
     await searchInput.fill(query);

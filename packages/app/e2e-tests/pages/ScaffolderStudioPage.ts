@@ -307,10 +307,8 @@ export class ScaffolderStudioPage {
     }
   }
 
-  async addStepAndSelectAction(actionId: string, sourceNodeText?: string) {
-    await this.addStepNode(sourceNodeText);
-    // After adding, the new node is selected.
-    // The side panel shows "Select Action" autocomplete.
+  async selectAction(actionId: string) {
+    // Assumes step is selected.
     await this.expandSideContent();
 
     const input = this.page.getByPlaceholder('Start typing...');
@@ -319,6 +317,12 @@ export class ScaffolderStudioPage {
     // Wait for options to appear
     await this.page.keyboard.press('ArrowDown');
     await this.page.keyboard.press('Enter');
+  }
+
+  async addStepAndSelectAction(actionId: string, sourceNodeText?: string) {
+    await this.addStepNode(sourceNodeText);
+    // After adding, the new node is selected.
+    await this.selectAction(actionId);
   }
 
   async configureStep(
