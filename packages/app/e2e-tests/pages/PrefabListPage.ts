@@ -10,8 +10,6 @@ export class PrefabListPage {
       await enterButton.click();
     }
     await this.page.waitForLoadState('networkidle');
-    // Give React time to render after API responses
-    await this.page.waitForTimeout(1000);
   }
 
   getPrefabCards(): Locator {
@@ -24,7 +22,6 @@ export class PrefabListPage {
 
   async getPrefabCount(): Promise<number> {
     await this.page.waitForLoadState('networkidle');
-    await this.page.waitForTimeout(500);
     return this.getPrefabCards().count();
   }
 
@@ -42,7 +39,6 @@ export class PrefabListPage {
     const titleInput = this.page.getByPlaceholder('Prefab Title');
     await titleInput.fill(title);
 
-    // Wait for the auto-save PUT request to complete before navigating away
     await this.page.waitForResponse(
       resp =>
         resp.url().includes('/prefabs/') &&
@@ -67,7 +63,6 @@ export class PrefabListPage {
     await this.page
       .getByRole('button', { name: 'Delete', exact: true })
       .click();
-    await this.page.waitForTimeout(500);
   }
 
   async publishPrefab(title: string) {
@@ -75,7 +70,6 @@ export class PrefabListPage {
     await card.first().click({ button: 'right' });
     await this.page.getByRole('menuitem', { name: 'Publish to Library' }).click();
 
-    // Wait for the success alert to appear
     await this.page.waitForFunction(() => {
       const alerts = document.querySelectorAll('[class*="MuiAlert-message"]');
       return Array.from(alerts).some(alert =>
@@ -87,7 +81,6 @@ export class PrefabListPage {
   async search(query: string) {
     const searchInput = this.page.getByPlaceholder('Search');
     await searchInput.fill(query);
-    await this.page.waitForTimeout(500);
   }
 
   async deletePrefab(title: string) {
@@ -96,7 +89,6 @@ export class PrefabListPage {
 
     await this.page.getByRole('menuitem', { name: 'Delete Prefab' }).click();
 
-    // Confirm dialog
     await this.page
       .getByRole('button', { name: 'Delete', exact: true })
       .click();
@@ -111,18 +103,14 @@ export class PrefabListPage {
   async bulkDelete(titles: string[]) {
     if (titles.length === 0) return;
 
-    // Select first card
     await this.getPrefabCard(titles[0]).click();
 
-    // Select rest with Shift
     for (let i = 1; i < titles.length; i++) {
       await this.getPrefabCard(titles[i]).click({ modifiers: ['Shift'] });
     }
 
-    // Setup dialog handler before triggering
     this.page.once('dialog', dialog => dialog.accept());
 
-    // Right-click to open context menu
     await this.getPrefabCard(titles[0]).click({ button: 'right' });
 
     const deleteMenuItem = this.page.getByRole('menuitem', {
@@ -137,6 +125,35 @@ export class PrefabListPage {
     );
     await deleteMenuItem.click();
     await deletePromise;
+  }
+
+  async createPrefabViaApi(title: string, data: any = {}): Promise<string> {
+    const response = await this.page.request.post(
+      'http://localhost:7007/api/scaffolder-studio/prefabs',
+      {
+        data: {
+          title,
+          owner: 'test-owner',
+          node: {
+            id: 'root-node',
+            type: 'step',
+            data: {
+              name: 'test-step',
+            },
+            position: { x: 0, y: 0 },
+            ...data.node,
+          },
+          ...data,
+        },
+      },
+    );
+
+    if (!response.ok()) {
+      throw new Error(`Failed to create prefab via API: ${response.statusText()}`);
+    }
+
+    const json = await response.json();
+    return json.id;
   }
 
   getSectionHeader(title: string): Locator {

@@ -30,7 +30,7 @@ test.describe('Prefab Grouping', () => {
 
     test('should display "Your Prefabs" and "Library Prefabs" in the template editor sidebar', async () => {
         const title = `sidebar-test-${Date.now()}`;
-        await prefabListPage.createPrefabViaUi(title);
+        await prefabListPage.createPrefabViaApi(title);
         createdPrefabTitles.push(title);
 
         await scaffolderStudioListPage.goto();
@@ -44,7 +44,7 @@ test.describe('Prefab Grouping', () => {
 
     test('should render an unpublished prefab when added to a template', async () => {
         const title = `render-test-${Date.now()}`;
-        await prefabListPage.createPrefabViaUi(title);
+        await prefabListPage.createPrefabViaApi(title);
         createdPrefabTitles.push(title);
 
         // Navigate to editor

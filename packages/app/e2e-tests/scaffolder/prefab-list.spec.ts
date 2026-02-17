@@ -24,7 +24,7 @@ test.describe('Prefab List Page', () => {
 
   test('should display prefabs', async () => {
     const title = `test-prefab-${Date.now()}`;
-    await prefabListPage.createPrefabViaUi(title);
+    await prefabListPage.createPrefabViaApi(title);
     createdPrefabTitles.push(title);
 
     await prefabListPage.goto();
@@ -35,9 +35,9 @@ test.describe('Prefab List Page', () => {
     const title1 = `unique-prefab-1-${Date.now()}`;
     const title2 = `unique-prefab-2-${Date.now()}`;
 
-    await prefabListPage.createPrefabViaUi(title1);
+    await prefabListPage.createPrefabViaApi(title1);
     createdPrefabTitles.push(title1);
-    await prefabListPage.createPrefabViaUi(title2);
+    await prefabListPage.createPrefabViaApi(title2);
     createdPrefabTitles.push(title2);
 
     await prefabListPage.goto();
@@ -49,7 +49,7 @@ test.describe('Prefab List Page', () => {
 
   test('should delete a prefab', async () => {
     const title = `delete-me-${Date.now()}`;
-    await prefabListPage.createPrefabViaUi(title);
+    await prefabListPage.createPrefabViaApi(title);
     createdPrefabTitles.push(title);
 
     await prefabListPage.goto();
@@ -65,9 +65,9 @@ test.describe('Prefab List Page', () => {
     const title1 = `bulk-delete-1-${Date.now()}`;
     const title2 = `bulk-delete-2-${Date.now()}`;
 
-    await prefabListPage.createPrefabViaUi(title1);
+    await prefabListPage.createPrefabViaApi(title1);
     createdPrefabTitles.push(title1);
-    await prefabListPage.createPrefabViaUi(title2);
+    await prefabListPage.createPrefabViaApi(title2);
     createdPrefabTitles.push(title2);
 
     await prefabListPage.goto();
