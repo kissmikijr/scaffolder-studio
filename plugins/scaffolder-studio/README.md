@@ -14,7 +14,7 @@ The Scaffolder Studio plugin provides a visual interface for creating and editin
 
 ### Prerequisites
 
-- Backstage version `1.24` or newer (supporting the New Backend System).
+- Backstage version `1.44` or newer (supporting the New Backend System).
 - The `scaffolder` plugin must be installed and configured in your Backstage instance.
 
 ### 1. Install the packages
@@ -160,12 +160,12 @@ If you are using the Backstage Permission Framework, this plugin exports several
 
 Permission IDs exported by `@kissmiklosjr/plugin-scaffolder-studio-common`:
 
-- `visualScaffolderEditorPublishPermission`
-- `visualScaffolderEditorUnpublishPermission`
-- `visualScaffolderEditorPrefabReadPermission`
-- `visualScaffolderEditorPrefabCreatePermission`
-- `visualScaffolderEditorPrefabDeletePermission`
-- `visualScaffolderEditorPermanentlyDeletePermission`
+- `scaffolderStudioPublishPermission`
+- `scaffolderStudioUnpublishPermission`
+- `scaffolderStudioPrefabReadPermission`
+- `scaffolderStudioPrefabCreatePermission`
+- `scaffolderStudioPrefabDeletePermission`
+- `scaffolderStudioPermanentlyDeletePermission`
 
 Use these in your permission policy (e.g., `packages/backend/src/extensions/permissionsPolicyExtension.ts`) to control access.
 

@@ -1,79 +1,162 @@
-# Features
+# Scaffolder Studio
 
-## Projects
+Scaffolder Studio is a plugin for Backstage that allows you to create and edit Backstage templates in a visual way. It provides a dedicated user based space where you can create and trial via dry run your Scaffolder Templates. 
 
-A project equals to one yaml file. It can contain multiple backstage templates. 
-Projects can be created, trashed. 
-A trashed project can be permanently deleted.
-You can import existing backstage templates in yaml or json format.
+With Scaffolder Studio, you can:
 
+- Create and edit your own Backstage templates in a visual way
+- Trial your templates via an enhanced dry run UI
+- Create your own Prefabs
+- Publish prefabs to the Prefab Library
+- Publish your template via the configured publisher
 
-## Editor
+## Quick Start
 
-There is an add template button. This starts the editing flow by adding the initial parent template node to the project.
-In the right side menu you can give a name to the project. By default it will be called untitled.
-Under the title field there is a search bar. One can search for node name/titles, query is submitted on enter and the view should jump to that.
+Install the backstage plugins to your backstage instance:
 
-The right side menu contains the form editor for the different nodes. The content depends on the selected node. It does not need to be submitted it auto updates.
+```bash
+yarn add @kissmiklosjr/plugin-scaffolder-studio
+yarn add @kissmiklosjr/plugin-scaffolder-studio-backend
+``` 
 
-You can create backstage template yaml files in a node graph representation. There are 5 different node types.
+### 2. Configure the Backend
 
-- template
-- step
-- parameter
-- property
-- output
+In your `packages/backend/src/index.ts`, add the backend plugin:
 
-### Template
+```typescript
+// packages/backend/src/index.ts
 
-A node that corresponds to the general envelope properties of a backstage template yaml file.
-It has 3 connection points. One which can be used to make steps. One to make parameters and one for the output.
+import { createBackend } from '@backstage/backend-defaults';
 
-A template node can have only 1 direct connection to a step, parameter or output node.
+const backend = createBackend();
 
-### Step
+// ... other plugins
 
-This contains the `spec.step`. You can select an action. The actions are fetched from your instance's scaffolder API. 
-The form is rendered via the rjsf input schema. If the selected action has output schema the available outputs will be rendered into a popper. It can be toggled via the `>`. 
+// Add the scaffolder-studio backend
+backend.add(import('@kissmiklosjr/plugin-scaffolder-studio-backend'));
 
-A step can be connected to another step node. To make a new step node drag from the right side handle. The new node will be created where you drop.
+backend.start();
+```
 
-In the form when you select an input field a popper will be rendered under/over the inputfield. This popper contains the available parameters or other step outputs for this particular node. If a parameter or step output is not avaialbe it means this step does not have access to it. On selecting a field the correct template string will be inserted into the inputfield.
+### 3. Configure the Frontend
 
-### Parameter
+In your `packages/app/src/App.tsx`, add the route for the Studio. You should also register any custom field extensions you want to be available in the editor.
 
-This node is a filler node which only acts as a group for the children property nodes. It controlls the title of the parameters block. To create a property node drag the right side handle of the node on drop it will create the property node.
+```tsx
+// packages/app/src/App.tsx
 
-### Property
-Property nodes are the parameter properties. These are available in the step nodes. You can configure the name, type and required field on the property.
+import { ScaffolderStudioPage } from '@kissmiklosjr/plugin-scaffolder-studio';
+import { ScaffolderFieldExtensions } from '@backstage/plugin-scaffolder-react';
+import {
+  EntityPickerFieldExtension,
+  RepoUrlPickerFieldExtension,
+  OwnerPickerFieldExtension,
+  // ... other extensions
+} from '@backstage/plugin-scaffolder';
 
+// ...
 
-### Output
+const routes = (
+  <FlatRoutes>
+    {/* ... other routes */}
 
-Output section of the backstage yaml file with link or free text block
+    <Route
+      path="/scaffolder-studio/*"
+      element={
+        <ScaffolderStudioPage>
+          {/* Register field extensions here so they appear in the editor */}
+          <ScaffolderFieldExtensions>
+            <EntityPickerFieldExtension />
+            <RepoUrlPickerFieldExtension />
+            <OwnerPickerFieldExtension />
+          </ScaffolderFieldExtensions>
+        </ScaffolderStudioPage>
+      }
+    />
+  </FlatRoutes>
+);
+```
 
----
-
-## Alpha Frontend (New Frontend System)
+#### Alpha Frontend (New Frontend System)
 
 This project includes a frontend using the [new Backstage frontend system](https://backstage.io/docs/frontend-system/). The alpha frontend is available on a separate entry point.
 
-### Running the Alpha Frontend
-
-```bash
-yarn start:alpha
-```
-
-### What's Different
-
-The alpha frontend is **fully migrated** to the new frontend system:
 - All plugins imported from `/alpha` subpaths (catalog, scaffolder, techdocs, etc.)
-- APIs as `ApiBlueprint` extensions
-- Sign-in page as `SignInPageBlueprint`
-- Custom sidebar as `NavContentBlueprint`  
-- Scaffolder Studio as `PageBlueprint`
-- Feature discovery enabled
 
-No compatibility helpers (`convertLegacyAppOptions`, `convertLegacyAppRoot`) are used.
 
-See the [Backstage migration guide](https://backstage.io/docs/frontend-system/building-apps/migrating/) for more details.
+### 4. Add to Sidebar (Optional)
+
+To make the editor easily accessible, you can add a link to the sidebar in `packages/app/src/components/Root/Root.tsx`:
+
+```tsx
+// packages/app/src/components/Root/Root.tsx
+
+import CreateComponentIcon from '@material-ui/icons/AddCircleOutline'; // or equivalent
+
+// ...
+
+export const Root = ({ children }: PropsWithChildren<{}>) => (
+  <SidebarPage>
+    <Sidebar>
+      {/* ... */}
+      <SidebarItem
+        icon={CreateComponentIcon}
+        to="scaffolder-studio"
+        text="Studio"
+      />
+      {/* ... */}
+    </Sidebar>
+  </SidebarPage>
+);
+```
+## Permissions
+
+If you are using the Backstage Permission Framework, this plugin exports several permissions that you may need to configure in your permission policy.
+
+Permission IDs exported by `@kissmiklosjr/plugin-scaffolder-studio-common`:
+
+- `scaffolderStudioPublishPermission`
+- `scaffolderStudioUnpublishPermission`
+- `scaffolderStudioPrefabReadPermission`
+- `scaffolderStudioPrefabCreatePermission`
+- `scaffolderStudioPrefabDeletePermission`
+- `scaffolderStudioPermanentlyDeletePermission`
+
+Use these in your permission policy (e.g., `packages/backend/src/extensions/permissionsPolicyExtension.ts`) to control access.
+
+
+## Key Concepts
+
+### Templates
+
+You can create templates. These are going to be fully functional Backstage Scaffolder templates. The templates that you create are yours only, others cannot access these. The template creation is done in a visual way. 
+
+You can start by creating a new template. In the editor you add Step, Parameters, Property and Output nodes to construct a full Backstage Scaffolder Template.
+
+The nodes are connected to each other to create a template which gets serialized into the yaml representation the node's position in the graph determines its position in the yaml file.
+
+If you have created a template you can run Dry Run to test it out and iterate on it. 
+
+The templates are auto-saved to localstorage and synced to the backend on an interval. 
+
+If you have a publisher configured in your app-config.yaml file and you are happy with your template you can publish it to the Backstage Scaffolder backend. If you do not have a publisher configured you can still create and edit templates but you will need to manually copy the yaml representation to ingest it into your Backstage instance.
+
+Permissions to control the publishing of templates:
+- `scaffolderStudioPublishPermission`
+- `scaffolderStudioUnpublishPermission`
+
+### Prefabs
+
+Prefabs are atomic Step, Output or Property nodes that you can reuse across multiple templates. The prefabs that you create are yours only if you want to make it avaialble to everyone you can publish them into the Prefab Library.
+
+You can create prefabs via the prefab tab. You can create a new prefab by clicking the "New Prefab" button. You can then select Step, Output or Property nodes. 
+Once you are happy with your prefab you can publish it to the Prefab Library. You can then use the prefab in your templates by dragging and dropping it from the prefab library to the template editor.
+
+The prefabs are going to be serialized int noneditable yaml blocks in the yaml view.
+
+A published prefab will be available in the Prefab Library for all users of your Backstage instance. You can also unpublish a prefab to make it unavailable to others.
+
+These permissions control the prefabs:
+- `scaffolderStudioPrefabReadPermission`
+- `scaffolderStudioPrefabCreatePermission`
+- `scaffolderStudioPrefabDeletePermission`
