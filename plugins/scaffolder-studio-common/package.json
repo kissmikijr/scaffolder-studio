@@ -1,6 +1,6 @@
 {
   "name": "@kissmiklosjr/plugin-scaffolder-studio-common",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "license": "Apache-2.0",
   "description": "Common functionalities for the scaffolder-studio plugin",
   "main": "src/index.ts",
