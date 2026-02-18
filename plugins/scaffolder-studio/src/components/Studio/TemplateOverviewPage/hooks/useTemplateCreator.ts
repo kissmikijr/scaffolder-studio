@@ -11,13 +11,24 @@ export const useTemplateCreator = () => {
     const createTemplate = async () => {
         const templateId = uuidv4();
         const templateNodeId = uuidv4();
+
+        const sidebarWidth = Number(localStorage.getItem('scaffolderStudioRightSideContentWidth')) || 540;
+        const availableWidth = window.innerWidth - sidebarWidth;
+        const availableHeight = window.innerHeight;
+
+        const nodeWidth = 260;
+        const nodeHeight = 190;
+
+        const x = Math.max(20, (availableWidth - nodeWidth) / 2);
+        const y = Math.max(20, (availableHeight - nodeHeight) / 4);
+
         await api.create({
             id: templateId,
             nodes: [
                 {
                     id: templateNodeId,
                     type: 'template',
-                    position: { x: 100, y: 100 },
+                    position: { x: x - 70, y },
                     selected: true,
                     data: {
                         nodeType: 'template',

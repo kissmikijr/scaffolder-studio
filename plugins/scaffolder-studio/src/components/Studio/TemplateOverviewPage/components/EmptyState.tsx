@@ -1,6 +1,6 @@
 import React from 'react';
-import { Box, Button } from '@mui/material';
-import { EmptyState as BackstageEmptyState } from '@backstage/core-components';
+import { Box, Button, Typography } from '@mui/material';
+import { TemplateGraphIcon } from './TemplateGraphIcon';
 
 type EmptyStateProps = {
     title: string;
@@ -18,8 +18,9 @@ export const EmptyState = ({
     description,
     action,
     image,
-    missing = "content",
 }: EmptyStateProps) => {
+
+
     return (
         <Box
             sx={{
@@ -30,24 +31,36 @@ export const EmptyState = ({
                 height: '100%',
                 p: 4,
                 textAlign: 'center',
+                minHeight: '400px',
             }}
         >
-            <BackstageEmptyState
-                missing={missing}
-                title={title}
-                description={description}
-                action={action && (
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={action.onClick}
-                        sx={{ mt: 2 }}
-                    >
-                        {action.label}
-                    </Button>
-                )}
-            />
-            {image && <Box sx={{ mt: 4 }}>{image}</Box>}
+            {image ? (
+                <Box sx={{ mb: 2 }}>{image}</Box>
+            ) : (
+                <Box sx={{ mb: 2 }}>
+                    <TemplateGraphIcon />
+                </Box>
+            )}
+
+            <Typography variant="h6" gutterBottom color="text.primary">
+                {title}
+            </Typography>
+
+            {description && (
+                <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 450, mb: action ? 3 : 0 }}>
+                    {description}
+                </Typography>
+            )}
+
+            {action && (
+                <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={action.onClick}
+                >
+                    {action.label}
+                </Button>
+            )}
         </Box>
     );
 };
