@@ -1,0 +1,16 @@
+{
+  "mode": "exit",
+  "tag": "beta",
+  "initialVersions": {
+    "app": "0.0.0",
+    "backend": "0.0.0",
+    "@kissmiklosjr/plugin-catalog-backend-module-scaffolder-studio-provider": "0.0.16",
+    "@kissmiklosjr/plugin-permission-backend-module-scaffolder-studio": "0.0.7",
+    "@kissmiklosjr/plugin-scaffolder-studio": "0.1.18",
+    "@kissmiklosjr/plugin-scaffolder-studio-backend": "0.0.20",
+    "@kissmiklosjr/plugin-scaffolder-studio-common": "0.0.16"
+  },
+  "changesets": [
+    "tough-turtles-march"
+  ]
+}

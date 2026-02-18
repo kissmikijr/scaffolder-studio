@@ -1,6 +1,6 @@
 {
   "name": "@kissmiklosjr/plugin-permission-backend-module-scaffolder-studio",
-  "version": "0.0.7",
+  "version": "1.0.0-beta.0",
   "license": "CC-BY-NC-4.0",
   "description": "The scaffolder-studio backend module for the permission plugin.",
   "main": "src/index.ts",
