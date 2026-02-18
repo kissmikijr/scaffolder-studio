@@ -1,7 +1,7 @@
 {
   "name": "@kissmiklosjr/plugin-catalog-backend-module-scaffolder-studio-provider",
   "version": "0.0.16",
-  "license": "Apache-2.0",
+  "license": "CC-BY-NC-4.0",
   "description": "The scaffolder-studio-provider backend module for the catalog plugin.",
   "main": "src/index.ts",
   "types": "src/index.ts",
