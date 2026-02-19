@@ -14,10 +14,17 @@ With Scaffolder Studio, you can:
 
 Install the backstage plugins to your backstage instance:
 
+Add the frontend plugin
+
 ```bash
 yarn add @kissmiklosjr/plugin-scaffolder-studio
-yarn add @kissmiklosjr/plugin-scaffolder-studio-backend
 ``` 
+
+Add the backend plugin
+
+```bash
+yarn add @kissmiklosjr/plugin-scaffolder-studio-backend
+```
 
 ### 2. Configure the Backend
 
@@ -74,6 +81,26 @@ const routes = (
       }
     />
   </FlatRoutes>
+);
+```
+
+Add it to the sidebar
+
+```typescript
+// packages/app/src/components/Root/Root.tsx
+
+import CreateComponentIcon from '@material-ui/icons/AddCircleOutline'; // or equivalent
+
+// ...
+
+export const Root = ({ children }: PropsWithChildren<{}>) => (
+  <SidebarPage>
+    <Sidebar>
+      {/* ... */}
+      <SidebarItem icon={CreateComponentIcon} to="scaffolder-studio" text="Scaffolder Studio" />
+      {/* ... */}
+    </Sidebar>
+  </SidebarPage>
 );
 ```
 

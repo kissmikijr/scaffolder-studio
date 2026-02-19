@@ -39,10 +39,6 @@ export const PrefabTreeView = ({
     setSearchQuery,
   });
 
-  // Filter out personal prefabs that are also in library to avoid duplication if needed,
-  // but usually "is_published" already handles this in the API if we were using one list.
-  // Since we have two lists, let's just show them as groups.
-  // We want "Your Prefabs" to be those that have NEVER been published.
   const unpublished = personalPrefabs.filter(p => !p.published_at);
 
   const groups = [

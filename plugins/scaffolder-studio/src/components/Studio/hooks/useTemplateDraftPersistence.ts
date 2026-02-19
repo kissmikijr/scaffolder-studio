@@ -155,7 +155,8 @@ const parseDraft = (raw: string | null): StoredTemplateDraft | null => {
       parsed.updated &&
       parsed.state?.nodes &&
       parsed.state?.edges &&
-      parsed.state?.viewport
+      parsed.state?.viewport &&
+      typeof parsed.state.viewport === 'object'
     ) {
       return parsed;
     }

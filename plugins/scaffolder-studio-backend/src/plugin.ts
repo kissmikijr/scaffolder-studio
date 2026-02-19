@@ -72,15 +72,21 @@ export default createBackendPlugin({
             database,
           });
 
+        const prefabStore = await DatabasePrefabStore.create({
+          database,
+        });
+        const prefabLibraryStore = await DatabasePrefabLibraryStore.create({
+          database,
+        });
+
         const scaffolderStudioService =
           new ScaffolderStudioService({
             events,
             visualTemplateProjectStore,
             publishedTemplatesStore,
             schemaPatcher,
-            prefabLibraryStore: await DatabasePrefabLibraryStore.create({
-              database,
-            }),
+            prefabLibraryStore,
+            prefabStore,
             publishers: [...publishers],
           });
 

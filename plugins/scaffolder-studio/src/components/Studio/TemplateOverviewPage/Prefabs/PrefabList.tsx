@@ -6,7 +6,6 @@ import {
     TableBody,
     TableCell,
     TableContainer,
-    TableHead,
     TableRow,
     IconButton,
     Menu,
@@ -37,6 +36,31 @@ import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { PrefabDragPreviewRef } from './PrefabDragPreview';
 import { PrefabLibraryClientApi } from '../../../../api';
+
+import { TemplateVisualSummary } from '../components/TemplateVisualSummary';
+import { DateTime } from 'luxon';
+
+const formatElapsedTime = (dateString: string) => {
+    const date = DateTime.fromISO(dateString);
+    if (!date.isValid) return 'Invalid date';
+
+    const now = DateTime.now();
+    const diff = now
+        .diff(date, ['years', 'months', 'days', 'hours', 'minutes'])
+        .toObject();
+
+    if (diff.years && diff.years > 0)
+        return `${Math.floor(diff.years)} ${Math.floor(diff.years) === 1 ? 'year' : 'years'} ago`;
+    if (diff.months && diff.months > 0)
+        return `${Math.floor(diff.months)} ${Math.floor(diff.months) === 1 ? 'month' : 'months'} ago`;
+    if (diff.days && diff.days > 0)
+        return `${Math.floor(diff.days)} ${Math.floor(diff.days) === 1 ? 'day' : 'days'} ago`;
+    if (diff.hours && diff.hours > 0)
+        return `${Math.floor(diff.hours)} ${Math.floor(diff.hours) === 1 ? 'hour' : 'hours'} ago`;
+    if (diff.minutes && diff.minutes > 0)
+        return `${Math.floor(diff.minutes)} ${Math.floor(diff.minutes) === 1 ? 'minute' : 'minutes'} ago`;
+    return 'just now';
+};
 
 interface PrefabListProps {
     prefabs: Prefab[] | undefined;
@@ -256,37 +280,47 @@ export const PrefabList = ({
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
+                borderRadius: '12px',
+                border: `1px solid ${theme.palette.divider}`,
+                backgroundColor: 'transparent',
                 overflow: 'hidden',
             }}
         >
             <TableContainer component={Box} sx={{ boxShadow: 'none', backgroundColor: 'transparent' }}>
-                <Table stickyHeader size="small" aria-label="prefabs table">
-                    <TableHead
+                <Table stickyHeader size="small" aria-label="prefabs table" sx={{ backgroundColor: 'transparent' }}>
+                    <Box
+                        component="thead"
                         sx={{
-                            '& .MuiTableCell-root': {
+                            '& th': {
                                 borderBottom: `1px solid ${theme.palette.divider}`,
                                 backgroundColor: 'transparent',
+                                color: theme.palette.text.secondary,
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                py: 1.5,
+                                px: 2,
+                                textAlign: 'left',
                             },
                         }}
                     >
-                        <TableRow>
-                            <TableCell />
-                            <TableCell>Type</TableCell>
-                            <TableCell>Name</TableCell>
-                            {!compact && <TableCell>Description</TableCell>}
-                            {!compact && <TableCell>Updated At</TableCell>}
-                            <TableCell>Version</TableCell>
-                            {!compact && <TableCell>Owner</TableCell>}
-                        </TableRow>
-                    </TableHead>
+                        <tr>
+                            <th>Nodes</th>
+                            <th>Name</th>
+                            {!compact && <th>Description</th>}
+                            {!compact && <th style={{ textAlign: 'right' }}>Updated</th>}
+                            {!compact && <th style={{ textAlign: 'center' }}>Version</th>}
+                            <th style={{ textAlign: 'right' }}>Owner</th>
+                            <th style={{ textAlign: 'right' }}>Type</th>
+                        </tr>
+                    </Box>
                     <TableBody
                         sx={{
-                            '& .MuiTableRow-root:nth-of-type(odd)': {
-                                backgroundColor: 'transparent',
-                            },
-                            '& .MuiTableRow-root .MuiTableCell-root': {
+                            '& .MuiTableCell-root': {
                                 borderBottom: `1px solid ${theme.palette.divider}`,
-                                backgroundColor: 'transparent',
+                                py: 1.5,
+                                backgroundColor: 'transparent !important',
                             },
                         }}
                     >
@@ -350,23 +384,27 @@ export const PrefabList = ({
                                                     cursor: draggable ? 'grab' : 'default',
                                                 }}
                                             >
-                                                <TableCell padding="checkbox">
-                                                    <IconButton
-                                                        aria-label="expand row"
-                                                        size="small"
-                                                        onClick={e => toggleGroup(groupId, e)}
-                                                        sx={{
-                                                            visibility: versionCount > 1 ? 'visible' : 'hidden',
-                                                        }}
-                                                    >
-                                                        {isExpanded ? (
-                                                            <KeyboardArrowDownIcon fontSize="small" />
-                                                        ) : (
-                                                            <KeyboardArrowRightIcon fontSize="small" />
-                                                        )}
-                                                    </IconButton>
+                                                <TableCell sx={{ minWidth: 160 }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <IconButton
+                                                            aria-label="expand row"
+                                                            size="small"
+                                                            onClick={e => toggleGroup(groupId, e)}
+                                                            sx={{
+                                                                visibility: versionCount > 1 ? 'visible' : 'hidden',
+                                                                padding: 0,
+                                                                mr: 1,
+                                                            }}
+                                                        >
+                                                            {isExpanded ? (
+                                                                <KeyboardArrowDownIcon fontSize="small" />
+                                                            ) : (
+                                                                <KeyboardArrowRightIcon fontSize="small" />
+                                                            )}
+                                                        </IconButton>
+                                                        <TemplateVisualSummary nodes={[latestPrefab.node]} />
+                                                    </Box>
                                                 </TableCell>
-                                                <TableCell>{getPrefabPill(latestPrefab)}</TableCell>
                                                 <TableCell>
                                                     <Typography
                                                         variant="body2"
@@ -389,6 +427,7 @@ export const PrefabList = ({
                                                                 overflow: 'hidden',
                                                                 textOverflow: 'ellipsis',
                                                                 whiteSpace: 'nowrap',
+                                                                color: 'text.secondary',
                                                             }}
                                                         >
                                                             {latestPrefab.description}
@@ -396,26 +435,29 @@ export const PrefabList = ({
                                                     </TableCell>
                                                 )}
                                                 {!compact && (
-                                                    <TableCell>
+                                                    <TableCell align="right">
                                                         <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
                                                             {latestPrefab.updated_at
-                                                                ? new Date(latestPrefab.updated_at).toLocaleDateString()
+                                                                ? formatElapsedTime(latestPrefab.updated_at)
                                                                 : 'N/A'}
                                                         </Typography>
                                                     </TableCell>
                                                 )}
-                                                <TableCell>
-                                                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                                                        v{latestPrefab.version || 'N/A'}
-                                                    </Typography>
-                                                </TableCell>
                                                 {!compact && (
-                                                    <TableCell>
+                                                    <TableCell align="center">
+                                                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                                                            v{latestPrefab.version || 'N/A'}
+                                                        </Typography>
+                                                    </TableCell>
+                                                )}
+                                                {!compact && (
+                                                    <TableCell align="right">
                                                         <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
                                                             {latestPrefab.owner}
                                                         </Typography>
                                                     </TableCell>
                                                 )}
+                                                <TableCell>{getPrefabPill(latestPrefab)}</TableCell>
                                             </TableRow>
                                             {isExpanded &&
                                                 sortedGroup.slice(1).map(prefab => (
@@ -431,7 +473,6 @@ export const PrefabList = ({
                                                             cursor: draggable ? 'grab' : 'default',
                                                         }}
                                                     >
-                                                        <TableCell />
                                                         <TableCell />
                                                         <TableCell>
                                                             <Typography
@@ -456,6 +497,7 @@ export const PrefabList = ({
                                                                         overflow: 'hidden',
                                                                         textOverflow: 'ellipsis',
                                                                         whiteSpace: 'nowrap',
+                                                                        color: 'text.secondary',
                                                                     }}
                                                                 >
                                                                     {latestPrefab.description}
@@ -463,26 +505,29 @@ export const PrefabList = ({
                                                             </TableCell>
                                                         )}
                                                         {!compact && (
-                                                            <TableCell>
+                                                            <TableCell align="right">
                                                                 <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
                                                                     {prefab.updated_at
-                                                                        ? new Date(prefab.updated_at).toLocaleDateString()
+                                                                        ? formatElapsedTime(prefab.updated_at)
                                                                         : 'N/A'}
                                                                 </Typography>
                                                             </TableCell>
                                                         )}
-                                                        <TableCell>
-                                                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                                                                v{prefab.version || 'N/A'}
-                                                            </Typography>
-                                                        </TableCell>
                                                         {!compact && (
-                                                            <TableCell>
+                                                            <TableCell align="center">
+                                                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                                                                    v{prefab.version || 'N/A'}
+                                                                </Typography>
+                                                            </TableCell>
+                                                        )}
+                                                        {!compact && (
+                                                            <TableCell align="right">
                                                                 <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
                                                                     {prefab.owner}
                                                                 </Typography>
                                                             </TableCell>
                                                         )}
+                                                        <TableCell />
                                                     </TableRow>
                                                 ))}
                                         </React.Fragment>
@@ -496,7 +541,7 @@ export const PrefabList = ({
                                                 <React.Fragment key={group.title + idx}>
                                                     {group.prefabs.length > 0 && (
                                                         <>
-                                                            <TableRow sx={{ backgroundColor: 'rgba(255, 255, 255, 0.05) !important' }}>
+                                                            <TableRow sx={{ borderTop: `1px solid ${theme.palette.divider}`, borderBottom: `1px solid ${theme.palette.divider}` }}>
                                                                 <TableCell colSpan={compact ? 4 : 7} sx={{ py: 1 }}>
                                                                     <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.7rem', opacity: 0.7, textTransform: 'uppercase' }}>
                                                                         {group.title}
@@ -523,7 +568,7 @@ export const PrefabList = ({
                                     <>
                                         {published.length > 0 && (
                                             <>
-                                                <TableRow sx={{ backgroundColor: 'rgba(255, 255, 255, 0.05) !important' }}>
+                                                <TableRow sx={{ borderTop: `1px solid ${theme.palette.divider}`, borderBottom: `1px solid ${theme.palette.divider}` }}>
                                                     <TableCell colSpan={compact ? 4 : 7} sx={{ py: 1 }}>
                                                         <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.7rem', opacity: 0.7, textTransform: 'uppercase' }}>
                                                             Library Prefabs
@@ -535,7 +580,7 @@ export const PrefabList = ({
                                         )}
                                         {unpublished.length > 0 && (
                                             <>
-                                                <TableRow sx={{ backgroundColor: 'rgba(255, 255, 255, 0.05) !important' }}>
+                                                <TableRow sx={{ borderTop: `1px solid ${theme.palette.divider}`, borderBottom: `1px solid ${theme.palette.divider}` }}>
                                                     <TableCell colSpan={compact ? 4 : 7} sx={{ py: 1 }}>
                                                         <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.7rem', opacity: 0.7, textTransform: 'uppercase' }}>
                                                             Your Prefabs
@@ -604,6 +649,6 @@ export const PrefabList = ({
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Box>
+        </Box >
     );
 };

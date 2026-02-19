@@ -54,12 +54,12 @@ const ParametersNode = ({
           backgroundColor: 'rgba(79, 255, 224, 0.1)', // Semi-transparent
           color: '#282a36',
           pointerEvents: 'all',
-          border: `2px ${selected ? 'solid' : 'dashed'} ${
-            selected ? SELECTED_BORDER_COLOR : 'rgba(79, 255, 224, 0.8)'
-          }`,
+          border: `2px ${selected ? 'solid' : 'dashed'} ${selected ? SELECTED_BORDER_COLOR : 'rgba(79, 255, 224, 0.8)'
+            }`,
           '&:hover': {
             cursor: 'grab',
           },
+          outline: 'none',
         }}
         data-interactive="true"
       >

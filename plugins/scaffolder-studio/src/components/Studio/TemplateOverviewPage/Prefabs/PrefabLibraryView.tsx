@@ -1,46 +1,36 @@
 import React from 'react';
+import { useNavigate, useOutletContext } from 'react-router-dom';
+import { Box } from '@mui/material';
 import { PrefabList } from './PrefabList';
-import { PrefabListHeader } from './PrefabListHeader';
 import { usePrefabTree } from './usePrefabTree';
 import { useApi } from '@backstage/core-plugin-api';
 import { prefabLibraryApiRef } from '../../../../api';
-import { useNavigate } from 'react-router-dom';
 
 export const PrefabLibraryView = () => {
+  const { searchText } = useOutletContext<{ searchText: string }>();
   const navigate = useNavigate();
   const prefabLibraryApi = useApi(prefabLibraryApiRef);
 
   const {
     prefabs,
     isLoading,
-    searchQuery,
-    setSearchQuery,
-    isSearchExpanded,
-    handleSearchToggle,
-    handleSearchClose,
-    searchInputRef,
     refetch,
-  } = usePrefabTree(prefabLibraryApi, 'library-prefabs', { fetchMethod: 'listLibrary' });
+  } = usePrefabTree(prefabLibraryApi, 'library-prefabs', {
+    fetchMethod: 'listLibrary',
+    searchQuery: searchText,
+  });
 
   return (
-    <>
-      <PrefabListHeader
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        isSearchExpanded={isSearchExpanded}
-        handleSearchToggle={handleSearchToggle}
-        handleSearchClose={handleSearchClose}
-        searchInputRef={searchInputRef}
-      />
+    <Box sx={{ mx: 16 }}>
       <PrefabList
         prefabs={prefabs}
         isLoading={isLoading}
-        searchQuery={searchQuery}
+        searchQuery={searchText}
         onPrefabClick={id => navigate(`../prefab/${id}`)}
         prefabLibraryApi={prefabLibraryApi}
         onDeleteSuccess={refetch}
         groupByPublished={false}
       />
-    </>
+    </Box>
   );
 };

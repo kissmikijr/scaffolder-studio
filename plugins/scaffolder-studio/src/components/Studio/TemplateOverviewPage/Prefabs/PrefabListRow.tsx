@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
-import { Box, Typography, Tooltip, Menu, MenuItem } from '@mui/material';
+import { Box, Typography, Tooltip, Menu, MenuItem, ListItemIcon, TableCell, TableRow, useTheme } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useNavigate } from 'react-router-dom';
+import { DateTime } from 'luxon';
 import {
     StoredPrefab,
     NodeTypeColors,
@@ -20,6 +24,7 @@ import { prefabsApiRef } from '../../../../api/PrefabsClient';
 import { usePermission } from '@backstage/plugin-permission-react';
 import { styledMenuProps } from '../../components/menuStyles';
 import { useConfirmationDialog } from '../../dialogs/ConfirmationDialogContext';
+import { TemplateVisualSummary } from '../components/TemplateVisualSummary';
 
 type PrefabListRowProps = {
     prefab: StoredPrefab;
@@ -27,6 +32,28 @@ type PrefabListRowProps = {
     onSelect: (e: React.MouseEvent) => void;
     onContextMenu: (e: React.MouseEvent) => void;
     onDelete?: (prefabId: string) => void;
+};
+
+const formatElapsedTime = (dateString: string) => {
+    const date = DateTime.fromISO(dateString);
+    if (!date.isValid) return 'Invalid date';
+
+    const now = DateTime.now();
+    const diff = now
+        .diff(date, ['years', 'months', 'days', 'hours', 'minutes'])
+        .toObject();
+
+    if (diff.years && diff.years > 0)
+        return `${Math.floor(diff.years)} ${Math.floor(diff.years) === 1 ? 'year' : 'years'} ago`;
+    if (diff.months && diff.months > 0)
+        return `${Math.floor(diff.months)} ${Math.floor(diff.months) === 1 ? 'month' : 'months'} ago`;
+    if (diff.days && diff.days > 0)
+        return `${Math.floor(diff.days)} ${Math.floor(diff.days) === 1 ? 'day' : 'days'} ago`;
+    if (diff.hours && diff.hours > 0)
+        return `${Math.floor(diff.hours)} ${Math.floor(diff.hours) === 1 ? 'hour' : 'hours'} ago`;
+    if (diff.minutes && diff.minutes > 0)
+        return `${Math.floor(diff.minutes)} ${Math.floor(diff.minutes) === 1 ? 'minute' : 'minutes'} ago`;
+    return 'just now';
 };
 
 const getNodeTypeConfig = (node: StoredPrefab['node']) => {
@@ -102,23 +129,22 @@ export const PrefabListRow = ({
                 if (onDelete) {
                     onDelete(prefab.id);
                 }
+                alertApi.post({
+                    message: 'Prefab has been deleted',
+                    severity: 'success',
+                    display: 'transient',
+                });
             } catch (error) {
                 console.error('Failed to delete prefab:', error);
             }
         }
         handleCloseContextMenu();
-        alertApi.post({
-            message: 'Prefab has been deleted',
-            severity: 'success',
-            display: 'transient',
-        });
     };
 
     const handlePublishToLibrary = async () => {
         try {
             await api.addToLibrary({
                 prefabId: prefab.id,
-                owner: prefab.owner || 'unknown',
             });
             alertApi.post({
                 message: 'Prefab published to library successfully',
@@ -135,9 +161,11 @@ export const PrefabListRow = ({
         handleCloseContextMenu();
     };
 
+    const theme = useTheme();
+
     return (
         <>
-            <Box
+            <TableRow
                 data-testid="prefab-list-row"
                 onClick={e => {
                     e.stopPropagation();
@@ -148,104 +176,130 @@ export const PrefabListRow = ({
                     navigate(`/scaffolder-studio/prefab/${prefab.id || ''}`)
                 }
                 onContextMenu={handleContextMenu}
+                hover
+                selected={isSelected}
                 sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    px: 2,
-                    py: 1.25,
-                    gap: 2,
                     cursor: 'default',
                     userSelect: 'none',
-                    borderBottom: '1px solid',
-                    borderColor: 'divider',
-                    bgcolor: isSelected ? 'action.selected' : 'transparent',
-                    transition: 'background-color 0.1s',
+                    position: 'relative',
+                    backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.08) !important' : 'transparent !important',
+                    borderLeft: isSelected ? `4px solid ${theme.palette.primary.main}` : '4px solid transparent',
+                    transition: 'all 0.2s ease',
+                    '&.Mui-selected': {
+                        backgroundColor: 'rgba(255, 255, 255, 0.08) !important',
+                    },
                     '&:hover': {
-                        bgcolor: isSelected ? 'action.selected' : 'action.hover',
+                        backgroundColor: isSelected
+                            ? 'rgba(255, 255, 255, 0.12) !important'
+                            : 'rgba(255, 255, 255, 0.04) !important',
                     },
                 }}
             >
-                <Typography
-                    variant="body2"
-                    fontWeight={500}
-                    sx={{
-                        minWidth: 0,
-                        maxWidth: 300,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        flexShrink: 0,
-                    }}
-                >
-                    {prefab.title}
-                </Typography>
+                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 1.5 }}>
+                    <Box sx={{ width: 140, flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                        <TemplateVisualSummary nodes={[prefab.node]} />
+                    </Box>
+                </TableCell>
 
-                <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{
-                        flex: 1,
-                        minWidth: 0,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                    }}
-                >
-                    {prefab.description}
-                </Typography>
-                {/* Version */}
-                <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ flexShrink: 0, fontSize: '0.75rem' }}
-                >
-                    v{prefab.version || '1'}
-                </Typography>
+                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 1.5 }}>
+                    <Typography
+                        variant="body2"
+                        fontWeight={500}
+                        sx={{
+                            minWidth: 0,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                        }}
+                    >
+                        {prefab.title}
+                    </Typography>
+                </TableCell>
 
-                {/* Published / unpublished icons */}
-                {prefab.published_at && prefab.is_published && (
-                    <Tooltip title="Published to Library">
-                        <CheckCircleRoundedIcon
-                            sx={{ fontSize: '1.1rem', color: 'success.main', flexShrink: 0 }}
-                        />
-                    </Tooltip>
-                )}
-                {prefab.published_at && !prefab.is_published && (
-                    <Tooltip title="Unpublished changes">
-                        <WarningRoundedIcon
-                            sx={{ fontSize: '1.1rem', color: 'warning.main', flexShrink: 0 }}
-                        />
-                    </Tooltip>
-                )}
-                {!prefab.published_at && (
-                    <Tooltip title="Not Published">
-                        <WarningRoundedIcon
-                            sx={{ fontSize: '1.1rem', color: 'text.disabled', flexShrink: 0 }}
-                        />
-                    </Tooltip>
-                )}
+                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 1.5 }}>
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                            minWidth: 0,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                        }}
+                    >
+                        {prefab.description}
+                    </Typography>
+                </TableCell>
 
-                {/* Node type pill */}
-                <Box
-                    sx={{
-                        backgroundColor: color,
-                        color: '#000',
-                        fontWeight: 'medium',
-                        fontSize: '0.75rem',
-                        height: '22px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        px: 1,
-                        borderRadius: '11px',
-                        width: '80px',
-                        minWidth: '80px',
-                        flexShrink: 0,
-                    }}
-                >
-                    {label}
-                </Box>
-            </Box>
+                <TableCell align="right" sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 1.5 }}>
+                    <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ flexShrink: 0, minWidth: 100, textAlign: 'right' }}
+                    >
+                        {prefab.updated_at ? formatElapsedTime(prefab.updated_at) : 'N/A'}
+                    </Typography>
+                </TableCell>
+
+                <TableCell align="center" sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 1.5 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        {prefab.published_at && prefab.is_published && (
+                            <Tooltip title="Published to Library">
+                                <CheckCircleRoundedIcon
+                                    sx={{ fontSize: '1.1rem', color: 'success.main', flexShrink: 0 }}
+                                />
+                            </Tooltip>
+                        )}
+                        {prefab.published_at && !prefab.is_published && (
+                            <Tooltip title="Unpublished changes">
+                                <WarningRoundedIcon
+                                    sx={{ fontSize: '1.1rem', color: 'warning.main', flexShrink: 0 }}
+                                />
+                            </Tooltip>
+                        )}
+                        {!prefab.published_at && (
+                            <Tooltip title="Not Published">
+                                <WarningRoundedIcon
+                                    sx={{ fontSize: '1.1rem', color: 'text.disabled', flexShrink: 0 }}
+                                />
+                            </Tooltip>
+                        )}
+                    </Box>
+                </TableCell>
+
+                <TableCell align="right" sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 1.5 }}>
+                    <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ flexShrink: 0, fontSize: '0.75rem' }}
+                    >
+                        v{prefab.version || '1'}
+                    </Typography>
+                </TableCell>
+
+                <TableCell sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 1.5 }}>
+                    <Box
+                        sx={{
+                            backgroundColor: color,
+                            color: '#000',
+                            fontWeight: 'medium',
+                            fontSize: '0.75rem',
+                            height: '22px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            px: 1,
+                            borderRadius: '11px',
+                            width: '80px',
+                            minWidth: '80px',
+                            flexShrink: 0,
+                            ml: 'auto'
+                        }}
+                    >
+                        {label}
+                    </Box>
+                </TableCell>
+            </TableRow>
             <Menu
                 open={contextMenu !== null}
                 onClose={handleCloseContextMenu}
@@ -258,14 +312,27 @@ export const PrefabListRow = ({
                 }
                 {...styledMenuProps}
             >
-                <MenuItem onClick={handleOpenPrefab}>Open Prefab</MenuItem>
+                <MenuItem onClick={handleOpenPrefab}>
+                    <ListItemIcon sx={{ minWidth: 32 }}>
+                        <OpenInNewIcon fontSize="small" />
+                    </ListItemIcon>
+                    <Typography variant="body2">Open Prefab</Typography>
+                </MenuItem>
                 {canPublishPrefab && (
                     <MenuItem onClick={handlePublishToLibrary}>
-                        Publish to Library
+                        <ListItemIcon sx={{ minWidth: 32 }}>
+                            <CloudUploadIcon fontSize="small" />
+                        </ListItemIcon>
+                        <Typography variant="body2">Publish to Library</Typography>
                     </MenuItem>
                 )}
                 {!isLoadingPermission && canDeletePrefab && (
-                    <MenuItem onClick={handleDeletePrefab}>Delete Prefab</MenuItem>
+                    <MenuItem onClick={handleDeletePrefab}>
+                        <ListItemIcon sx={{ minWidth: 32 }}>
+                            <DeleteIcon fontSize="small" />
+                        </ListItemIcon>
+                        <Typography variant="body2">Delete Prefab</Typography>
+                    </MenuItem>
                 )}
             </Menu>
         </>

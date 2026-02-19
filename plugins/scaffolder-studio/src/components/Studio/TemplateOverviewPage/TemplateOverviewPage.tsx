@@ -283,12 +283,6 @@ export const ProjectOverviewPage = () => {
         <Box
           sx={{
             minWidth: 160,
-            visibility:
-              currentTab === '/scaffolder-studio/templates' ||
-                currentTab === '/scaffolder-studio/prefabs' ||
-                currentTab === '/scaffolder-studio/trash'
-                ? 'visible'
-                : 'hidden',
             display: 'flex',
             gap: 2,
           }}
@@ -332,68 +326,72 @@ export const ProjectOverviewPage = () => {
               width: 300,
             }}
           />
-          <FormControl size="small" sx={{ minWidth: 160 }}>
-            <Select
-              value={sort}
-              onChange={e => setSort(e.target.value as string)}
-              displayEmpty
-              sx={{
-                borderRadius: '12px',
-                backgroundColor:
-                  theme.palette.mode === 'dark'
-                    ? 'rgba(255,255,255,0.05)'
-                    : 'rgba(0,0,0,0.03)',
-                '& .MuiSelect-select': {
-                  textTransform: 'none',
-                  padding: '8px 16px',
-                  fontSize: '0.875rem',
-                  color: theme.palette.text.primary,
-                  fontWeight: 500,
-                },
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor:
-                    theme.palette.mode === 'dark'
-                      ? 'rgba(255,255,255,0.1)'
-                      : 'rgba(0,0,0,0.1)',
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor:
-                    theme.palette.mode === 'dark'
-                      ? 'rgba(255,255,255,0.2)'
-                      : 'rgba(0,0,0,0.2)',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: theme.palette.primary.main,
-                  borderWidth: '1px',
-                },
-                '& .MuiSvgIcon-root': {
-                  color: theme.palette.text.secondary,
-                },
-              }}
-              MenuProps={{
-                PaperProps: {
-                  sx: {
+          {currentTab !== '/scaffolder-studio/prefab-library' && (
+            <>
+              <FormControl size="small" sx={{ minWidth: 160 }}>
+                <Select
+                  value={sort}
+                  onChange={e => setSort(e.target.value as string)}
+                  displayEmpty
+                  sx={{
                     borderRadius: '12px',
-                    mt: 0.5,
-                    boxShadow:
-                      theme.palette.mode === 'dark'
-                        ? '0 4px 20px rgba(0,0,0,0.5)'
-                        : '0 4px 20px rgba(0,0,0,0.1)',
                     backgroundColor:
-                      theme.palette.mode === 'dark' ? '#2a2a2a' : '#fff',
-                  },
-                },
-              }}
-            >
-              <MenuItem value="name" sx={{ borderRadius: '8px', mx: 0.5 }}>
-                Name
-              </MenuItem>
-              <MenuItem value="updated" sx={{ borderRadius: '8px', mx: 0.5 }}>
-                Last Modified
-              </MenuItem>
-            </Select>
-          </FormControl>
-          <ViewToggle viewMode={viewMode} onChange={setViewMode} />
+                      theme.palette.mode === 'dark'
+                        ? 'rgba(255,255,255,0.05)'
+                        : 'rgba(0,0,0,0.03)',
+                    '& .MuiSelect-select': {
+                      textTransform: 'none',
+                      padding: '8px 16px',
+                      fontSize: '0.875rem',
+                      color: theme.palette.text.primary,
+                      fontWeight: 500,
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor:
+                        theme.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.1)'
+                          : 'rgba(0,0,0,0.1)',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor:
+                        theme.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.2)'
+                          : 'rgba(0,0,0,0.2)',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: theme.palette.primary.main,
+                      borderWidth: '1px',
+                    },
+                    '& .MuiSvgIcon-root': {
+                      color: theme.palette.text.secondary,
+                    },
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        borderRadius: '12px',
+                        mt: 0.5,
+                        boxShadow:
+                          theme.palette.mode === 'dark'
+                            ? '0 4px 20px rgba(0,0,0,0.5)'
+                            : '0 4px 20px rgba(0,0,0,0.1)',
+                        backgroundColor:
+                          theme.palette.mode === 'dark' ? '#2a2a2a' : '#fff',
+                      },
+                    },
+                  }}
+                >
+                  <MenuItem value="name" sx={{ borderRadius: '8px', mx: 0.5 }}>
+                    Name
+                  </MenuItem>
+                  <MenuItem value="updated" sx={{ borderRadius: '8px', mx: 0.5 }}>
+                    Last Modified
+                  </MenuItem>
+                </Select>
+              </FormControl>
+              <ViewToggle viewMode={viewMode} onChange={setViewMode} />
+            </>
+          )}
         </Box>
       </Box>
 

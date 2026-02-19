@@ -11,8 +11,12 @@
     "@kissmiklosjr/plugin-scaffolder-studio-common": "1.0.0-beta.0"
   },
   "changesets": [
+    "afraid-tables-run",
+    "cozy-results-shave",
     "eighty-dots-tie",
     "humble-goats-pay",
-    "tough-turtles-march"
+    "thirty-pets-enjoy",
+    "tough-turtles-march",
+    "twelve-masks-feel"
   ]
 }

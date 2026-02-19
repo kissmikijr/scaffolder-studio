@@ -1,5 +1,29 @@
 # @kissmiklosjr/plugin-scaffolder-studio
 
+## 1.0.0-beta.5
+
+### Patch Changes
+
+- Fixed a bunch of stuff ready for release
+
+## 1.0.0-beta.4
+
+### Patch Changes
+
+- Fix personal prefab serialization
+
+## 1.0.0-beta.3
+
+### Patch Changes
+
+- Fix auto-save
+
+## 1.0.0-beta.2
+
+### Patch Changes
+
+- fix null check
+
 ## 1.0.0-beta.1
 
 ### Patch Changes

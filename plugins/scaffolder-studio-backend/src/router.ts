@@ -67,17 +67,23 @@ export async function createRouter({
 
   const projectSchema = z.object({
     id: z.string(),
-    metadata: z
-      .object({
-        name: z.string().optional(),
-        description: z.string().optional(),
-      })
-      .optional(),
-    viewport: z.object({
-      x: z.number(),
-      y: z.number(),
-      zoom: z.number(),
-    }),
+    metadata: z.preprocess(
+      val => (typeof val === 'string' ? JSON.parse(val) : val),
+      z
+        .object({
+          name: z.string().optional(),
+          description: z.string().optional(),
+        })
+        .optional(),
+    ),
+    viewport: z.preprocess(
+      val => (typeof val === 'string' ? JSON.parse(val) : val),
+      z.object({
+        x: z.number(),
+        y: z.number(),
+        zoom: z.number(),
+      }),
+    ),
     nodes: z.array(z.any()),
     edges: z.array(z.any()),
     updated: z.string(),

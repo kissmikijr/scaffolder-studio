@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Menu, MenuItem } from '@mui/material';
+import { Box, Menu, MenuItem, ListItemIcon, Typography } from '@mui/material';
+import RestoreIcon from '@mui/icons-material/Restore';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import { useOutletContext } from 'react-router-dom';
 import { alertApiRef, useApi } from '@backstage/core-plugin-api';
 import { scaffolderVisualApiRef } from '../../../../api/ScaffolderVisualClient';
@@ -87,9 +89,14 @@ export const TrashView = () => {
     <>
       <Box>
         <ProjectLayout
-          projects={projects.filter(p =>
-            p.metadata.name.toLowerCase().includes(searchText.toLowerCase()),
-          )}
+          projects={projects.filter(p => {
+            const query = searchText.toLowerCase();
+            return (
+              (p.metadata.name ?? '').toLowerCase().includes(query) ||
+              (p.metadata.description ?? '').toLowerCase().includes(query) ||
+              (p.owner ?? '').toLowerCase().includes(query)
+            );
+          })}
           selectedProjectIds={projectIds}
           setSelectedProjectIds={setProjectIds}
           setContextMenu={setContextMenu}
@@ -131,7 +138,10 @@ export const TrashView = () => {
             onClose();
           }}
         >
-          Restore
+          <ListItemIcon sx={{ minWidth: 32 }}>
+            <RestoreIcon fontSize="small" />
+          </ListItemIcon>
+          <Typography variant="body2">Restore</Typography>
         </MenuItem>
         {!isLoadingPermission && canPermanentlyDelete && (
           <MenuItem
@@ -142,7 +152,10 @@ export const TrashView = () => {
               onClose();
             }}
           >
-            Permanently Delete
+            <ListItemIcon sx={{ minWidth: 32 }}>
+              <DeleteForeverIcon fontSize="small" />
+            </ListItemIcon>
+            <Typography variant="body2">Permanently Delete</Typography>
           </MenuItem>
         )}
       </Menu>

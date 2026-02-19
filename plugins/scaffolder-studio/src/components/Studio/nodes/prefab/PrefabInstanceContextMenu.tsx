@@ -31,23 +31,10 @@ export const PrefabInstanceContextMenu = ({
         className="nodrag nopan"
         {...styledMenuProps}
         sx={{
-          '& .MuiMenu-paper': {
-            borderRadius: 2,
-            backgroundColor: 'background.paper',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-            padding: '4px 0',
-          },
           '& .MuiMenuItem-root': {
             display: 'flex',
-            padding: '8px 16px',
             alignItems: 'center',
-            '&:hover': {
-              backgroundColor: 'primary.main',
-              color: 'primary.contrastText',
-              '& svg': {
-                color: 'primary.contrastText',
-              },
-            },
+            gap: 1,
           },
         }}
       >

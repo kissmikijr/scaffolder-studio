@@ -245,6 +245,49 @@ const UnifiedRouter = ({ children }: UnifiedRouterProps) => {
             },
           },
         },
+        MuiTable: {
+          styleOverrides: {
+            root: {
+              backgroundColor: 'transparent',
+            },
+          },
+        },
+        MuiTableRow: {
+          styleOverrides: {
+            root: {
+              backgroundColor: 'transparent',
+            },
+          },
+        },
+        MuiTableHead: {
+          styleOverrides: {
+            root: {
+              backgroundColor: 'transparent',
+            },
+          },
+        },
+        MuiTableBody: {
+          styleOverrides: {
+            root: {
+              backgroundColor: 'transparent',
+            },
+          },
+        },
+        MuiTableCell: {
+          styleOverrides: {
+            root: {
+              backgroundColor: 'transparent !important',
+            },
+          },
+        },
+        MuiTableContainer: {
+          styleOverrides: {
+            root: {
+              backgroundColor: 'transparent',
+              boxShadow: 'none',
+            },
+          },
+        },
         MuiPaper: {
           styleOverrides: {
             root: {

@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Menu, MenuItem, Grid, Chip, Tooltip } from '@mui/material';
+import { Box, Typography, Menu, MenuItem, Grid, Chip, Tooltip, ListItemIcon } from '@mui/material';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DeleteIcon from '@mui/icons-material/Delete';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import {
@@ -55,14 +58,16 @@ export const PrefabCard = ({
   });
   const handleContextMenu = (event: React.MouseEvent) => {
     event.preventDefault();
-    setContextMenu(
-      contextMenu === null
-        ? {
-          mouseX: event.clientX + 2,
-          mouseY: event.clientY - 6,
-        }
-        : null,
-    );
+    if (isSelected) {
+      setContextMenu(
+        contextMenu === null
+          ? {
+            mouseX: event.clientX + 2,
+            mouseY: event.clientY - 6,
+          }
+          : null,
+      );
+    }
   };
 
   const handleCloseContextMenu = () => {
@@ -333,14 +338,27 @@ export const PrefabCard = ({
           )
         ) : (
           <>
-            <MenuItem onClick={handleOpenPrefab}>Open Prefab</MenuItem>
+            <MenuItem onClick={handleOpenPrefab}>
+              <ListItemIcon sx={{ minWidth: 32 }}>
+                <OpenInNewIcon fontSize="small" />
+              </ListItemIcon>
+              <Typography variant="body2">Open Prefab</Typography>
+            </MenuItem>
             {canPublishPrefab && (
               <MenuItem onClick={handlePublishToLibrary}>
-                Publish to Library
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  <CloudUploadIcon fontSize="small" />
+                </ListItemIcon>
+                <Typography variant="body2">Publish to Library</Typography>
               </MenuItem>
             )}
             {!isLoadingPermission && canDeletePrefab && (
-              <MenuItem onClick={handleDeletePrefab}>Delete Prefab</MenuItem>
+              <MenuItem onClick={handleDeletePrefab}>
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  <DeleteIcon fontSize="small" />
+                </ListItemIcon>
+                <Typography variant="body2">Delete Prefab</Typography>
+              </MenuItem>
             )}
           </>
         )}

@@ -220,11 +220,15 @@ export class DatabaseVisualTemplateProjectStore
   ): VisualTemplateProject {
     return {
       id: row.id,
-      metadata: row.metadata as { name: string; description?: string },
+      metadata: (typeof row.metadata === 'string'
+        ? JSON.parse(row.metadata)
+        : row.metadata) as { name: string; description?: string },
       owner: row.owner,
       nodes: JSON.parse(row.nodes) as VisualTemplateProject['nodes'],
       edges: JSON.parse(row.edges),
-      viewport: row.viewport as { x: number; y: number; zoom: number },
+      viewport: typeof row.viewport === 'string'
+        ? JSON.parse(row.viewport)
+        : (row.viewport as { x: number; y: number; zoom: number }),
       updated: row.updated,
       deleted: row.deleted,
       published_at: null,

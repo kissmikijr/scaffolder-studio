@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Box, MenuItem, Menu } from '@mui/material';
+import { Box, MenuItem, Menu, ListItemIcon, Typography, Divider } from '@mui/material';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import DeleteIcon from '@mui/icons-material/Delete';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { alertApiRef, useApi } from '@backstage/core-plugin-api';
 import { scaffolderVisualApiRef } from '../../../../api/ScaffolderVisualClient';
 import { VisualTemplateProject } from '../../types';
@@ -107,6 +111,34 @@ export const TemplatesView = () => {
   };
 
   const onClose = () => setContextMenu(null);
+
+  const handleCopyYaml = async (id: string) => {
+    try {
+      const project = projects.find(p => p.id === id);
+      if (!project || project.nodes.length === 0) return;
+
+      const template = await api.serializeTemplate({
+        sourceNodeId: project.nodes[0].id,
+        nodes: project.nodes,
+        edges: project.edges,
+      });
+
+      await navigator.clipboard.writeText(template);
+      alertApi.post({
+        message: 'YAML copied to clipboard',
+        severity: 'success',
+        display: 'transient',
+      });
+    } catch (error) {
+      alertApi.post({
+        message: 'Failed to copy YAML',
+        severity: 'error',
+        display: 'transient',
+      });
+    } finally {
+      onClose();
+    }
+  };
   const onTrash = async (ids: string[]) => {
     const confirmed = await confirm({
       title: 'Trash Project',
@@ -129,9 +161,14 @@ export const TemplatesView = () => {
     <>
       <Box>
         <ProjectLayout
-          projects={sortedProjects.filter(p =>
-            p.metadata.name.toLowerCase().includes(searchText.toLowerCase()),
-          )}
+          projects={sortedProjects.filter(p => {
+            const query = searchText.toLowerCase();
+            return (
+              (p.metadata.name ?? '').toLowerCase().includes(query) ||
+              (p.metadata.description ?? '').toLowerCase().includes(query) ||
+              (p.owner ?? '').toLowerCase().includes(query)
+            );
+          })}
           selectedProjectIds={projectIds}
           setSelectedProjectIds={setProjectIds}
           setContextMenu={setContextMenu}
@@ -182,8 +219,28 @@ export const TemplatesView = () => {
               onClose();
             }}
           >
-            Open
+            <ListItemIcon sx={{ minWidth: 32 }}>
+              <OpenInNewIcon fontSize="small" />
+            </ListItemIcon>
+            <Typography variant="body2">Open</Typography>
           </MenuItem>
+        )}
+        {projectIds.length === 1 && (
+          <>
+            <MenuItem
+              onClick={() => {
+                if (projectIds.length > 0) {
+                  handleCopyYaml(projectIds[0]);
+                }
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 32 }}>
+                <ContentCopyIcon fontSize="small" />
+              </ListItemIcon>
+              <Typography variant="body2">Copy YAML</Typography>
+            </MenuItem>
+            <Divider sx={{ my: 0.5 }} />
+          </>
         )}
         <MenuItem
           onClick={() => {
@@ -193,7 +250,10 @@ export const TemplatesView = () => {
             onClose();
           }}
         >
-          Move to trash
+          <ListItemIcon sx={{ minWidth: 32 }}>
+            <DeleteIcon fontSize="small" />
+          </ListItemIcon>
+          <Typography variant="body2">Move to trash</Typography>
         </MenuItem>
 
         {projectIds.length === 1 && !loadingPermission && canPublish && (
@@ -205,7 +265,10 @@ export const TemplatesView = () => {
               onClose();
             }}
           >
-            Publish
+            <ListItemIcon sx={{ minWidth: 32 }}>
+              <CloudUploadIcon fontSize="small" />
+            </ListItemIcon>
+            <Typography variant="body2">Publish</Typography>
           </MenuItem>
         )}
       </Menu>

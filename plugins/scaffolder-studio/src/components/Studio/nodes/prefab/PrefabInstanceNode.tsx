@@ -230,8 +230,8 @@ const PrefabInstanceNode = ({
           }}
         >
           {`${prefab?.node?.type === 'templateOutput'
-              ? 'Output'
-              : prefab?.node?.type
+            ? 'Output'
+            : prefab?.node?.type
             }`}
         </Box>
       )}
@@ -243,18 +243,19 @@ const PrefabInstanceNode = ({
           position: 'relative',
           display: 'block',
           border: `4px ${isError ? 'dashed' : 'solid'} ${selected
-              ? SELECTED_BORDER_COLOR
-              : isError
-                ? theme.palette.warning.main
-                : prefab?.node?.type
-                  ? getBorderColor(prefab.node.type)
-                  : NodeTypeColors.unknown
+            ? SELECTED_BORDER_COLOR
+            : isError
+              ? theme.palette.warning.main
+              : prefab?.node?.type
+                ? getBorderColor(prefab.node.type)
+                : NodeTypeColors.unknown
             }`,
 
           overflow: 'visible',
           '&:hover': {
             boxShadow: 2,
           },
+          outline: 'none',
         }}
       >
         <Box

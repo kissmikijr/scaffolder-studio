@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Box, MenuItem, Menu } from '@mui/material';
+import { Box, MenuItem, Menu, ListItemIcon, Typography } from '@mui/material';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import CloudOffIcon from '@mui/icons-material/CloudOff';
 import { alertApiRef, useApi } from '@backstage/core-plugin-api';
 import { scaffolderVisualApiRef } from '../../../../api/ScaffolderVisualClient';
 import { styledMenuProps } from '../../components/menuStyles';
@@ -12,7 +14,7 @@ import { usePermission } from '@backstage/plugin-permission-react';
 import { scaffolderStudioUnpublishPermission } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
 export const PublishedView = () => {
-  const { sort, viewMode } = useOutletContext<{ sort: string; viewMode?: string }>();
+  const { sort, searchText, viewMode } = useOutletContext<{ sort: string; searchText: string; viewMode?: string }>();
   const { loading: isLoadingPermission, allowed: canUnpublish } = usePermission(
     {
       permission: scaffolderStudioUnpublishPermission,
@@ -49,11 +51,13 @@ export const PublishedView = () => {
 
   const handleContextMenu = (e: React.MouseEvent, templateId: string) => {
     e.preventDefault();
-    setContextMenu({
-      mouseX: e.clientX + 2,
-      mouseY: e.clientY - 6,
-      templateId,
-    });
+    if (selectedTemplateId === templateId) {
+      setContextMenu({
+        mouseX: e.clientX + 2,
+        mouseY: e.clientY - 6,
+        templateId,
+      });
+    }
   };
 
   const onUnpublish = async (id: string) => {
@@ -74,9 +78,20 @@ export const PublishedView = () => {
     onClose();
   };
 
+  const filtered = publishedTemplates.filter(t => {
+    const query = searchText?.toLowerCase() ?? '';
+    const metadata = (t.scaffolder_template as any)?.metadata;
+    const spec = (t.scaffolder_template as any)?.spec;
+    return (
+      metadata?.name?.toLowerCase().includes(query) ||
+      metadata?.description?.toLowerCase().includes(query) ||
+      spec?.owner?.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <>
-      <Box sx={{ p: 3 }}>
+      <Box sx={{}}>
         {viewMode === 'list' ? (
           <Box
             sx={{
@@ -84,9 +99,10 @@ export const PublishedView = () => {
               borderColor: 'divider',
               borderRadius: '12px',
               overflow: 'hidden',
+              mx: 16,
             }}
           >
-            {publishedTemplates?.map(template => (
+            {filtered?.map(template => (
               <PublishedTemplateListRow
                 key={template.id}
                 publishedTemplate={template}
@@ -104,7 +120,7 @@ export const PublishedView = () => {
               gap: 3,
             }}
           >
-            {publishedTemplates?.map(template => (
+            {filtered?.map(template => (
               <PublishedTemplateCard
                 key={template.id}
                 publishedTemplate={template}
@@ -142,7 +158,10 @@ export const PublishedView = () => {
             onClose();
           }}
         >
-          Run
+          <ListItemIcon sx={{ minWidth: 32 }}>
+            <PlayArrowIcon fontSize="small" />
+          </ListItemIcon>
+          <Typography variant="body2">Run</Typography>
         </MenuItem>
         {!isLoadingPermission && canUnpublish && (
           <MenuItem
@@ -152,7 +171,10 @@ export const PublishedView = () => {
               }
             }}
           >
-            Unpublish
+            <ListItemIcon sx={{ minWidth: 32 }}>
+              <CloudOffIcon fontSize="small" />
+            </ListItemIcon>
+            <Typography variant="body2">Unpublish</Typography>
           </MenuItem>
         )}
       </Menu>

@@ -93,6 +93,7 @@ const PrefabQueenNode = ({
             boxShadow: 3,
             cursor: 'pointer',
           },
+          outline: 'none',
         }}
         data-interactive="true"
       >

@@ -10,7 +10,7 @@ import {
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { SchemaPatcher } from '../SchemaPatcher/SchemaPatcher';
 import parseScaffolderTemplate from './parseScaffolderTemplate';
-import { PrefabLibraryStore } from '../database/types';
+import { PrefabLibraryStore, PrefabStore } from '../database/types';
 import type { Edge, Node } from '@xyflow/react';
 import { PublisherExtension } from '../extensions/types';
 
@@ -19,6 +19,7 @@ export class ScaffolderStudioService {
   private readonly visualTemplateProjectStore: VisualTemplateProjectStore;
   private readonly publishedTemplatesStore: PublishedTemplatesStore;
   private readonly prefabLibraryStore: PrefabLibraryStore;
+  private readonly prefabStore: PrefabStore;
   private readonly schemaPatcher: SchemaPatcher;
   private readonly publishers: PublisherExtension[];
 
@@ -26,6 +27,7 @@ export class ScaffolderStudioService {
     visualTemplateProjectStore,
     publishedTemplatesStore,
     prefabLibraryStore,
+    prefabStore,
     schemaPatcher,
     publishers,
   }: {
@@ -33,12 +35,14 @@ export class ScaffolderStudioService {
     visualTemplateProjectStore: VisualTemplateProjectStore;
     publishedTemplatesStore: PublishedTemplatesStore;
     prefabLibraryStore: PrefabLibraryStore;
+    prefabStore: PrefabStore;
     schemaPatcher: SchemaPatcher;
     publishers: PublisherExtension[];
   }) {
     this.visualTemplateProjectStore = visualTemplateProjectStore;
     this.publishedTemplatesStore = publishedTemplatesStore;
     this.prefabLibraryStore = prefabLibraryStore;
+    this.prefabStore = prefabStore;
     this.schemaPatcher = schemaPatcher;
     this.publishers = publishers;
   }
@@ -105,10 +109,24 @@ export class ScaffolderStudioService {
     const actualNodes: Node<AllNodeData>[] = [];
     for (const node of nodes) {
       if (isPrefabNode(node)) {
-        const prefab = await this.prefabLibraryStore.get({
-          id: node.data.id as string,
-          version: node.data.version,
-        });
+        let prefab;
+        try {
+          prefab = await this.prefabLibraryStore.get({
+            id: node.data.id as string,
+            version: node.data.version,
+          });
+        } catch (libraryError) {
+          // If not in library, try the personal prefab store
+          try {
+            prefab = await this.prefabStore.get({
+              id: node.data.id as string,
+            });
+          } catch (personalError) {
+            throw new Error(
+              `Prefab with id ${node.data.id} not found in library or personal store`,
+            );
+          }
+        }
 
         actualNodes.push({
           ...prefab.node,

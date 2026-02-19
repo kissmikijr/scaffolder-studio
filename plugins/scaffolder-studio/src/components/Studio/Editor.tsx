@@ -649,6 +649,9 @@ const ScaffolderStudioEditor = ({
                   cursor: isPanning ? 'grab' : 'default',
                   transition: 'cursor 0.2s',
                 },
+                '& .react-flow__node': {
+                  outline: 'none !important',
+                },
               }}
             >
               <ReactFlow

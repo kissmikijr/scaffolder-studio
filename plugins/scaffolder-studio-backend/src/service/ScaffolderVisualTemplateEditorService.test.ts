@@ -49,6 +49,7 @@ describe('ScaffolderVisualTemplateEditorService', () => {
       visualTemplateProjectStore: mockVisualProjectStore,
       publishedTemplatesStore: mockStore,
       prefabLibraryStore: mockPrefabLibraryStore,
+      prefabStore: mockPrefabLibraryStore,
       schemaPatcher: mockSchemaPatcher,
       publishers: [mockPublisher1, mockPublisher2],
     });

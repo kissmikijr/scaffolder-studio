@@ -73,9 +73,8 @@ const StepNode = ({
         minWidth: 150,
         maxWidth: 300,
         borderRadius: '20px',
-        border: `2px solid ${
-          selected ? SELECTED_BORDER_COLOR : theme.palette.divider
-        }`,
+        border: `2px solid ${selected ? SELECTED_BORDER_COLOR : theme.palette.divider
+          }`,
         backgroundColor: theme.palette.background.paper,
         color: theme.palette.text.primary,
         boxShadow: selected ? 3 : 1,
@@ -87,6 +86,7 @@ const StepNode = ({
           boxShadow: 4,
         },
         pointerEvents: disabled ? 'none' : 'none', // FORCE NONE on container to prevent it intercepting handle clicks
+        outline: 'none',
       }}
       data-testid={`step-node-${id}`}
       data-interactive="true"
@@ -162,146 +162,84 @@ const StepNode = ({
       </Box>
       <Box>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          {data.actionId ? (
-            <Box
+          <Box
+            sx={{
+              backgroundColor: NodeTypeColors.step,
+              color: '#282a36',
+              px: 1.5,
+              py: 0.5,
+              borderTopLeftRadius: '18px',
+              borderTopRightRadius: '18px',
+              width: '100%',
+              minHeight: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <FadableContainer
+              component={Typography}
+              variant="h6"
               sx={{
-                backgroundColor: NodeTypeColors.step,
-                color: '#282a36',
-                px: 1.5,
-                py: 0.5,
-                borderTopLeftRadius: '18px',
-                borderTopRightRadius: '18px',
-                width: '100%',
-              }}
-            >
-              <FadableContainer
-                component={Typography}
-                variant="h6"
-                sx={{
-                  fontSize: '1rem',
-                  lineHeight: 1.4,
-                  display: 'block',
-                  textAlign: 'center',
-                }}
-              >
-                {data.name}
-              </FadableContainer>
-            </Box>
-          ) : (
-            <Box
-              sx={{
-                backgroundColor: NodeTypeColors.step,
-                color: '#282a36',
-                px: 1.5,
-                py: 0.5,
-                borderTopLeftRadius: 'calc(18px * var(--zoom-scale, 1))',
-                borderTopRightRadius: 'calc(18px * var(--zoom-scale, 1))',
-                width: '100%',
+                fontSize: '1rem',
+                lineHeight: 1.4,
                 display: 'flex',
-                justyContent: 'center',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
+                fontWeight: data.actionId ? 600 : 400,
               }}
             >
-              <Typography
-                variant="h6"
-                sx={{ fontSize: '0.7rem', lineHeight: 1.2 }}
-              >
-                Step
-              </Typography>
-            </Box>
-          )}
+              {data.name || (
+                <Box
+                  sx={{
+                    width: '60%',
+                    height: '10px',
+                    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                    borderRadius: '5px',
+                  }}
+                />
+              )}
+            </FadableContainer>
+          </Box>
         </Box>
       </Box>
-      {(data.actionId || data.stepId || data.if !== undefined) && (
+      <Box
+        sx={{
+          border: '1px solid',
+          borderColor: 'divider',
+          borderBottomLeftRadius: '18px',
+          borderBottomRightRadius: '18px',
+          fontFamily: 'Monospace',
+          fontSize: '0.75rem',
+          padding: 1,
+          width: '100%',
+          textAlign: 'left',
+          color: 'text.primary',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+          overflow: 'hidden',
+          minHeight: '64px', // Ensure consistent body size
+        }}
+      >
         <Box
           sx={{
-            border: '1px solid',
-            borderColor: 'divider',
-            borderBottomLeftRadius: '18px',
-            borderBottomRightRadius: '18px',
-            fontFamily: 'Monospace',
-            fontSize: '0.75rem',
-            padding: 1,
-            width: '100%',
-            textAlign: 'left',
-            color: 'text.primary',
+            backgroundColor: theme.palette.action.hover,
+            borderRadius: '12px',
+            padding: '2px 8px',
             display: 'flex',
-            flexDirection: 'column',
-            gap: 1,
-            overflow: 'hidden', // Contain children
+            alignItems: 'center',
+            width: data.stepId ? 'fit-content' : '80%',
+            height: '24px',
+            maxWidth: '100%',
           }}
         >
-          {data.stepId && (
-            <Box
-              sx={{
-                backgroundColor: theme.palette.action.hover,
-                borderRadius: '12px',
-                padding: '2px 8px',
-                display: 'flex',
-                alignItems: 'center',
-                width: 'fit-content',
-                maxWidth: '100%',
-              }}
-            >
-              <FadableContainer
-                component={Typography}
-                sx={{
-                  fontFamily: 'Monospace',
-                  fontSize: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  width: '100%',
-                }}
-              >
-                <span
-                  style={{
-                    color: theme.palette.text.secondary,
-                    marginRight: '6px',
-                  }}
-                >
-                  id:
-                </span>
-                <span style={{ fontWeight: 600 }}>{data.stepId}</span>
-              </FadableContainer>
-            </Box>
-          )}
-          {data.actionId && (
-            <Box
-              sx={{
-                backgroundColor: theme.palette.action.hover,
-                borderRadius: '12px',
-                padding: '2px 8px',
-                display: 'flex',
-                alignItems: 'center',
-                width: 'fit-content',
-                maxWidth: '100%',
-              }}
-            >
-              <FadableContainer
-                component={Typography}
-                sx={{
-                  fontFamily: 'Monospace',
-                  fontSize: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  width: '100%',
-                }}
-              >
-                <span
-                  style={{
-                    color: theme.palette.text.secondary,
-                    marginRight: '6px',
-                  }}
-                >
-                  action:
-                </span>
-                <span style={{ fontWeight: 600 }}>{data.actionId}</span>
-              </FadableContainer>
-            </Box>
-          )}
-
-          {data.if && (
+          {data.stepId ? (
             <FadableContainer
+              component={Typography}
               sx={{
+                fontFamily: 'Monospace',
                 fontSize: '0.75rem',
                 display: 'flex',
                 alignItems: 'center',
@@ -310,24 +248,101 @@ const StepNode = ({
             >
               <span
                 style={{
-                  color: 'text.secondary',
+                  color: theme.palette.text.secondary,
                   marginRight: '6px',
-                  whiteSpace: 'nowrap',
                 }}
               >
-                if:
+                id:
               </span>
-              <div style={{ display: 'inline-block' }}>
-                <ExpressionViewer
-                  value={data.if}
-                  parameters={parameters}
-                  outputs={outputs}
-                />
-              </div>
+              <span style={{ fontWeight: 600 }}>{data.stepId}</span>
             </FadableContainer>
+          ) : (
+            <Box
+              sx={{
+                width: '100%',
+                height: '8px',
+                backgroundColor: theme.palette.action.disabledBackground,
+                borderRadius: '4px',
+                opacity: 0.3,
+              }}
+            />
           )}
         </Box>
-      )}
+
+        <Box
+          sx={{
+            backgroundColor: theme.palette.action.hover,
+            borderRadius: '12px',
+            padding: '2px 8px',
+            display: 'flex',
+            alignItems: 'center',
+            width: data.actionId ? 'fit-content' : '60%',
+            height: '24px',
+            maxWidth: '100%',
+          }}
+        >
+          {data.actionId ? (
+            <FadableContainer
+              component={Typography}
+              sx={{
+                fontFamily: 'Monospace',
+                fontSize: '0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                width: '100%',
+              }}
+            >
+              <span
+                style={{
+                  color: theme.palette.text.secondary,
+                  marginRight: '6px',
+                }}
+              >
+                action:
+              </span>
+              <span style={{ fontWeight: 600 }}>{data.actionId}</span>
+            </FadableContainer>
+          ) : (
+            <Box
+              sx={{
+                width: '100%',
+                height: '8px',
+                backgroundColor: theme.palette.action.disabledBackground,
+                borderRadius: '4px',
+                opacity: 0.3,
+              }}
+            />
+          )}
+        </Box>
+
+        {data.if && (
+          <FadableContainer
+            sx={{
+              fontSize: '0.75rem',
+              display: 'flex',
+              alignItems: 'center',
+              width: '100%',
+            }}
+          >
+            <span
+              style={{
+                color: 'text.secondary',
+                marginRight: '6px',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              if:
+            </span>
+            <div style={{ display: 'inline-block' }}>
+              <ExpressionViewer
+                value={data.if}
+                parameters={parameters}
+                outputs={outputs}
+              />
+            </div>
+          </FadableContainer>
+        )}
+      </Box>
       {!disabled && (
         <>
           <Handle

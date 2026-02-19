@@ -76,4 +76,5 @@ backend.add(import('@backstage/plugin-permission-backend'));
 // backend.add(import('./extensions/permissionsPolicyExtension'));
 // scaffolder-studio plugin
 backend.add(import('@kissmiklosjr/plugin-scaffolder-studio-backend'));
+backend.add(import('@kissmiklosjr/plugin-permission-backend-module-scaffolder-studio'))
 backend.start();

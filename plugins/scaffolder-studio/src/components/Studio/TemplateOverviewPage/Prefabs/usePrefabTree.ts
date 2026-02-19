@@ -63,6 +63,7 @@ export const usePrefabTree = (
 
       return (
         prefab.title?.toLowerCase().includes(query) ||
+        prefab.description?.toLowerCase().includes(query) ||
         prefab.owner?.toLowerCase().includes(query) ||
         nodeTypeLabel.includes(query)
       );

@@ -38,15 +38,15 @@ export const PropertyNodeContent = ({
         borderRadius: '20px',
         color: theme.palette.text.primary,
         backgroundColor: theme.palette.background.paper,
-        border: `2px solid ${
-          selected ? SELECTED_BORDER_COLOR : theme.palette.divider
-        }`,
+        border: `2px solid ${selected ? SELECTED_BORDER_COLOR : theme.palette.divider
+          }`,
         pointerEvents: disabled ? 'none' : 'auto',
         filter: disabled ? 'grayscale(1)' : 'none',
         '&:hover': {
           boxShadow: 3,
           cursor: 'pointer',
         },
+        outline: 'none',
       }}
       data-interactive="true"
     >

@@ -1,6 +1,6 @@
 {
   "name": "@kissmiklosjr/plugin-scaffolder-studio",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.5",
   "license": "CC-BY-NC-4.0",
   "main": "src/index.ts",
   "types": "src/index.ts",
