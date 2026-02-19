@@ -5,6 +5,7 @@ import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import {
   StoredPrefab,
   scaffolderStudioPrefabDeletePermission,
+  scaffolderStudioPrefabPublishPermission,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { useNavigate } from 'react-router-dom';
 import { alertApiRef, useApi } from '@backstage/core-plugin-api';
@@ -49,6 +50,9 @@ export const PrefabCard = ({
     usePermission({
       permission: scaffolderStudioPrefabDeletePermission,
     });
+  const { allowed: canPublishPrefab } = usePermission({
+    permission: scaffolderStudioPrefabPublishPermission,
+  });
   const handleContextMenu = (event: React.MouseEvent) => {
     event.preventDefault();
     setContextMenu(
@@ -100,7 +104,6 @@ export const PrefabCard = ({
     try {
       await api.addToLibrary({
         prefabId: prefab.id,
-        owner: prefab.owner || 'unknown',
       });
       alertApi.post({
         message: 'Prefab published to library successfully',
@@ -331,9 +334,11 @@ export const PrefabCard = ({
         ) : (
           <>
             <MenuItem onClick={handleOpenPrefab}>Open Prefab</MenuItem>
-            <MenuItem onClick={handlePublishToLibrary}>
-              Publish to Library
-            </MenuItem>
+            {canPublishPrefab && (
+              <MenuItem onClick={handlePublishToLibrary}>
+                Publish to Library
+              </MenuItem>
+            )}
             {!isLoadingPermission && canDeletePrefab && (
               <MenuItem onClick={handleDeletePrefab}>Delete Prefab</MenuItem>
             )}

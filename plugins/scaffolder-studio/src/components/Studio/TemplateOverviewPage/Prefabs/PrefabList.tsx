@@ -19,6 +19,7 @@ import {
     Button,
     ListItemIcon,
     ListItemText,
+    Skeleton,
 } from '@mui/material';
 import React, { useState } from 'react';
 import {
@@ -52,6 +53,42 @@ interface PrefabListProps {
 }
 
 import { EmptyState } from '../components/EmptyState';
+
+const PrefabSkeleton = ({ compact }: { compact: boolean }) => (
+    <>
+        {[1, 2, 3, 4, 5].map((i) => (
+            <TableRow key={`skeleton-${i}`}>
+                <TableCell padding="checkbox">
+                    <Skeleton variant="circular" width={24} height={24} />
+                </TableCell>
+                <TableCell>
+                    <Skeleton variant="rounded" width={80} height={22} />
+                </TableCell>
+                <TableCell>
+                    <Skeleton variant="text" width="60%" />
+                </TableCell>
+                {!compact && (
+                    <TableCell>
+                        <Skeleton variant="text" width="80%" />
+                    </TableCell>
+                )}
+                {!compact && (
+                    <TableCell>
+                        <Skeleton variant="text" width={60} />
+                    </TableCell>
+                )}
+                <TableCell>
+                    <Skeleton variant="text" width={40} />
+                </TableCell>
+                {!compact && (
+                    <TableCell>
+                        <Skeleton variant="text" width={100} />
+                    </TableCell>
+                )}
+            </TableRow>
+        ))}
+    </>
+);
 
 export const PrefabList = ({
     prefabs,
@@ -139,9 +176,6 @@ export const PrefabList = ({
         setPrefabToDelete(null);
     };
 
-    if (isLoading) {
-        return null;
-    }
 
     const getNodeTypeConfig = (node: Prefab['node']) => {
         if (!node) {
@@ -256,7 +290,9 @@ export const PrefabList = ({
                             },
                         }}
                     >
-                        {((!Array.isArray(prefabs) || prefabs.length === 0) && (!groups || groups.every(g => g.prefabs.length === 0))) ? (
+                        {isLoading ? (
+                            <PrefabSkeleton compact={compact} />
+                        ) : ((!Array.isArray(prefabs) || prefabs.length === 0) && (!groups || groups.every(g => g.prefabs.length === 0))) ? (
                             <TableRow>
                                 <TableCell colSpan={compact ? 4 : 7} align="center" sx={{ borderBottom: 'none' }}>
                                     <EmptyState

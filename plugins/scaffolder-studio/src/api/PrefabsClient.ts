@@ -37,7 +37,7 @@ export interface PrefabsClientApi {
     owner,
   }: {
     prefabId: string;
-    owner: string;
+    owner?: string;
   }): Promise<{ id: string }>;
   listLibrary(): Promise<StoredPrefab[]>;
 }
@@ -50,7 +50,7 @@ export class PrefabsClient implements PrefabsClientApi {
   constructor(
     private readonly discoveryApi: DiscoveryApi,
     private readonly fetchApi: FetchApi,
-  ) {}
+  ) { }
 
   private async getBaseUrl(): Promise<string> {
     return this.discoveryApi.getBaseUrl('scaffolder-studio');
@@ -130,7 +130,7 @@ export class PrefabsClient implements PrefabsClientApi {
     owner,
   }: {
     prefabId: string;
-    owner: string;
+    owner?: string;
   }): Promise<{ id: string }> {
     const res = await this.fetchApi.fetch(
       `${await this.getBaseUrl()}/prefab-library`,

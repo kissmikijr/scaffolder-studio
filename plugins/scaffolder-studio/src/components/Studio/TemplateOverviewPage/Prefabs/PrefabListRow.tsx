@@ -11,6 +11,7 @@ import {
     isTemplateNode,
     isParametersNode,
     scaffolderStudioPrefabDeletePermission,
+    scaffolderStudioPrefabPublishPermission,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
@@ -66,6 +67,9 @@ export const PrefabListRow = ({
         usePermission({
             permission: scaffolderStudioPrefabDeletePermission,
         });
+    const { allowed: canPublishPrefab } = usePermission({
+        permission: scaffolderStudioPrefabPublishPermission,
+    });
 
     const handleContextMenu = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -255,9 +259,11 @@ export const PrefabListRow = ({
                 {...styledMenuProps}
             >
                 <MenuItem onClick={handleOpenPrefab}>Open Prefab</MenuItem>
-                <MenuItem onClick={handlePublishToLibrary}>
-                    Publish to Library
-                </MenuItem>
+                {canPublishPrefab && (
+                    <MenuItem onClick={handlePublishToLibrary}>
+                        Publish to Library
+                    </MenuItem>
+                )}
                 {!isLoadingPermission && canDeletePrefab && (
                     <MenuItem onClick={handleDeletePrefab}>Delete Prefab</MenuItem>
                 )}

@@ -22,7 +22,7 @@ import {
   Outlet,
   Link,
 } from 'react-router-dom';
-import { useApi } from '@backstage/core-plugin-api';
+import { useApi, configApiRef } from '@backstage/core-plugin-api';
 import {
   scaffolderVisualApiRef,
   ScaffolderStudioApi,
@@ -73,6 +73,10 @@ function useRouteMatch(patterns: readonly string[]) {
 
 export const ProjectOverviewPage = () => {
   const api = useApi<ScaffolderStudioApi>(scaffolderVisualApiRef);
+  const configApi = useApi(configApiRef);
+  const isLibraryEnabled =
+    configApi.getOptionalBoolean('scaffolder.studio.prefabs.libraryEnabled') ??
+    true;
 
 
   const navigate = useNavigate();
@@ -229,16 +233,18 @@ export const ProjectOverviewPage = () => {
                 to="/scaffolder-studio/published"
               />
             )}
-            <Tab
-              label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <span>Prefab Library</span>
-                </Box>
-              }
-              value="/scaffolder-studio/prefab-library"
-              component={Link}
-              to="/scaffolder-studio/prefab-library"
-            />
+            {isLibraryEnabled && (
+              <Tab
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <span>Prefab Library</span>
+                  </Box>
+                }
+                value="/scaffolder-studio/prefab-library"
+                component={Link}
+                to="/scaffolder-studio/prefab-library"
+              />
+            )}
             <Tab
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

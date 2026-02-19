@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ConfirmationDialogProvider } from '../Studio/dialogs/ConfirmationDialogContext';
 import { useCustomFieldExtensions } from '@backstage/plugin-scaffolder-react';
 import { FieldExtensionsContext } from '../../context/FieldExtensionsContext';
+import { configApiRef, useApi } from '@backstage/core-plugin-api';
 
 // Overview/List Components
 import { TemplatesView } from '../Studio/TemplateOverviewPage/components/TemplatesView';
@@ -40,6 +41,10 @@ export interface UnifiedRouterProps {
 
 const UnifiedRouter = ({ children }: UnifiedRouterProps) => {
   const parentTheme = useTheme();
+  const configApi = useApi(configApiRef);
+  const isLibraryEnabled =
+    configApi.getOptionalBoolean('scaffolder.studio.prefabs.libraryEnabled') ??
+    true;
 
   const pluginTheme = React.useMemo(() => {
     const backgroundColor =
@@ -282,7 +287,12 @@ const UnifiedRouter = ({ children }: UnifiedRouterProps) => {
                 <Route path="prefabs" element={<PrefabsView />} />
                 <Route path="trash" element={<TrashView />} />
                 <Route path="published" element={<PublishedView />} />
-                <Route path="prefab-library" element={<PrefabLibraryView />} />
+                {isLibraryEnabled && (
+                  <Route
+                    path="prefab-library"
+                    element={<PrefabLibraryView />}
+                  />
+                )}
               </Route>
 
               {/* Prefab Editor Route */}

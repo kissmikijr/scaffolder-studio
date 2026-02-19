@@ -135,6 +135,7 @@ Permission IDs exported by `@kissmiklosjr/plugin-scaffolder-studio-common`:
 - `scaffolderStudioPrefabReadPermission`
 - `scaffolderStudioPrefabCreatePermission`
 - `scaffolderStudioPrefabDeletePermission`
+- `scaffolderStudioPrefabPublishPermission`
 - `scaffolderStudioPermanentlyDeletePermission`
 
 Use these in your permission policy (e.g., `packages/backend/src/extensions/permissionsPolicyExtension.ts`) to control access.
@@ -175,6 +176,8 @@ scaffolder:
     publishers:
       github:
         enabled: true
+    prefabs:
+      libraryEnabled: true # Set to false to disable the prefab library feature
 ```
 
 ## Key Concepts
@@ -212,3 +215,4 @@ These permissions control the prefabs:
 - `scaffolderStudioPrefabReadPermission`
 - `scaffolderStudioPrefabCreatePermission`
 - `scaffolderStudioPrefabDeletePermission`
+- `scaffolderStudioPrefabPublishPermission`

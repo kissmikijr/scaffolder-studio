@@ -13,6 +13,7 @@ import {
     scaffolderStudioPrefabReadPermission,
     scaffolderStudioPrefabCreatePermission,
     scaffolderStudioPrefabDeletePermission,
+    scaffolderStudioPrefabPublishPermission,
     scaffolderStudioPermanentlyDeletePermission,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
@@ -36,6 +37,9 @@ export class ScaffolderStudioPermissionPolicy implements PermissionPolicy {
             return { result: AuthorizeResult.ALLOW };
         }
         if (isPermission(permission, scaffolderStudioPrefabDeletePermission)) {
+            return { result: AuthorizeResult.ALLOW };
+        }
+        if (isPermission(permission, scaffolderStudioPrefabPublishPermission)) {
             return { result: AuthorizeResult.ALLOW };
         }
 

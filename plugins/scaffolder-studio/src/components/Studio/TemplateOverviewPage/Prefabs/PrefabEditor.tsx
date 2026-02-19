@@ -7,6 +7,7 @@ import {
   OutputNodeData,
   PropertyNodeData,
   AllNodeData,
+  scaffolderStudioPrefabPublishPermission,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -16,6 +17,7 @@ import { Box, useTheme, Divider, Button } from '@mui/material';
 import '@xyflow/react/dist/style.css';
 import { getNodeBase } from '../../nodeBase';
 import { scaffolderVisualApiRef } from '../../../../api/ScaffolderVisualClient';
+import { usePermission } from '@backstage/plugin-permission-react';
 
 import PrefabQueenNode from '../../nodes/prefab/PrefabQueenNode';
 import { rehydrateNodes } from '../../rehydrateNodes';
@@ -46,6 +48,10 @@ export const PrefabEditor = () => {
   const [isLoading, setIsLoading] = useState(true);
   const theme = useTheme();
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
+
+  const { allowed: canPublishPrefab } = usePermission({
+    permission: scaffolderStudioPrefabPublishPermission,
+  });
 
   const handlePrefabChange = useCallback(
     (_: string, data: Record<string, unknown>) => {
@@ -411,7 +417,7 @@ export const PrefabEditor = () => {
                 });
               }
             }}
-            disabled={!prefab || (prefab.is_published && !!prefab.published_at)}
+            disabled={!prefab || (prefab.is_published && !!prefab.published_at) || !canPublishPrefab}
             sx={{ height: 32, width: 128 }}
           >
             {!prefab?.published_at

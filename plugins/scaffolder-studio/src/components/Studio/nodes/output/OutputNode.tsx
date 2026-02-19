@@ -67,24 +67,23 @@ const OutputNode = ({
           </Typography>
         </Box>
 
-        <Stack spacing={1} sx={{ px: 1 }}>
-          {linksCount > 0 && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <LaunchIcon fontSize="small" />
-              <Typography variant="body2">
-                {linksCount} link{linksCount !== 1 ? 's' : ''}
+        <Stack spacing={0.5} sx={{ px: 1.5, py: 1 }}>
+          {data?.links?.map((link, idx) => (
+            <Box key={`link-${idx}`} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <LaunchIcon sx={{ fontSize: '0.9rem', opacity: 0.7 }} />
+              <Typography variant="body2" noWrap sx={{ fontSize: '0.75rem' }}>
+                {link.title}
               </Typography>
             </Box>
-          )}
-
-          {textsCount > 0 && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <InfoIcon fontSize="small" />
-              <Typography variant="body2">
-                {textsCount} text block{textsCount !== 1 ? 's' : ''}
+          ))}
+          {data?.text?.map((text, idx) => (
+            <Box key={`text-${idx}`} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <InfoIcon sx={{ fontSize: '0.9rem', opacity: 0.7 }} />
+              <Typography variant="body2" noWrap sx={{ fontSize: '0.75rem' }}>
+                {text.title}
               </Typography>
             </Box>
-          )}
+          ))}
         </Stack>
       </Box>
     );
@@ -97,9 +96,8 @@ const OutputNode = ({
         borderRadius: '20px',
         backgroundColor: theme.palette.background.paper,
         color: theme.palette.text.primary,
-        border: `2px solid ${
-          selected ? SELECTED_BORDER_COLOR : theme.palette.divider
-        }`,
+        border: `2px solid ${selected ? SELECTED_BORDER_COLOR : theme.palette.divider
+          }`,
         pointerEvents: disabled ? 'none' : 'auto',
         filter: disabled ? 'grayscale(1)' : 'none',
         '&:hover': {

@@ -202,7 +202,7 @@ const yamlToProjectData = (
       id: `${templateNode.id}-${stepNodes[0].id}`,
       source: templateNode.id,
       target: stepNodes[0].id,
-      sourceHandle: 'step',
+      sourceHandle: 'right',
       targetHandle: 'left',
     });
 
@@ -228,7 +228,7 @@ const yamlToProjectData = (
       id: `${templateNode.id}-${parameterNodes[0].id}`,
       source: templateNode.id,
       target: parameterNodes[0].id,
-      sourceHandle: 'parameters',
+      sourceHandle: 'bottom',
       targetHandle: 'left',
     });
   }
@@ -237,7 +237,7 @@ const yamlToProjectData = (
       id: `${templateNode.id}-${outputNodes[0].id}`,
       source: templateNode.id,
       target: outputNodes[0].id,
-      sourceHandle: 'output',
+      sourceHandle: 'left',
       targetHandle: 'top',
     });
   }

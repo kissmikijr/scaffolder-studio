@@ -25,7 +25,6 @@ export const usePrefabCreator = () => {
                     formData: {},
                 },
             },
-            owner: 'system',
             title: 'New Prefab',
         });
         navigate(`/scaffolder-studio/prefab/${prefabId}`);

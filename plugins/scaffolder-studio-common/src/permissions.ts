@@ -34,3 +34,7 @@ export const scaffolderStudioPermanentlyDeletePermission =
     name: 'scaffolder-studio.prefab.permanently-delete',
     attributes: { action: 'delete' },
   });
+export const scaffolderStudioPrefabPublishPermission = createPermission({
+  name: 'scaffolder-studio.prefab.publish',
+  attributes: { action: 'update' },
+});

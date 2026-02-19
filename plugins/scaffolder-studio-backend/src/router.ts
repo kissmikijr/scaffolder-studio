@@ -14,6 +14,7 @@ import {
   scaffolderStudioPermanentlyDeletePermission,
   scaffolderStudioPrefabCreatePermission,
   scaffolderStudioPrefabDeletePermission,
+  scaffolderStudioPrefabPublishPermission,
   scaffolderStudioPrefabReadPermission,
   scaffolderStudioPublishPermission,
   scaffolderStudioUnpublishPermission,
@@ -448,7 +449,7 @@ export async function createRouter({
 
     const result = await prefabService.create({
       node: req.body.node,
-      owner: req.body.owner,
+      owner: credentials.principal.userEntityRef,
       title: req.body.title,
       description: req.body.description,
     });
@@ -489,13 +490,28 @@ export async function createRouter({
   });
 
   router.post('/prefab-library', async (req, res) => {
+    const credentials = await httpAuth.credentials(req, { allow: ['user'] });
+    const owner = credentials.principal.userEntityRef;
+
+    const decision = (
+      await permissions.authorize(
+        [{ permission: scaffolderStudioPrefabPublishPermission }],
+        { credentials },
+      )
+    )[0];
+
+    if (decision.result === AuthorizeResult.DENY) {
+      throw new NotAllowedError('Unauthorized');
+    }
+
     const result = await prefabLibraryService.create({
       prefabId: req.body.prefabId,
-      owner: req.body.owner,
+      owner,
     });
     res.json(result);
   });
   router.delete('/prefab-library/:id', async (req, res) => {
+    await httpAuth.credentials(req, { allow: ['user'] });
     const result = await prefabLibraryService.delete({ id: req.params.id });
     res.json(result);
   });
