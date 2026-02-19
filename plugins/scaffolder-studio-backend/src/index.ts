@@ -18,13 +18,6 @@ export default createBackendFeatureLoader({
       yield import('./modules/eventPublisherModule');
     }
 
-    yield import(
-      '@kissmiklosjr/plugin-permission-backend-module-scaffolder-studio'
-    );
-
-    yield import(
-      '@kissmiklosjr/plugin-catalog-backend-module-scaffolder-studio-provider'
-    );
   },
 });
 

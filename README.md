@@ -113,6 +113,21 @@ export const Root = ({ children }: PropsWithChildren<{}>) => (
 
 If you are using the Backstage Permission Framework, this plugin exports several permissions that you may need to configure in your permission policy.
 
+Install the permission module into your backend
+```typescript
+
+import { createBackend } from '@backstage/backend-defaults';
+
+const backend = createBackend();
+
+// ... other plugins
+
+// Add the scaffolder-studio backend
+backend.add(import('@kissmiklosjr/plugin-permission-backend-module-scaffolder-studio'));
+
+backend.start();
+```
+
 Permission IDs exported by `@kissmiklosjr/plugin-scaffolder-studio-common`:
 
 - `scaffolderStudioPublishPermission`
@@ -124,6 +139,43 @@ Permission IDs exported by `@kissmiklosjr/plugin-scaffolder-studio-common`:
 
 Use these in your permission policy (e.g., `packages/backend/src/extensions/permissionsPolicyExtension.ts`) to control access.
 
+## Publishers
+
+To enable the event publisher you need to install the event based entity provider.
+
+### Event based entity provider
+
+```typescript
+
+import { createBackend } from '@backstage/backend-defaults';
+
+const backend = createBackend();
+
+// ... other plugins
+
+// Add the scaffolder-studio backend
+backend.add(import('@kissmiklosjr/plugin-catalog-backend-module-scaffolder-studio-provider'))
+backend.start();
+```
+Then set enable it in your `app-config.yaml`
+
+```yaml
+scaffolder:
+  studio:
+    publishers:
+      event:
+        enabled: true
+``` 
+### Publishing to GitHub
+To enable publshing to a GitHub repository you need to enable the GitHub publisher in your `app-config.yaml`
+
+```yaml
+scaffolder:
+  studio:
+    publishers:
+      github:
+        enabled: true
+```
 
 ## Key Concepts
 
