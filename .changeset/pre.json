@@ -11,6 +11,7 @@
     "@kissmiklosjr/plugin-scaffolder-studio-common": "1.0.0-beta.0"
   },
   "changesets": [
+    "eighty-dots-tie",
     "humble-goats-pay",
     "tough-turtles-march"
   ]
