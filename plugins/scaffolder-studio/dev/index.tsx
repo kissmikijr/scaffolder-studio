@@ -13,10 +13,7 @@ import {
 } from '@backstage/core-plugin-api';
 import { scmIntegrationsApiRef } from '@backstage/integration-react';
 import { CatalogClient } from '@backstage/catalog-client';
-import {
-  formDecoratorsApiRef,
-  formFieldsApiRef,
-} from '@backstage/plugin-scaffolder/alpha';
+import { formDecoratorsApiRef } from '@backstage/plugin-scaffolder/alpha';
 import { DefaultScaffolderFormDecoratorsApi } from '@backstage/plugin-scaffolder/alpha';
 
 createDevApp()
@@ -42,11 +39,6 @@ createDevApp()
     api: formDecoratorsApiRef,
     deps: {},
     factory: () => DefaultScaffolderFormDecoratorsApi.create(),
-  })
-  .registerApi({
-    api: formFieldsApiRef,
-    deps: {},
-    factory: () => ({ getFormFields: async () => [] }),
   })
   .registerApi({
     api: catalogApiRef,

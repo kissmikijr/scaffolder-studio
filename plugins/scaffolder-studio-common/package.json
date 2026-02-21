@@ -30,15 +30,15 @@
     "postpack": "backstage-cli package postpack"
   },
   "devDependencies": {
-    "@backstage/cli": "^0.34.5",
+    "@backstage/cli": "^0.35.4",
     "@types/js-yaml": "^4"
   },
   "files": [
     "dist"
   ],
   "dependencies": {
-    "@backstage/backend-plugin-api": "^1.6.0",
-    "@backstage/plugin-permission-common": "^0.9.3",
+    "@backstage/backend-plugin-api": "^1.7.0",
+    "@backstage/plugin-permission-common": "^0.9.6",
     "js-yaml": "^4.1.1",
     "uuid": "^13.0.0"
   }
