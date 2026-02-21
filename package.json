@@ -27,7 +27,8 @@
     "new": "backstage-cli new",
     "changeset": "changeset",
     "changeset:version": "changeset version",
-    "changeset:publish": "yarn workspaces foreach -A --no-private --topological-dev npm publish --tolerate-republish"
+    "changeset:publish": "yarn workspaces foreach -A --no-private --topological-dev npm publish --tolerate-republish",
+    "prepare": "husky"
   },
   "workspaces": {
     "packages": [
@@ -42,6 +43,8 @@
     "@playwright/test": "^1.32.3",
     "@types/lodash.debounce": "^4",
     "@types/luxon": "^3",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "node-gyp": "^10.0.0",
     "prettier": "^2.3.2",
     "typescript": "~5.8.0"
