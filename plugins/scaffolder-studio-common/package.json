@@ -1,6 +1,6 @@
 {
   "name": "@kissmiklosjr/plugin-scaffolder-studio-common",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
   "license": "CC-BY-NC-4.0",
   "description": "Common functionalities for the scaffolder-studio plugin",
   "main": "src/index.ts",
