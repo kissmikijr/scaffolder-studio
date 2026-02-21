@@ -27,7 +27,8 @@
   "dependencies": {
     "@backstage/backend-plugin-api": "^1.5.0",
     "@backstage/plugin-permission-common": "^0.9.3",
-    "@backstage/plugin-permission-node": "^0.10.7"
+    "@backstage/plugin-permission-node": "^0.10.7",
+    "@kissmiklosjr/plugin-scaffolder-studio-common": "workspace:^"
   },
   "devDependencies": {
     "@backstage/backend-test-utils": "^1.10.0",

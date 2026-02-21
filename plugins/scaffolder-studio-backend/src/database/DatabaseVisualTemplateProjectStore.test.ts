@@ -11,7 +11,13 @@ describe('DatabaseVisualTemplateProjectStore', () => {
 
   beforeEach(async () => {
     database = mockServices.database.mock();
-    knex = await database.getClient();
+
+    knex = {
+      migrate: { latest: jest.fn() },
+      transaction: jest.fn(),
+      destroy: jest.fn(),
+    } as unknown as Knex;
+    (database.getClient as jest.Mock).mockResolvedValue(knex);
 
     // Mock the migrations
     jest.spyOn(knex.migrate, 'latest').mockResolvedValue([]);
@@ -56,7 +62,7 @@ describe('DatabaseVisualTemplateProjectStore', () => {
             actionId: 'test:action',
             formData: {},
             if: '',
-            onChange: () => {},
+            onChange: () => { },
           },
         },
         {
@@ -80,7 +86,8 @@ describe('DatabaseVisualTemplateProjectStore', () => {
         jest
           .spyOn(knex, 'transaction')
           .mockImplementation(async (callback: any) => {
-            const mockTrx = {
+            const mockTrx: any = jest.fn();
+            Object.assign(mockTrx, {
               ...knex,
               insert: jest.fn().mockReturnThis(),
               onConflict: jest.fn().mockReturnThis(),
@@ -89,7 +96,8 @@ describe('DatabaseVisualTemplateProjectStore', () => {
               whereIn: jest.fn().mockReturnThis(),
               delete: jest.fn().mockResolvedValue(1),
               ignore: jest.fn().mockResolvedValue(undefined),
-            };
+            });
+            mockTrx.mockReturnValue(mockTrx);
             return callback(mockTrx);
           });
       });
@@ -105,13 +113,15 @@ describe('DatabaseVisualTemplateProjectStore', () => {
         jest
           .spyOn(knex, 'transaction')
           .mockImplementation(async (callback: any) => {
-            const mockTrx = {
+            const mockTrx: any = jest.fn();
+            Object.assign(mockTrx, {
               ...knex,
               insert: mockInsert,
               onConflict: mockOnConflict,
               merge: jest.fn().mockResolvedValue(undefined),
               ignore: mockIgnore,
-            };
+            });
+            mockTrx.mockReturnValue(mockTrx);
             return callback(mockTrx);
           });
 
@@ -146,7 +156,8 @@ describe('DatabaseVisualTemplateProjectStore', () => {
         jest
           .spyOn(knex, 'transaction')
           .mockImplementation(async (callback: any) => {
-            const mockTrx = {
+            const mockTrx: any = jest.fn();
+            Object.assign(mockTrx, {
               ...knex,
               insert: mockInsert,
               onConflict: jest.fn().mockReturnThis(),
@@ -155,7 +166,8 @@ describe('DatabaseVisualTemplateProjectStore', () => {
               whereIn: jest.fn().mockReturnThis(),
               delete: mockDelete,
               ignore: jest.fn().mockResolvedValue(undefined),
-            };
+            });
+            mockTrx.mockReturnValue(mockTrx);
             return callback(mockTrx);
           });
 
@@ -194,7 +206,8 @@ describe('DatabaseVisualTemplateProjectStore', () => {
         jest
           .spyOn(knex, 'transaction')
           .mockImplementation(async (callback: any) => {
-            const mockTrx = {
+            const mockTrx: any = jest.fn();
+            Object.assign(mockTrx, {
               ...knex,
               insert: jest.fn().mockReturnThis(),
               onConflict: jest.fn().mockReturnThis(),
@@ -202,7 +215,8 @@ describe('DatabaseVisualTemplateProjectStore', () => {
               where: mockWhere,
               whereIn: mockWhereIn,
               delete: mockDelete,
-            };
+            });
+            mockTrx.mockReturnValue(mockTrx);
             return callback(mockTrx);
           });
 
@@ -245,7 +259,8 @@ describe('DatabaseVisualTemplateProjectStore', () => {
         jest
           .spyOn(knex, 'transaction')
           .mockImplementation(async (callback: any) => {
-            const mockTrx = {
+            const mockTrx: any = jest.fn();
+            Object.assign(mockTrx, {
               ...knex,
               insert: mockInsert,
               onConflict: jest.fn().mockReturnThis(),
@@ -254,7 +269,8 @@ describe('DatabaseVisualTemplateProjectStore', () => {
               whereIn: mockWhereIn,
               delete: mockDelete,
               ignore: jest.fn().mockResolvedValue(undefined),
-            };
+            });
+            mockTrx.mockReturnValue(mockTrx);
             return callback(mockTrx);
           });
 
@@ -288,13 +304,14 @@ describe('DatabaseVisualTemplateProjectStore', () => {
         // Mock existing template with same prefabs
         jest.spyOn(store, 'get').mockResolvedValue(mockTemplateWithPrefabs);
 
-        const mockInsert = jest.fn();
+        const mockInsert = jest.fn().mockReturnThis();
         const mockDelete = jest.fn();
 
         jest
           .spyOn(knex, 'transaction')
           .mockImplementation(async (callback: any) => {
-            const mockTrx = {
+            const mockTrx: any = jest.fn();
+            Object.assign(mockTrx, {
               ...knex,
               insert: mockInsert,
               onConflict: jest.fn().mockReturnThis(),
@@ -302,14 +319,15 @@ describe('DatabaseVisualTemplateProjectStore', () => {
               where: jest.fn().mockReturnThis(),
               whereIn: jest.fn().mockReturnThis(),
               delete: mockDelete,
-            };
+            });
+            mockTrx.mockReturnValue(mockTrx);
             return callback(mockTrx);
           });
 
         await store.set(mockTemplateWithPrefabs);
 
-        // Should not insert or delete any connections
-        expect(mockInsert).not.toHaveBeenCalled();
+        // Should insert the template, but not any new connections
+        expect(mockInsert).toHaveBeenCalledTimes(1);
         expect(mockDelete).not.toHaveBeenCalled();
       });
     });
@@ -322,11 +340,13 @@ describe('DatabaseVisualTemplateProjectStore', () => {
         jest
           .spyOn(knex, 'transaction')
           .mockImplementation(async (callback: any) => {
-            const mockTrx = {
+            const mockTrx: any = jest.fn();
+            Object.assign(mockTrx, {
               ...knex,
               whereIn: mockWhereIn,
               delete: mockDelete,
-            };
+            });
+            mockTrx.mockReturnValue(mockTrx);
             return callback(mockTrx);
           });
 

@@ -59,7 +59,7 @@ export class PrefabListPage {
     if ((await card.count()) === 0) {
       return;
     }
-
+    await card.first().click();
     await card.first().click({ button: 'right' });
     await this.page.getByRole('menuitem', { name: 'Delete Prefab' }).click();
     await this.page
@@ -69,6 +69,7 @@ export class PrefabListPage {
 
   async publishPrefab(title: string) {
     const card = this.getPrefabCard(title);
+    await card.first().click();
     await card.first().click({ button: 'right' });
     await this.page
       .getByRole('menuitem', { name: 'Publish to Library' })
@@ -89,6 +90,7 @@ export class PrefabListPage {
 
   async deletePrefab(title: string) {
     const card = this.getPrefabCard(title);
+    await card.first().click();
     await card.click({ button: 'right' });
 
     await this.page.getByRole('menuitem', { name: 'Delete Prefab' }).click();
