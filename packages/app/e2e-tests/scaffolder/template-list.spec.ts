@@ -298,7 +298,7 @@ test.describe('Template Description Display', () => {
     }
   });
 
-  test.only('should display template description in list view', async ({
+  test('should display template description in list view', async ({
     page,
   }) => {
     const templateName = `e2e-desc-test-${Date.now()}`;
