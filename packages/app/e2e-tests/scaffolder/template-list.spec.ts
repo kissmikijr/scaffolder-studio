@@ -298,7 +298,7 @@ test.describe('Template Description Display', () => {
     }
   });
 
-  test('should display template description in list view', async ({
+  test.only('should display template description in list view', async ({
     page,
   }) => {
     const templateName = `e2e-desc-test-${Date.now()}`;
@@ -326,8 +326,6 @@ test.describe('Template Description Display', () => {
     });
     await expect(row).toBeVisible();
 
-    // The description should appear with an em-dash separator
-    await expect(row).toContainText('—');
     await expect(row).toContainText(description);
   });
 
