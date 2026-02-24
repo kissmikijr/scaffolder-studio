@@ -1,5 +1,27 @@
 # @kissmiklosjr/plugin-catalog-backend-module-scaffolder-studio-provider
 
+## 1.0.0
+
+### Major Changes
+
+- e0a7515: 1.0-beta release
+- e0a7515: Initial release
+
+### Patch Changes
+
+- e0a7515: Release properly
+- e0a7515: preparing for release
+- e0a7515: release candidate final testing
+- e0a7515: Upgrade backstage to 1.48.1
+- Updated dependencies [e0a7515]
+- Updated dependencies [e0a7515]
+- Updated dependencies [e0a7515]
+- Updated dependencies [e0a7515]
+- Updated dependencies [e0a7515]
+- Updated dependencies [e0a7515]
+- Updated dependencies [e0a7515]
+  - @kissmiklosjr/plugin-scaffolder-studio-common@1.0.0
+
 ## 1.0.0-beta.4
 
 ### Patch Changes
