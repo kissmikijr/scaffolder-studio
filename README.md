@@ -8,6 +8,11 @@
 
 Scaffolder Studio is a plugin for Backstage that allows you to create and edit Backstage templates in a visual way. It provides a dedicated user based space where you can create and trial via dry run your Scaffolder Templates.
 
+<img width="1726" height="856" alt="image" src="https://github.com/user-attachments/assets/e1bf1984-588e-4671-8703-65b44e725d49" />
+
+Video walkthrough:
+- [https://www.youtube.com/watch?v=urf1mC9XnUE](https://www.youtube.com/watch?v=urf1mC9XnUE)
+
 With Scaffolder Studio, you can:
 
 - Create and edit your own Backstage templates in a visual way
