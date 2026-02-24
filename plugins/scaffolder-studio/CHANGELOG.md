@@ -1,5 +1,38 @@
 # @kissmiklosjr/plugin-scaffolder-studio
 
+## 1.0.0
+
+### Major Changes
+
+- e0a7515: 1.0-beta release
+- e0a7515: Initial release
+
+### Patch Changes
+
+- e0a7515: Fix auto-save
+- e0a7515: Release properly
+- e0a7515: preparing for release
+- e0a7515: Fix personal prefab serialization
+- e0a7515: Fix redirect and yaml import
+- e0a7515: After import a template via the import it did not create edges between the templates but serialization looks like it works
+  OutputNode should render the title’sfrom the text and or link blocks
+  The prefabs side content empty state loads really slow it pops up after a while
+  Need a new permission which controls that you if you can publish to the prefab library
+  Add an app-config setting to be able to turn off the prefab library feature in the frontend
+- e0a7515: release candidate final testing
+- e0a7515: Upgrade backstage to 1.48.1
+- e0a7515: Fix resize observer
+- e0a7515: fix null check
+- e0a7515: Fixed a bunch of stuff ready for release
+- Updated dependencies [e0a7515]
+- Updated dependencies [e0a7515]
+- Updated dependencies [e0a7515]
+- Updated dependencies [e0a7515]
+- Updated dependencies [e0a7515]
+- Updated dependencies [e0a7515]
+- Updated dependencies [e0a7515]
+  - @kissmiklosjr/plugin-scaffolder-studio-common@1.0.0
+
 ## 1.0.0-beta.10
 
 ### Patch Changes
