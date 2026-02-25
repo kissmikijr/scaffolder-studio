@@ -40,6 +40,7 @@
     "@backstage/cli": "^0.35.4",
     "@backstage/e2e-test-utils": "^0.1.2",
     "@changesets/cli": "^2.27.1",
+    "@jest/environment-jsdom-abstract": "^30.2.0",
     "@playwright/test": "^1.32.3",
     "@types/jest": "^30.0.0",
     "@types/lodash.debounce": "^4",

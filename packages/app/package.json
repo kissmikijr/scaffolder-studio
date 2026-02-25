@@ -48,7 +48,7 @@
     "@kissmiklosjr/plugin-scaffolder-studio": "workspace:^",
     "@material-ui/core": "^4.12.2",
     "@material-ui/icons": "^4.9.1",
-    "@roadiehq/plugin-scaffolder-frontend-module-http-request-field": "^1.2.0",
+    "@roadiehq/plugin-scaffolder-frontend-module-http-request-field": "^2.0.1",
     "react": "^18.0.2",
     "react-dom": "^18.0.2",
     "react-router": "^6.3.0",

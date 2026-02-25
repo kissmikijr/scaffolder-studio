@@ -19,28 +19,17 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Cache TypeScript build info
-        uses: actions/cache@v4
-        with:
-          path: |
-            dist-types
-            **/dist
-            **/.turbo
-          key: ${{ runner.os }}-tsc-${{ hashFiles('**/yarn.lock', '**/tsconfig*.json', '**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-tsc-
-
-      # - name: Lint
-      #   run: yarn lint
+      - name: Lint
+        run: yarn lint
 
       - name: Type check
         run: yarn tsc
 
-      - name: Unit Tests
-        run: yarn test --coverage=false --passWithNoTests
-
       - name: Build
         run: yarn build:all
+
+      - name: Unit Tests
+        run: yarn test --coverage=false --passWithNoTests
 
       - name: Check for changesets
         uses: changesets/action@v1
@@ -76,16 +65,6 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --immutable
-
-      - name: Cache TypeScript build info
-        uses: actions/cache@v4
-        with:
-          path: |
-            dist-types
-            **/dist
-          key: ${{ runner.os }}-tsc-${{ hashFiles('**/yarn.lock', '**/tsconfig*.json', '**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-tsc-
 
       - name: Build all packages
         run: yarn build:all
