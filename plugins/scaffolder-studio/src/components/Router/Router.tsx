@@ -1,7 +1,10 @@
-import { useMemo, ReactNode } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { ReactNode, useMemo } from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { ConfirmationDialogProvider } from '../Studio/dialogs/ConfirmationDialogContext';
-import { useCustomFieldExtensions } from '@backstage/plugin-scaffolder-react';
+import {
+  FieldExtensionOptions,
+  useCustomFieldExtensions,
+} from '@backstage/plugin-scaffolder-react';
 import { FieldExtensionsContext } from '../../context/FieldExtensionsContext';
 import { configApiRef, useApi } from '@backstage/core-plugin-api';
 
@@ -10,8 +13,8 @@ import { TemplatesView } from '../Studio/TemplateOverviewPage/components/Templat
 import { TrashView } from '../Studio/TemplateOverviewPage/components/TrashView';
 import { PublishedView } from '../Studio/TemplateOverviewPage/components/PublishedView';
 import {
-  PrefabsView,
   PrefabLibraryView,
+  PrefabsView,
 } from '../Studio/TemplateOverviewPage/Prefabs';
 import { ProjectOverviewPage } from '../Studio/TemplateOverviewPage/TemplateOverviewPage';
 
@@ -21,7 +24,8 @@ import { DryRunPage } from '../Studio/DryRunPage';
 import { VisualTemplateEditorComponent } from '../Studio/VisualTemplateEditorComponent';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { createTheme, useTheme, ThemeProvider } from '@mui/material/styles';
+import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
+import { FormField } from '@backstage/plugin-scaffolder-react/alpha';
 
 declare module '@mui/material/styles' {
   interface Theme {
@@ -37,9 +41,10 @@ const queryClient = new QueryClient();
 
 export interface UnifiedRouterProps {
   children?: ReactNode;
+  formFields?: Array<FormField>;
 }
 
-const UnifiedRouter = ({ children }: UnifiedRouterProps) => {
+const UnifiedRouter = ({ children, formFields }: UnifiedRouterProps) => {
   const parentTheme = useTheme();
   const configApi = useApi(configApiRef);
   const isLibraryEnabled =
@@ -316,10 +321,17 @@ const UnifiedRouter = ({ children }: UnifiedRouterProps) => {
   }, [parentTheme]);
 
   const customFieldExtensions = useCustomFieldExtensions(children);
+  const allFieldExtensions = useMemo(
+    () => [
+      ...customFieldExtensions,
+      ...((formFields as unknown as FieldExtensionOptions<any, any>[]) ?? []),
+    ],
+    [customFieldExtensions, formFields],
+  );
 
   return (
     <ThemeProvider theme={pluginTheme}>
-      <FieldExtensionsContext.Provider value={customFieldExtensions}>
+      <FieldExtensionsContext.Provider value={allFieldExtensions}>
         <ConfirmationDialogProvider>
           <QueryClientProvider client={queryClient}>
             <Routes>
