@@ -8,8 +8,8 @@
   "scripts": {
     "dev": "yarn workspaces foreach -A --include backend --include app --parallel --jobs unlimited -v -i run start",
     "db": "docker ps -a | grep -q \"scaffolder_studio_db\" && docker stop scaffolder_studio_db && docker rm scaffolder_studio_db; docker run -d --name scaffolder_studio_db --env POSTGRES_HOST_AUTH_METHOD=trust -p 5433:5432 postgres:16 -c max_connections=191",
-    "start": "yarn workspace app start",
-    "start:alpha": "yarn workspace app start:alpha",
+    "start:legacy": "yarn workspace app start",
+    "start": "yarn workspace app start:alpha",
     "start-backend": "yarn workspace backend start",
     "build:backend": "yarn workspace backend build",
     "build:all": "yarn tsc && backstage-cli repo build --all",

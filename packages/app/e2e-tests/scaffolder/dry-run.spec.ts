@@ -119,10 +119,10 @@ test.describe('Dry Run Feature', () => {
 
     await editorPage.clickDryRun();
 
-    await expect(page).toHaveURL(
-      /\/scaffolder-studio\/templates\/.*\/dry-run/,
-    );
-    await expect(page.getByText('Template Parameters')).toBeVisible();
+    await expect(page).toHaveURL(/\/scaffolder-studio\/templates\/.*\/dry-run/);
+    await expect(
+      page.getByRole('heading', { name: 'Template Parameters' }),
+    ).toBeVisible();
 
     await page.getByLabel('Test Parameter').fill('Hello Dry Run');
 
@@ -176,9 +176,7 @@ test.describe('Dry Run Feature', () => {
 
     // Go to Dry Run
     await editorPage.clickDryRun();
-    await expect(page).toHaveURL(
-      /\/scaffolder-studio\/templates\/.*\/dry-run/,
-    );
+    await expect(page).toHaveURL(/\/scaffolder-studio\/templates\/.*\/dry-run/);
     const dryRunUrlMatch = page.url().match(/\/templates\/([^/]+)\/dry-run/);
     expect(dryRunUrlMatch?.[1]).toBeTruthy();
     const templateId = dryRunUrlMatch![1];
@@ -196,9 +194,7 @@ test.describe('Dry Run Feature', () => {
     // Wait for transition off dry-run first.
     await expect(page).not.toHaveURL(/\/dry-run$/);
     // If close fallback landed outside editor form, normalize route before reopening.
-    if (
-      !/\/scaffolder-studio\/templates\/[^/]+\/form$/.test(page.url())
-    ) {
+    if (!/\/scaffolder-studio\/templates\/[^/]+\/form$/.test(page.url())) {
       await page.goto(`/scaffolder-studio/templates/${templateId}/form`);
     }
     await expect(page).toHaveURL(
@@ -208,10 +204,10 @@ test.describe('Dry Run Feature', () => {
 
     // Open Dry Run again
     await editorPage.clickDryRun();
-    await expect(page).toHaveURL(
-      /\/scaffolder-studio\/templates\/.*\/dry-run/,
-    );
-    await expect(page.getByText('Template Parameters')).toBeVisible();
+    await expect(page).toHaveURL(/\/scaffolder-studio\/templates\/.*\/dry-run/);
+    await expect(
+      page.getByRole('heading', { name: 'Template Parameters' }),
+    ).toBeVisible();
     await ensureDryRunInputStep({ page, fieldLabel: 'City' });
 
     await expect(page.getByRole('textbox', { name: 'City' })).toHaveValue(

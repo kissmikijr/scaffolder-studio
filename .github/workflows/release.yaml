@@ -33,16 +33,6 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Cache TypeScript build info
-        uses: actions/cache@v4
-        with:
-          path: |
-            dist-types
-            **/dist
-          key: ${{ runner.os }}-tsc-${{ hashFiles('**/yarn.lock', '**/tsconfig*.json', '**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-tsc-
-
       - name: Build all packages
         run: yarn build:all
 
