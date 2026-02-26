@@ -24,5 +24,5 @@ test('App should render the welcome page', async ({ page }) => {
     await enterButton.click();
   }
 
-  await expect(page.getByText('My Company Catalog')).toBeVisible();
+  await expect(page.getByText('Scaffolder Studio')).toBeVisible();
 });
