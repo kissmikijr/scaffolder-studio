@@ -31,13 +31,19 @@ export const UIFieldConfig = ({
   } | null>(null);
   const customFieldExtensions = useFieldExtensions();
 
+  // In the new frontend system, the schema is nested under an extra `.schema` key.
+  // Support both: legacy `ext.schema.uiOptions` and NFS `ext.schema.schema.uiOptions`.
+  const getUiOptions = (schema: RJSFSchema): RJSFSchema | undefined =>
+    (schema as any).uiOptions ?? (schema as any).schema?.uiOptions;
+
   const uiFieldOptions = useMemo(
     () => [
       { label: 'None', schema: {} as RJSFSchema },
       ...customFieldExtensions
         .map(ui => ({ schema: ui.schema as RJSFSchema, label: ui.name }))
-        .filter(ui => (ui.schema as any).uiOptions),
+        .filter(ui => getUiOptions(ui.schema)),
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [customFieldExtensions],
   );
 
@@ -128,10 +134,10 @@ export const UIFieldConfig = ({
         />
       </Box>
       <Box>
-        {selectedField?.schema && selectedField.schema.uiOptions && (
+        {selectedField?.schema && getUiOptions(selectedField.schema) && (
           <Form
             disabled={disabled}
-            schema={selectedField.schema.uiOptions as RJSFSchema}
+            schema={getUiOptions(selectedField.schema) as RJSFSchema}
             onChange={e => onChange({ 'ui:options': e.formData as string })}
             formData={data['ui:options']}
             formContext={{ fieldFormState: data['ui:options'] }}

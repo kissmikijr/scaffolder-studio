@@ -1,7 +1,16 @@
 import { useRef, useState, useMemo } from 'react';
 import { NodeProps, Position, Node, useNodes, useEdges } from '@xyflow/react';
 import { Handle } from '../../components/Handle';
-import { Box, useTheme, Tooltip, Typography, Popper } from '@mui/material';
+import {
+  Box,
+  useTheme,
+  Tooltip,
+  Typography,
+  Popper,
+  alpha,
+  Fade,
+  Paper,
+} from '@mui/material';
 import {
   StepNodeData,
   isPropertyNode,
@@ -73,8 +82,9 @@ const StepNode = ({
         minWidth: 150,
         maxWidth: 300,
         borderRadius: '20px',
-        border: `2px solid ${selected ? SELECTED_BORDER_COLOR : theme.palette.divider
-          }`,
+        border: `2px solid ${
+          selected ? SELECTED_BORDER_COLOR : theme.palette.divider
+        }`,
         backgroundColor: theme.palette.background.paper,
         color: theme.palette.text.primary,
         boxShadow: selected ? 3 : 1,
@@ -96,19 +106,84 @@ const StepNode = ({
         anchorEl={nodeRef.current}
         placement="right-start"
         disablePortal
+        transition
       >
-        <Box sx={{ p: 1, backgroundColor: theme.palette.background.paper }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Output Fields
-          </Typography>
-          {Object.entries((data.schema as any)?.output?.properties || {}).map(
-            ([key, val]: any) => (
-              <Typography variant="body2" key={key}>
-                <strong>{key}</strong>: {val.type}
+        {({ TransitionProps }) => (
+          <Fade {...TransitionProps} timeout={350}>
+            <Paper
+              elevation={8}
+              sx={{
+                p: 1.5,
+                m: 1,
+                backgroundColor: alpha(theme.palette.background.paper, 0.85),
+                backdropFilter: 'blur(12px)',
+                borderRadius: '12px',
+                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                minWidth: 160,
+                boxShadow: `0 4px 20px 0 ${alpha(
+                  theme.palette.common.black,
+                  0.2,
+                )}`,
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  color: theme.palette.text.secondary,
+                  display: 'block',
+                  mb: 1,
+                  letterSpacing: '0.05rem',
+                  fontSize: '0.6rem',
+                }}
+              >
+                Output Fields
               </Typography>
-            ),
-          )}
-        </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                {Object.entries(
+                  (data.schema as any)?.output?.properties || {},
+                ).map(([key, val]: any) => (
+                  <Box
+                    key={key}
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: 1.5,
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 600,
+                        color: theme.palette.text.primary,
+                        fontSize: '0.75rem',
+                      }}
+                    >
+                      {key}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        backgroundColor: alpha(NodeTypeColors.step, 0.1),
+                        color: NodeTypeColors.step,
+                        px: 0.8,
+                        py: 0.2,
+                        borderRadius: '4px',
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        fontFamily: 'Monospace',
+                      }}
+                    >
+                      {val.type}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Paper>
+          </Fade>
+        )}
       </Popper>
       <Box
         sx={{
@@ -138,24 +213,23 @@ const StepNode = ({
               alignItems: 'center',
             }}
           >
-            <Tooltip title="Show output fields">
-              {open ? (
-                <ChevronRightIcon
-                  onClick={() =>
-                    setAnchorEl(prev => (prev ? null : nodeRef.current))
-                  }
-                  fontSize="small"
-                  sx={{ cursor: 'pointer' }}
-                />
-              ) : (
-                <ExpandMoreIcon
-                  onClick={() =>
-                    setAnchorEl(prev => (prev ? null : nodeRef.current))
-                  }
-                  fontSize="small"
-                  sx={{ cursor: 'pointer' }}
-                />
-              )}
+            <Tooltip title={open ? 'Hide output fields' : 'Show output fields'}>
+              <Box
+                onClick={() =>
+                  setAnchorEl(prev => (prev ? null : nodeRef.current))
+                }
+                sx={{
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                {open ? (
+                  <ChevronRightIcon fontSize="small" />
+                ) : (
+                  <ExpandMoreIcon fontSize="small" />
+                )}
+              </Box>
             </Tooltip>
           </Box>
         )}

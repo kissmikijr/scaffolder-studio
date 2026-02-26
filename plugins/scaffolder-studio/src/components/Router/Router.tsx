@@ -1,12 +1,26 @@
-import { ReactNode, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { ConfirmationDialogProvider } from '../Studio/dialogs/ConfirmationDialogContext';
-import {
-  FieldExtensionOptions,
-  useCustomFieldExtensions,
-} from '@backstage/plugin-scaffolder-react';
+import { FieldExtensionOptions } from '@backstage/plugin-scaffolder-react';
 import { FieldExtensionsContext } from '../../context/FieldExtensionsContext';
 import { configApiRef, useApi } from '@backstage/core-plugin-api';
+
+// Suppress ResizeObserver errors globally so consuming apps don't have to.
+/* eslint-disable no-console */
+const _origError = console.error;
+console.error = (...args: unknown[]) => {
+  if (typeof args[0] === 'string' && args[0].includes('ResizeObserver')) return;
+  _origError.apply(console, args);
+};
+/* eslint-enable no-console */
+if (typeof window !== 'undefined') {
+  window.addEventListener('error', e => {
+    if (e.message?.includes('ResizeObserver')) {
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+    }
+  });
+}
 
 // Overview/List Components
 import { TemplatesView } from '../Studio/TemplateOverviewPage/components/TemplatesView';
@@ -40,11 +54,10 @@ declare module '@mui/material/styles' {
 const queryClient = new QueryClient();
 
 export interface UnifiedRouterProps {
-  children?: ReactNode;
   formFields?: Array<FormField>;
 }
 
-const UnifiedRouter = ({ children, formFields }: UnifiedRouterProps) => {
+const UnifiedRouter = ({ formFields }: UnifiedRouterProps) => {
   const parentTheme = useTheme();
   const configApi = useApi(configApiRef);
   const isLibraryEnabled =
@@ -320,13 +333,11 @@ const UnifiedRouter = ({ children, formFields }: UnifiedRouterProps) => {
     });
   }, [parentTheme]);
 
-  const customFieldExtensions = useCustomFieldExtensions(children);
   const allFieldExtensions = useMemo(
     () => [
-      ...customFieldExtensions,
       ...((formFields as unknown as FieldExtensionOptions<any, any>[]) ?? []),
     ],
-    [customFieldExtensions, formFields],
+    [formFields],
   );
 
   return (
@@ -351,34 +362,16 @@ const UnifiedRouter = ({ children, formFields }: UnifiedRouterProps) => {
               </Route>
 
               {/* Prefab Editor Route */}
-              <Route
-                path="prefab/:id"
-                element={
-                  <div>
-                    {children}
-                    <PrefabEditor />
-                  </div>
-                }
-              />
+              <Route path="prefab/:id" element={<PrefabEditor />} />
 
               {/* Template Editor Routes */}
               <Route
                 path="templates/:id"
-                element={
-                  <div>
-                    {children}
-                    <VisualTemplateEditorComponent />
-                  </div>
-                }
+                element={<VisualTemplateEditorComponent />}
               />
               <Route
                 path="templates/:id/:tab"
-                element={
-                  <div>
-                    {children}
-                    <VisualTemplateEditorComponent />
-                  </div>
-                }
+                element={<VisualTemplateEditorComponent />}
               />
               <Route path="templates/:id/dry-run" element={<DryRunPage />} />
             </Routes>

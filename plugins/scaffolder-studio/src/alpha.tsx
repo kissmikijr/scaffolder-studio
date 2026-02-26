@@ -20,13 +20,13 @@ import {
   fetchApiRef,
   useApi,
 } from '@backstage/core-plugin-api';
-import { ScaffolderStudioPage } from './plugin.ts';
+import { Router } from './components/Router/Router';
 import { useEffect, useState } from 'react';
 import { FormField } from '@backstage/plugin-scaffolder-react/alpha';
 import { formFieldsApiRef } from '@backstage/plugin-scaffolder/alpha';
 
 const NfsScaffolderStudioPage = () => {
-  const [formFields, setFormFields] = useState<FormField[]>([]);
+  const [formFields, setFormFields] = useState<FormField[] | null>(null);
   const formFieldsApi = useApi(formFieldsApiRef);
 
   useEffect(() => {
@@ -34,11 +34,17 @@ const NfsScaffolderStudioPage = () => {
       formFieldsApi
         .loadFormFields()
         .then(fields => setFormFields(fields))
-        .catch(() => { });
+        .catch(() => setFormFields([]));
+    } else {
+      setFormFields([]);
     }
   }, [formFieldsApi]);
 
-  return <ScaffolderStudioPage formFields={formFields} />;
+  if (formFields === null) {
+    return null;
+  }
+
+  return <Router formFields={formFields} />;
 };
 
 const studioNavItem = NavItemBlueprint.make({

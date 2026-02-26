@@ -1,142 +1,77 @@
-import { Navigate, Route } from 'react-router-dom';
-import { apiDocsPlugin, ApiExplorerPage } from '@backstage/plugin-api-docs';
 import {
-  CatalogEntityPage,
-  CatalogIndexPage,
-  catalogPlugin,
-} from '@backstage/plugin-catalog';
+  ScmIntegrationsApi,
+  scmIntegrationsApiRef,
+  ScmAuth,
+} from '@backstage/integration-react';
+import { configApiRef, createApiFactory } from '@backstage/core-plugin-api';
+import { SignInPage } from '@backstage/core-components';
+import { createApp } from '@backstage/frontend-defaults';
 import {
-  CatalogImportPage,
-  catalogImportPlugin,
-} from '@backstage/plugin-catalog-import';
-import {
-  EntityNamePickerFieldExtension,
-  EntityPickerFieldExtension,
-  MultiEntityPickerFieldExtension,
-  OwnerPickerFieldExtension,
-  RepoUrlPickerFieldExtension,
-  MyGroupsPickerFieldExtension,
-  EntityTagsPickerFieldExtension,
-  OwnedEntityPickerFieldExtension,
-  RepoBranchPickerFieldExtension,
-  ScaffolderPage,
-  scaffolderPlugin,
-} from '@backstage/plugin-scaffolder';
-import { ScaffolderFieldExtensions } from '@backstage/plugin-scaffolder-react';
-import { orgPlugin } from '@backstage/plugin-org';
-import { SearchPage } from '@backstage/plugin-search';
-import {
-  TechDocsIndexPage,
-  techdocsPlugin,
-  TechDocsReaderPage,
-} from '@backstage/plugin-techdocs';
-import { TechDocsAddons } from '@backstage/plugin-techdocs-react';
-import { ReportIssue } from '@backstage/plugin-techdocs-module-addons-contrib';
-import { UserSettingsPage } from '@backstage/plugin-user-settings';
-import { apis } from './apis';
-import { entityPage } from './components/catalog/EntityPage';
-import { searchPage } from './components/search/SearchPage';
-import { Root } from './components/Root';
+  ApiBlueprint,
+  createFrontendModule,
+} from '@backstage/frontend-plugin-api';
+import { SignInPageBlueprint } from '@backstage/plugin-app-react';
+// Alpha plugin imports (new frontend system)
+import scaffolderPlugin from '@backstage/plugin-scaffolder/alpha';
+import searchPlugin from '@backstage/plugin-search/alpha';
 
-import {
-  AlertDisplay,
-  OAuthRequestDialog,
-  SignInPage,
-} from '@backstage/core-components';
-import { createApp } from '@backstage/app-defaults';
-import { AppRouter, FlatRoutes } from '@backstage/core-app-api';
-import { CatalogGraphPage } from '@backstage/plugin-catalog-graph';
-import { RequirePermission } from '@backstage/plugin-permission-react';
-import { catalogEntityCreatePermission } from '@backstage/plugin-catalog-common/alpha';
-import { ScaffolderStudioPage } from '@kissmiklosjr/plugin-scaffolder-studio';
-import { SelectFieldFromApiExtension } from '@roadiehq/plugin-scaffolder-frontend-module-http-request-field';
+import scaffolderStudioPlugin from '@kissmiklosjr/plugin-scaffolder-studio/alpha';
 
-const app = createApp({
-  apis,
-  bindRoutes({ bind }) {
-    bind(catalogPlugin.externalRoutes, {
-      createComponent: scaffolderPlugin.routes.root,
-      viewTechDoc: techdocsPlugin.routes.docRoot,
-      createFromTemplate: scaffolderPlugin.routes.selectedTemplate,
-    });
-    bind(apiDocsPlugin.externalRoutes, {
-      registerApi: catalogImportPlugin.routes.importPage,
-    });
-    bind(scaffolderPlugin.externalRoutes, {
-      registerComponent: catalogImportPlugin.routes.importPage,
-      viewTechDoc: techdocsPlugin.routes.docRoot,
-    });
-    bind(orgPlugin.externalRoutes, {
-      catalogIndex: catalogPlugin.routes.catalogIndex,
-    });
-  },
-  components: {
-    SignInPage: props => <SignInPage {...props} auto providers={['guest']} />,
+// ============================================================================
+// API Extensions
+// ============================================================================
+
+const scmIntegrationsApi = ApiBlueprint.make({
+  name: 'scm-integrations',
+  params: defineParams =>
+    defineParams(
+      createApiFactory({
+        api: scmIntegrationsApiRef,
+        deps: { configApi: configApiRef },
+        factory: ({ configApi }) => ScmIntegrationsApi.fromConfig(configApi),
+      }),
+    ),
+});
+
+const scmAuthApi = ApiBlueprint.make({
+  name: 'scm-auth',
+  params: defineParams => defineParams(ScmAuth.createDefaultApiFactory()),
+});
+
+// ============================================================================
+// Sign-In Page Extension
+// ============================================================================
+
+const signInPage = SignInPageBlueprint.make({
+  params: {
+    loader: async () => props =>
+      <SignInPage {...props} auto providers={['guest']} />,
   },
 });
 
-const routes = (
-  <FlatRoutes>
-    <Route path="/" element={<Navigate to="catalog" />} />
-    <Route path="/catalog" element={<CatalogIndexPage />} />
-    <Route
-      path="/catalog/:namespace/:kind/:name"
-      element={<CatalogEntityPage />}
-    >
-      {entityPage}
-    </Route>
-    <Route path="/docs" element={<TechDocsIndexPage />} />
-    <Route
-      path="/docs/:namespace/:kind/:name/*"
-      element={<TechDocsReaderPage />}
-    >
-      <TechDocsAddons>
-        <ReportIssue />
-      </TechDocsAddons>
-    </Route>
-    <Route path="/create" element={<ScaffolderPage />} />
-    <Route path="/api-docs" element={<ApiExplorerPage />} />
-    <Route
-      path="/catalog-import"
-      element={
-        <RequirePermission permission={catalogEntityCreatePermission}>
-          <CatalogImportPage />
-        </RequirePermission>
-      }
-    />
-    <Route path="/search" element={<SearchPage />}>
-      {searchPage}
-    </Route>
-    <Route path="/settings" element={<UserSettingsPage />} />
-    <Route path="/catalog-graph" element={<CatalogGraphPage />} />
-    <Route
-      path="/scaffolder-studio/*"
-      element={
-        <ScaffolderStudioPage>
-          <ScaffolderFieldExtensions>
-            <SelectFieldFromApiExtension />
-            <EntityNamePickerFieldExtension />
-            <EntityPickerFieldExtension />
-            <MultiEntityPickerFieldExtension />
-            <OwnerPickerFieldExtension />
-            <RepoUrlPickerFieldExtension />
-            <MyGroupsPickerFieldExtension />
-            <EntityTagsPickerFieldExtension />
-            <OwnedEntityPickerFieldExtension />
-            <RepoBranchPickerFieldExtension />
-          </ScaffolderFieldExtensions>
-        </ScaffolderStudioPage>
-      }
-    />
-  </FlatRoutes>
-);
+// ============================================================================
+// App Extensions Module
+// ============================================================================
 
-export default app.createRoot(
-  <>
-    <AlertDisplay />
-    <OAuthRequestDialog />
-    <AppRouter>
-      <Root>{routes}</Root>
-    </AppRouter>
-  </>,
-);
+const appExtensionsModule = createFrontendModule({
+  pluginId: 'app',
+  extensions: [scmIntegrationsApi, scmAuthApi, signInPage],
+});
+
+// ============================================================================
+// Create App - Fully migrated to new frontend system
+// ============================================================================
+
+const app = createApp({
+  features: [
+    // Core Backstage plugins (from /alpha exports)
+    scaffolderPlugin,
+    searchPlugin,
+    // Scaffolder Studio (alpha plugin)
+    scaffolderStudioPlugin,
+    // Custom extensions
+    appExtensionsModule,
+  ],
+});
+
+export default app.createRoot();
