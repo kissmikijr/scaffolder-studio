@@ -1,5 +1,11 @@
 # @kissmiklosjr/plugin-scaffolder-studio
 
+## 1.1.0
+
+### Minor Changes
+
+- d3039e3: Added support for the new frontend system
+
 ## 1.0.0
 
 ### Major Changes
