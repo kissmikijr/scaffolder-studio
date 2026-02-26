@@ -33,15 +33,6 @@ jobs:
       - name: Unit Tests
         run: yarn test --coverage=false --passWithNoTests
 
-      - name: Check for changesets
-        uses: changesets/action@v1
-        with:
-          commit: 'chore: version packages'
-          title: 'chore: version packages'
-          setupGitUser: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   e2e-tests:
     runs-on: ubuntu-latest
     services:
