@@ -34,7 +34,7 @@ const NfsScaffolderStudioPage = () => {
       formFieldsApi
         .loadFormFields()
         .then(fields => setFormFields(fields))
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [formFieldsApi]);
 
@@ -60,6 +60,7 @@ const studioPage = PageBlueprint.make({
 });
 
 const visualApi = ApiBlueprint.make({
+  name: 'visual',
   params: defineParams =>
     defineParams({
       api: scaffolderVisualApiRef,
@@ -71,6 +72,7 @@ const visualApi = ApiBlueprint.make({
 });
 
 const prefabsApi = ApiBlueprint.make({
+  name: 'prefabs',
   params: defineParams =>
     defineParams({
       api: prefabsApiRef,
@@ -82,6 +84,7 @@ const prefabsApi = ApiBlueprint.make({
 });
 
 const prefabsLibraryApi = ApiBlueprint.make({
+  name: 'prefabs-library',
   params: defineParams =>
     defineParams({
       api: prefabLibraryApiRef,
