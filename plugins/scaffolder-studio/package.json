@@ -5,9 +5,22 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "publishConfig": {
-    "access": "public",
-    "main": "dist/index.esm.js",
-    "types": "dist/index.d.ts"
+    "access": "public"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./alpha": "./src/alpha.tsx",
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "alpha": [
+        "src/alpha.tsx"
+      ],
+      "package.json": [
+        "package.json"
+      ]
+    }
   },
   "repository": {
     "type": "git",
@@ -38,11 +51,13 @@
   "dependencies": {
     "@ai-sdk/react": "^2.0.15",
     "@backstage/catalog-model": "^1.7.6",
+    "@backstage/core-compat-api": "^0.5.8",
     "@backstage/core-components": "^0.18.7",
     "@backstage/core-plugin-api": "^1.12.3",
+    "@backstage/frontend-plugin-api": "^0.14.1",
     "@backstage/plugin-catalog-react": "^2.0.0",
     "@backstage/plugin-permission-react": "^0.4.40",
-    "@backstage/plugin-scaffolder": "^1.35.3",
+    "@backstage/plugin-scaffolder": "^1.35.4",
     "@backstage/plugin-scaffolder-common": "^1.7.6",
     "@backstage/plugin-scaffolder-react": "^1.19.7",
     "@backstage/theme": "^0.7.2",
@@ -54,6 +69,7 @@
     "@kissmiklosjr/plugin-scaffolder-studio-common": "workspace:*",
     "@lexical/react": "^0.34.0",
     "@lezer/highlight": "^1.0.0",
+    "@material-ui/icons": "^4.9.1",
     "@mui/icons-material": "^5.0.0",
     "@mui/material": "^5.0.0",
     "@rjsf/core": "^5.24.8",

@@ -85,14 +85,6 @@ export class TemplateListPage {
 
   async goto() {
     await this.page.goto('/scaffolder-studio/templates');
-    // Handle potential redirect to login page
-    const enterButton = this.page.getByRole('button', { name: 'Enter' });
-    try {
-      await enterButton.waitFor({ state: 'visible', timeout: 3000 });
-      await enterButton.click();
-    } catch (e) {
-      // Ignore if not found, we might already be logged in
-    }
   }
 
   async gotoTrash() {

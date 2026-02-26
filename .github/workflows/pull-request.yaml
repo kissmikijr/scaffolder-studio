@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -19,37 +21,17 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Cache TypeScript build info
-        uses: actions/cache@v4
-        with:
-          path: |
-            dist-types
-            **/dist
-            **/.turbo
-          key: ${{ runner.os }}-tsc-${{ hashFiles('**/yarn.lock', '**/tsconfig*.json', '**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-tsc-
-
-      # - name: Lint
-      #   run: yarn lint
+      - name: Lint
+        run: yarn lint
 
       - name: Type check
         run: yarn tsc
 
-      - name: Unit Tests
-        run: yarn test --coverage=false --passWithNoTests
-
       - name: Build
         run: yarn build:all
 
-      - name: Check for changesets
-        uses: changesets/action@v1
-        with:
-          commit: 'chore: version packages'
-          title: 'chore: version packages'
-          setupGitUser: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Unit Tests
+        run: yarn test --coverage=false --passWithNoTests
 
   e2e-tests:
     runs-on: ubuntu-latest
@@ -76,16 +58,6 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --immutable
-
-      - name: Cache TypeScript build info
-        uses: actions/cache@v4
-        with:
-          path: |
-            dist-types
-            **/dist
-          key: ${{ runner.os }}-tsc-${{ hashFiles('**/yarn.lock', '**/tsconfig*.json', '**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-tsc-
 
       - name: Build all packages
         run: yarn build:all

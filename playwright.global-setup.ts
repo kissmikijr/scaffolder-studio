@@ -20,7 +20,7 @@ export default async function globalSetup(config: FullConfig) {
 
     const enterButton = page.getByRole('button', { name: 'Enter' });
     const hasEnterButton = await enterButton
-      .isVisible({ timeout: 30000 })
+      .isVisible()
       .catch(() => false);
 
     if (hasEnterButton) {
