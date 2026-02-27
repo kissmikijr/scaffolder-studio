@@ -22,7 +22,7 @@ test.describe('Template List Operations', () => {
   test.afterEach(async () => {
     for (const id of createdTemplateIds) {
       try {
-        await templateListPage.deleteTemplate(id);
+        await templateListPage?.deleteTemplate(id);
       } catch {
         // Best effort cleanup.
       }
@@ -165,10 +165,9 @@ spec:
     const response = await importResponsePromise;
     expect(response.ok()).toBeTruthy();
 
-    await page.waitForURL(
-      /\/scaffolder-studio\/templates\/.*\/(form|node)/,
-      { timeout: 10000 },
-    );
+    await page.waitForURL(/\/scaffolder-studio\/templates\/.*\/(form|node)/, {
+      timeout: 10000,
+    });
     await expect(page).toHaveURL(
       /\/scaffolder-studio\/templates\/.*\/(form|node)/,
     );
@@ -254,10 +253,9 @@ spec:
     const response = await importResponsePromise;
     expect(response.ok()).toBeTruthy();
 
-    await page.waitForURL(
-      /\/scaffolder-studio\/templates\/.*\/(form|node)/,
-      { timeout: 10000 },
-    );
+    await page.waitForURL(/\/scaffolder-studio\/templates\/.*\/(form|node)/, {
+      timeout: 10000,
+    });
 
     await expect(page).toHaveURL(
       /\/scaffolder-studio\/templates\/.*\/(form|node)/,
@@ -291,32 +289,29 @@ test.describe('Template Description Display', () => {
   test.afterEach(async () => {
     for (const id of createdTemplateIds) {
       try {
-        await templateListPage.deleteTemplate(id);
+        await templateListPage?.deleteTemplate(id);
       } catch {
         // Best effort cleanup.
       }
     }
   });
 
-  test('should display template description in list view', async ({
-    page,
-  }) => {
+  test('should display template description in list view', async ({ page }) => {
     const templateName = `e2e-desc-test-${Date.now()}`;
     const description = 'A helpful template description';
 
-    const id =
-      await templateListPage.createTemplateWithDescriptionViaApi(
-        templateName,
-        description,
-      );
+    const id = await templateListPage.createTemplateWithDescriptionViaApi(
+      templateName,
+      description,
+    );
     createdTemplateIds.push(id);
 
     await templateListPage.goto();
 
     // Switch to list view
-    const listViewButton = page.getByTestId('list-view-button').or(
-      page.locator('button[aria-label="List view"]'),
-    );
+    const listViewButton = page
+      .getByTestId('list-view-button')
+      .or(page.locator('button[aria-label="List view"]'));
     await listViewButton.click();
     await page.waitForTimeout(500);
 
@@ -329,17 +324,14 @@ test.describe('Template Description Display', () => {
     await expect(row).toContainText(description);
   });
 
-  test('should display template description in card view', async ({
-    page,
-  }) => {
+  test('should display template description in card view', async ({ page }) => {
     const templateName = `e2e-desc-card-${Date.now()}`;
     const description = 'Card view description test';
 
-    const id =
-      await templateListPage.createTemplateWithDescriptionViaApi(
-        templateName,
-        description,
-      );
+    const id = await templateListPage.createTemplateWithDescriptionViaApi(
+      templateName,
+      description,
+    );
     createdTemplateIds.push(id);
 
     await templateListPage.goto();
@@ -363,9 +355,9 @@ test.describe('Template Description Display', () => {
     await templateListPage.goto();
 
     // Switch to list view
-    const listViewButton = page.getByTestId('list-view-button').or(
-      page.locator('button[aria-label="List view"]'),
-    );
+    const listViewButton = page
+      .getByTestId('list-view-button')
+      .or(page.locator('button[aria-label="List view"]'));
     await listViewButton.click();
     await page.waitForTimeout(500);
 
@@ -378,12 +370,19 @@ test.describe('Template Description Display', () => {
     await expect(row).not.toContainText('—');
   });
 
-  test('should display empty state when no templates match search', async ({ page }) => {
+  test('should display empty state when no templates match search', async ({
+    page,
+  }) => {
     await templateListPage.goto();
     await templateListPage.searchForTemplate('non-existent-template-xyz');
 
-    await expect(page.getByText('No templates match your search')).toBeVisible();
-    await expect(page.getByText("Try adjusting your search terms to find what you're looking for.")).toBeVisible();
+    await expect(
+      page.getByText('No templates match your search'),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        "Try adjusting your search terms to find what you're looking for.",
+      ),
+    ).toBeVisible();
   });
 });
-

@@ -12,7 +12,7 @@ test.describe('Scaffolder Studio', () => {
   });
 
   test.afterEach(async () => {
-    await listPage.cleanupCreatedTemplates();
+    await listPage?.cleanupCreatedTemplates();
   });
 
   test('should create a new template and load the editor', async ({ page }) => {

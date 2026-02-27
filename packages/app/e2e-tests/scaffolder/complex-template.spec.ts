@@ -12,7 +12,7 @@ test.describe('Scaffolder Studio - Complex Template', () => {
   });
 
   test.afterEach(async () => {
-    await listPage.cleanupCreatedTemplates();
+    await listPage?.cleanupCreatedTemplates();
   });
 
   test('should create a complex template with parameters, steps and outputs', async ({

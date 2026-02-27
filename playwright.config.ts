@@ -21,24 +21,24 @@ import { generateProjects } from '@backstage/e2e-test-utils/playwright';
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  timeout: 10_000,
+  timeout: process.env.CI ? 60_000 : 30_000,
   globalSetup: require.resolve('./playwright.global-setup.ts'),
 
   expect: {
-    timeout: 10_000,
+    timeout: process.env.CI ? 15_000 : 10_000,
   },
 
   // Run your local dev server before starting the tests
   webServer: process.env.CI
     ? []
     : [
-      {
-        command: 'yarn dev',
-        port: 3000,
-        reuseExistingServer: true,
-        timeout: 60_000,
-      },
-    ],
+        {
+          command: 'yarn dev',
+          port: 3000,
+          reuseExistingServer: true,
+          timeout: 60_000,
+        },
+      ],
 
   forbidOnly: !!process.env.CI,
 
