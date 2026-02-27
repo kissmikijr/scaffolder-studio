@@ -1,7 +1,7 @@
 import { Page, expect, Locator } from '@playwright/test';
 
 export class TemplateListPage {
-  constructor(private readonly page: Page) { }
+  constructor(private readonly page: Page) {}
   private authToken?: string;
 
   private getBackendBaseCandidates(): string[] {
@@ -85,10 +85,18 @@ export class TemplateListPage {
 
   async goto() {
     await this.page.goto('/scaffolder-studio/templates');
+    const enterButton = this.page.getByRole('button', { name: 'Enter' });
+    if (await enterButton.isVisible().catch(() => false)) {
+      await enterButton.click({ force: true });
+    }
   }
 
   async gotoTrash() {
     await this.page.goto('/scaffolder-studio/trash');
+    const enterButton = this.page.getByRole('button', { name: 'Enter' });
+    if (await enterButton.isVisible().catch(() => false)) {
+      await enterButton.click({ force: true });
+    }
   }
 
   async clickTrashTab() {
