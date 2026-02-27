@@ -1,5 +1,11 @@
 # @kissmiklosjr/plugin-scaffolder-studio
 
+## 1.1.1
+
+### Patch Changes
+
+- 518ddaf: Support fieldextensions from NFS
+
 ## 1.1.0
 
 ### Minor Changes
