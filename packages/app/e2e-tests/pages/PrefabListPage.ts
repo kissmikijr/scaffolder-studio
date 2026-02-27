@@ -1,14 +1,13 @@
 import { Page, Locator } from '@playwright/test';
+import { ensureGuestLogin } from '../utils/auth';
 
 export class PrefabListPage {
   constructor(private readonly page: Page) {}
 
   async goto() {
     await this.page.goto('/scaffolder-studio/prefabs');
-    const enterButton = this.page.getByRole('button', { name: 'Enter' });
-    if (await enterButton.isVisible()) {
-      await enterButton.click();
-    }
+    const newButton = this.page.getByRole('button', { name: 'New' });
+    await ensureGuestLogin(this.page, newButton);
     await this.page.waitForLoadState('networkidle');
   }
 

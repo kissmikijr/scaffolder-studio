@@ -15,14 +15,13 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { ensureGuestLogin } from './utils/auth';
 
 test('App should render the welcome page', async ({ page }) => {
   await page.goto('/');
 
-  const enterButton = page.getByRole('button', { name: 'Enter' });
-  if (await enterButton.isVisible().catch(() => false)) {
-    await enterButton.click();
-  }
+  const appHeader = page.getByText('Scaffolder Studio').first();
+  await ensureGuestLogin(page, appHeader);
 
   await expect(page.getByText('Scaffolder Studio')).toBeVisible();
 });

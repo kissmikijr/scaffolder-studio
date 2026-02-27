@@ -1,4 +1,5 @@
 import { Page, expect } from '@playwright/test';
+import { ensureGuestLogin } from '../utils/auth';
 
 export class ScaffolderStudioListPage {
   private readonly page: Page;
@@ -12,11 +13,11 @@ export class ScaffolderStudioListPage {
   async goto() {
     await this.page.goto('/scaffolder-studio/templates');
 
-    // Handle potential redirect to login page
-    const enterButton = this.page.getByRole('button', { name: 'Enter' });
-    if (await enterButton.isVisible()) {
-      await enterButton.click({ force: true });
-    }
+    const newButton = this.page
+      .getByRole('button')
+      .filter({ hasText: /new/i })
+      .first();
+    await ensureGuestLogin(this.page, newButton);
   }
 
   async createNewTemplate(): Promise<string> {

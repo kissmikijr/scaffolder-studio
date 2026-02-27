@@ -1,6 +1,7 @@
 import { chromium, FullConfig } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
+import { ensureGuestLogin } from './packages/app/e2e-tests/utils/auth';
 
 const STORAGE_STATE_PATH = 'node_modules/.cache/e2e-auth/guest.json';
 
@@ -18,17 +19,8 @@ export default async function globalSetup(config: FullConfig) {
   try {
     await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
 
-    const enterButton = page.getByRole('button', { name: 'Enter' });
-    const hasEnterButton = await enterButton
-      .isVisible()
-      .catch(() => false);
-
-    if (hasEnterButton) {
-      await enterButton.click({ force: true });
-      // `networkidle` is flaky with long-lived dev requests (HMR, polling).
-      // `domcontentloaded` is enough for persisting auth storage state.
-      await page.waitForLoadState('domcontentloaded');
-    }
+    const appHeader = page.getByText('Scaffolder Studio').first();
+    await ensureGuestLogin(page, appHeader, 5000);
 
     await mkdir(path.dirname(STORAGE_STATE_PATH), { recursive: true });
     await context.storageState({ path: STORAGE_STATE_PATH });

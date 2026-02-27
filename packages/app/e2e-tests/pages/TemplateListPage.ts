@@ -1,4 +1,5 @@
 import { Page, expect, Locator } from '@playwright/test';
+import { ensureGuestLogin } from '../utils/auth';
 
 export class TemplateListPage {
   constructor(private readonly page: Page) {}
@@ -85,18 +86,14 @@ export class TemplateListPage {
 
   async goto() {
     await this.page.goto('/scaffolder-studio/templates');
-    const enterButton = this.page.getByRole('button', { name: 'Enter' });
-    if (await enterButton.isVisible().catch(() => false)) {
-      await enterButton.click({ force: true });
-    }
+    const templatesTab = this.page.getByRole('tab', { name: /^templates$/i });
+    await ensureGuestLogin(this.page, templatesTab);
   }
 
   async gotoTrash() {
     await this.page.goto('/scaffolder-studio/trash');
-    const enterButton = this.page.getByRole('button', { name: 'Enter' });
-    if (await enterButton.isVisible().catch(() => false)) {
-      await enterButton.click({ force: true });
-    }
+    const trashTab = this.page.getByRole('tab', { name: /trash/i });
+    await ensureGuestLogin(this.page, trashTab);
   }
 
   async clickTrashTab() {
