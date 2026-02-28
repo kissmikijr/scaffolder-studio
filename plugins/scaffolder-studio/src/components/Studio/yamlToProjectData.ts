@@ -42,9 +42,6 @@ const STATIC_Y_POSITION = 125;
 const getDynamicXPosition = (index: number) => {
   return STATIC_X_POSITION * (index + 1);
 };
-const getDynamicYPosition = (index: number) => {
-  return STATIC_Y_POSITION * (index + 1);
-};
 
 const templateYamlToProjectData = (
   yamlData: object,
@@ -73,8 +70,8 @@ const templateYamlToProjectData = (
   if (templateYaml.spec.parameters && templateYaml.spec.parameters.length > 0) {
     // Create all parameter nodes first
     const paramNodes = templateYaml.spec.parameters.map((param, index) => {
-      const x = STATIC_X_POSITION;
-      const y = getDynamicYPosition(index);
+      const x = index * STATIC_X_POSITION; // Layout horizontally left to right
+      const y = STATIC_Y_POSITION * 2.5; // Fixed Y position below template
       return {
         id: uuidv4(),
         type: 'parameters',
@@ -91,8 +88,8 @@ const templateYamlToProjectData = (
         id: `${paramNodes[i].id}-${paramNodes[i + 1].id}`,
         source: paramNodes[i].id,
         target: paramNodes[i + 1].id,
-        sourceHandle: 'bottom',
-        targetHandle: 'top',
+        sourceHandle: 'right', // Parameters link left to right
+        targetHandle: 'left',
       });
     }
 
@@ -134,8 +131,8 @@ const templateYamlToProjectData = (
                 id: `${prevPropertyId}-${propertyNode.id}`,
                 source: prevPropertyId,
                 target: propertyNode.id,
-                sourceHandle: 'right',
-                targetHandle: 'left',
+                sourceHandle: 'bottom', // Properties link top to bottom
+                targetHandle: 'top',
                 type: 'custom-step',
                 zIndex: 1001,
               });
@@ -185,7 +182,7 @@ const templateYamlToProjectData = (
     const outputNode = {
       id: uuidv4(),
       type: 'templateOutput',
-      position: { x: 0, y: STATIC_Y_POSITION * 3 },
+      position: { x: -STATIC_X_POSITION, y: 0 }, // Position to the left of template
       data: {
         links: templateYaml.spec.output.links || [],
         text: templateYaml.spec.output.text || [],
@@ -227,8 +224,8 @@ const templateYamlToProjectData = (
       id: `${templateNode.id}-${parameterNodes[0].id}`,
       source: templateNode.id,
       target: parameterNodes[0].id,
-      sourceHandle: 'bottom',
-      targetHandle: 'left',
+      sourceHandle: 'bottom', // Template bottom connects to Parameter top
+      targetHandle: 'top',
     });
   }
   if (outputNodes.length > 0) {
@@ -236,8 +233,8 @@ const templateYamlToProjectData = (
       id: `${templateNode.id}-${outputNodes[0].id}`,
       source: templateNode.id,
       target: outputNodes[0].id,
-      sourceHandle: 'left',
-      targetHandle: 'top',
+      sourceHandle: 'left', // Template left connects to Output right
+      targetHandle: 'right',
     });
   }
 
