@@ -113,8 +113,11 @@ test.describe('Dry Run Feature', () => {
       .locator('form')
       .getByRole('paragraph')
       .filter({ hasText: /^$/ })
-      .fill('${{');
+      .fill('${{}}');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
     await page.getByRole('button', { name: 'testParam', exact: true }).click();
+
     await page.waitForTimeout(500);
 
     await editorPage.clickDryRun();

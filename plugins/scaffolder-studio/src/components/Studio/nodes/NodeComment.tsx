@@ -1,17 +1,9 @@
-import { useState, useMemo } from 'react';
-import { Box, Tooltip, Popover, useTheme } from '@mui/material';
+import { useState } from 'react';
+import { Box, Tooltip, useTheme } from '@mui/material';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
-import { MarkdownEditor } from '../components/MarkdownEditor';
-import { useNodes, Node } from '@xyflow/react';
-import {
-  AllNodeData,
-  isPropertyNode,
-  isStepNode,
-  PropertyNodeData,
-  StepNodeData,
-} from '../types';
 import { StyledIconButton } from '../components/StyledIconButton';
+import { CommentInputPopover } from '../components/CommentInputPopover';
 
 interface NodeCommentProps {
   comment?: string;
@@ -30,7 +22,6 @@ export const NodeComment = ({
 }: NodeCommentProps) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const theme = useTheme();
-  const nodes = useNodes<Node<AllNodeData>>();
 
   const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
     if (disabled && !comment) return;
@@ -42,24 +33,6 @@ export const NodeComment = ({
   };
 
   const open = Boolean(anchorEl);
-
-  const parameters = useMemo(() => {
-    return nodes
-      .filter((n): n is Node<PropertyNodeData> => isPropertyNode(n))
-      .map(n => ({
-        name: n.data.name,
-        type: n.data.variableType,
-      }));
-  }, [nodes]);
-
-  const outputs = useMemo(() => {
-    return nodes
-      .filter((n): n is Node<StepNodeData> => isStepNode(n))
-      .map(n => ({
-        id: n.data.stepId || '',
-        outputs: n.data.schema?.output,
-      }));
-  }, [nodes]);
 
   return (
     <Box
@@ -110,35 +83,14 @@ export const NodeComment = ({
           )}
         </StyledIconButton>
       </Tooltip>
-      <Popover
+      <CommentInputPopover
         open={open}
         anchorEl={anchorEl}
+        value={comment || ''}
+        onChange={onChange}
         onClose={handleClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        PaperProps={{
-          sx: {
-            width: 400,
-            p: 1,
-            borderRadius: '12px',
-            boxShadow: theme.shadows[8],
-          },
-        }}
-      >
-        <MarkdownEditor
-          value={comment || ''}
-          onChange={onChange}
-          parameters={parameters}
-          outputs={outputs}
-          disabled={disabled}
-        />
-      </Popover>
+        disabled={disabled}
+      />
     </Box>
   );
 };

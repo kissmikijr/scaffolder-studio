@@ -595,37 +595,37 @@ export class ScaffolderStudioPage {
 
     await commentBtn.dispatchEvent('click');
 
-    const popover = this.page.getByTestId('markdown-editor').first();
+    const popover = this.page.getByTestId('comment-input-popover').first();
     await expect(popover).toBeVisible({ timeout: 10000 });
   }
 
   async addComment(comment: string) {
-    // Target the popover
-    const popover = this.page.getByTestId('markdown-editor').first();
+    const popover = this.page.getByTestId('comment-input-popover').first();
     await expect(popover).toBeVisible();
 
-    const writeTab = popover.getByRole('tab', { name: 'Write' });
-    await expect(writeTab).toBeVisible();
-    await writeTab.click();
-
-    // The MarkdownEditor uses Lexical, which has data-lexical-editor="true"
-    const editor = popover.locator('[data-lexical-editor="true"]');
-    await expect(editor).toBeVisible();
-    await editor.click();
-
-    // Clear existing content
-    await this.page.keyboard.press('Meta+A');
-    await this.page.keyboard.press('Control+A');
-    await this.page.keyboard.press('Backspace');
-
-    // Type the new comment
-    if (comment) {
-      await this.page.keyboard.type(comment);
+    // Existing comments open in read-only mode. Use the kebab menu to enter edit mode.
+    const submitButton = popover.getByTestId('comment-input-submit');
+    if (!(await submitButton.isVisible())) {
+      await popover.getByTestId('comment-input-menu-button').click();
+      await this.page.getByTestId('comment-input-edit-menu-item').click();
+      await expect(submitButton).toBeVisible();
     }
 
-    // Close popover by clicking backdrop/outside
-    await this.page.mouse.click(10, 10);
+    const fieldRoot = popover.getByTestId('comment-input-field');
+    const input = fieldRoot.locator('textarea, input').first();
+    await expect(input).toBeVisible();
+    await input.fill(comment);
+
+    await submitButton.click();
     await expect(popover).not.toBeVisible();
+  }
+
+  async expectCommentValue(comment: string) {
+    const popover = this.page.getByTestId('comment-input-popover').first();
+    await expect(popover).toBeVisible();
+    const fieldRoot = popover.getByTestId('comment-input-field');
+    const input = fieldRoot.locator('textarea, input').first();
+    await expect(input).toHaveValue(comment);
   }
 
   async addCommentViaYaml(nodeText: string, comment: string) {

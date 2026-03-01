@@ -30,9 +30,13 @@ test.describe('Scaffolder Studio - Node Comments', () => {
 
     // badge should now be visible
     await editorPage.expectNodeCommentBadgeVisible('Comment Test Step');
+
+    // comment should be persisted in the popover field
+    await editorPage.openCommentEditor('Comment Test Step');
+    await editorPage.expectCommentValue('This is a test comment');
   });
 
-  test('should hide the badge when a comment is removed', async () => {
+  test('should clear comment content when a comment is removed', async () => {
     await listPage.goto();
     await listPage.createNewTemplate();
     await editorPage.verifyLoaded();
@@ -46,5 +50,9 @@ test.describe('Scaffolder Studio - Node Comments', () => {
     // remove the comment via UI
     await editorPage.openCommentEditor('Comment Hide Step');
     await editorPage.addComment('');
+
+    // confirm the field is now empty
+    await editorPage.openCommentEditor('Comment Hide Step');
+    await editorPage.expectCommentValue('');
   });
 });

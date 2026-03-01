@@ -32,9 +32,7 @@ test.describe('Scaffolder Studio - Node YAML Editor', () => {
     expect(content).toContain('name: YAML Test Step');
   });
 
-  test('should persist arbitrary YAML fields alongside form edits', async ({
-    page,
-  }) => {
+  test('should persist arbitrary YAML fields alongside form edits', async () => {
     await listPage.goto();
     await listPage.createNewTemplate();
     await editorPage.verifyLoaded();
@@ -63,9 +61,7 @@ test.describe('Scaffolder Studio - Node YAML Editor', () => {
     expect(finalContent).toContain('dependsOn: another-step');
   });
 
-  test('should update visual node canvas when YAML name changes', async ({
-    page,
-  }) => {
+  test('should update visual node canvas when YAML name changes', async () => {
     await listPage.goto();
     await listPage.createNewTemplate();
     await editorPage.verifyLoaded();
@@ -92,9 +88,7 @@ test.describe('Scaffolder Studio - Node YAML Editor', () => {
     await editorPage.verifyNodeExists('New Canvas Name');
   });
 
-  test.only('should include arbitrary YAML fields in the final template YAML', async ({
-    page,
-  }) => {
+  test('should include arbitrary YAML fields in the final template YAML', async () => {
     await listPage.goto();
     await listPage.createNewTemplate();
     await editorPage.verifyLoaded();
