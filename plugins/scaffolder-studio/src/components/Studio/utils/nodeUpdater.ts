@@ -44,6 +44,7 @@ export const mergeNodeData = (
             ...stepData.formData,
             ...(dataToMerge.input || {}), // Merge the inputs
           },
+          customYamlData: dataToMerge.customYamlData ?? stepData.customYamlData,
         },
       };
     }
@@ -63,6 +64,7 @@ export const mergeNodeData = (
           variableType: dataToMerge.type ?? propData.variableType,
           enum: dataToMerge.enum ?? propData.enum,
           pattern: dataToMerge.pattern ?? propData.pattern,
+          customYamlData: dataToMerge.customYamlData ?? propData.customYamlData,
         },
       };
     }
@@ -80,6 +82,8 @@ export const mergeNodeData = (
               : outputData.links,
           text:
             dataToMerge.text !== undefined ? dataToMerge.text : outputData.text,
+          customYamlData:
+            dataToMerge.customYamlData ?? outputData.customYamlData,
         },
       };
     }
@@ -146,6 +150,7 @@ export const injectNewNode = (
         schema: matchedAction?.schema,
         if: dataToInject.if || '',
         formData: dataToInject.input || {},
+        customYamlData: dataToInject.customYamlData,
         // onChange is rehydrated later by YamlView / Studio context, so we omit or mock it here
         onChange: () => {},
       },
@@ -191,6 +196,7 @@ export const injectNewNode = (
         type: 'templateOutput',
         links: dataToInject.links || [],
         text: dataToInject.text || [],
+        customYamlData: dataToInject.customYamlData,
         onChange: () => {},
       },
     };

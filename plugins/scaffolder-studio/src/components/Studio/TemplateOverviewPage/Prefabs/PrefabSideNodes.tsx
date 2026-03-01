@@ -1,4 +1,7 @@
-import { NodeSideContent, NodeSideContentProps } from '../../components/NodeSideContent';
+import {
+  NodeSideContent,
+  NodeSideContentProps,
+} from '../../components/NodeSideContent';
 
 /**
  * Side content for the prefab editor.
@@ -14,7 +17,6 @@ export const PrefabSideNodes = ({
     <NodeSideContent
       node={node}
       availableActions={availableActions}
-      showHint={false}
       supportedTypes={['step', 'output', 'property']}
     >
       {children}

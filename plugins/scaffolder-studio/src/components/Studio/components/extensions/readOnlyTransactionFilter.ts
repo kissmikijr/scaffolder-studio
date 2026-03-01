@@ -8,6 +8,20 @@ export const readOnlyTransactionFilter = (
 
     let blocked = false;
     if (tr.docChanged) {
+      // Allow programmatic doc syncs (e.g. controlled value updates from React).
+      // We only want to block user-originated edits in read-only ranges.
+      const isUserEdit =
+        tr.isUserEvent('input') ||
+        tr.isUserEvent('delete') ||
+        tr.isUserEvent('undo') ||
+        tr.isUserEvent('redo') ||
+        tr.isUserEvent('paste') ||
+        tr.isUserEvent('cut');
+
+      if (!isUserEdit) {
+        return tr;
+      }
+
       tr.changes.iterChanges((fromA, toA, _fromB, _toB) => {
         if (blocked) return;
         for (const range of readOnlyRanges) {

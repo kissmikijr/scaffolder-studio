@@ -60,8 +60,7 @@ export const serializeToYaml = ({
   if (includeManagedByAnnotations) {
     metadata.annotations = {
       'backstage.io/managed-by-location': 'visual:scaffolder-studio',
-      'backstage.io/managed-by-origin-location':
-        'visual:scaffolder-studio',
+      'backstage.io/managed-by-origin-location': 'visual:scaffolder-studio',
     };
   }
 
@@ -73,6 +72,7 @@ export const serializeToYaml = ({
       owner: templateNode.data.owner || 'guest',
       type: (templateNode.data.spec as { type: string }).type || 'component',
     },
+    ...(templateNode.data.customYamlData || {}),
   };
 
   if (parametersNodes.length > 0) {
@@ -122,12 +122,19 @@ export const serializeToYaml = ({
             propertyData.title = param.data.title;
           }
 
-          acc[param.data.name] = propertyData;
+          acc[param.data.name] = {
+            ...propertyData,
+            ...(param.data.customYamlData || {}),
+          };
           return acc;
         },
         {} as Record<string, any>,
       );
-      return parameterSchema;
+
+      return {
+        ...parameterSchema,
+        ...(pNode.data.customYamlData || {}),
+      };
     });
   }
 
@@ -142,6 +149,7 @@ export const serializeToYaml = ({
         if: sNode.data.if ? sNode.data.if : undefined,
         action: sNode.data.actionId,
         input: sNode.data.formData,
+        ...(sNode.data.customYamlData || {}),
       };
     });
   }
@@ -160,6 +168,10 @@ export const serializeToYaml = ({
         }
         return oNode.data.text || [];
       }),
+      // Spread custom fields from the first output node
+      ...(outputNodes.length > 0
+        ? (outputNodes[0].data as any).customYamlData
+        : {}),
     };
   }
 

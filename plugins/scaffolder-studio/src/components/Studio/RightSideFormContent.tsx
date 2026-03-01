@@ -1,4 +1,7 @@
-import { NodeSideContent, NodeSideContentProps } from './components/NodeSideContent';
+import {
+  NodeSideContent,
+  NodeSideContentProps,
+} from './components/NodeSideContent';
 
 /**
  * Right sidebar form content for the main template editor.
@@ -10,11 +13,7 @@ export const RightSideFormContent = ({
   node,
 }: NodeSideContentProps) => {
   return (
-    <NodeSideContent
-      node={node}
-      availableActions={availableActions}
-      showHint
-    >
+    <NodeSideContent node={node} availableActions={availableActions}>
       {children}
     </NodeSideContent>
   );

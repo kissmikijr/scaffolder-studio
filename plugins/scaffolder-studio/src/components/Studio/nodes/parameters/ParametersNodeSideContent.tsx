@@ -1,9 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Typography, TextField, Box } from '@mui/material';
+import { TextField, Box } from '@mui/material';
 import { ParametersNodeData } from '../../types';
 import { useNodes } from '@xyflow/react';
 import { parametersSchema, ParametersForm } from './schema';
-import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
 export const ParametersNodeSideContent = ({ id }: { id: string }) => {
   const nodes = useNodes();
@@ -40,20 +39,6 @@ export const ParametersNodeSideContent = ({ id }: { id: string }) => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Box
-          sx={{
-            width: 16,
-            height: 16,
-            borderRadius: '4px',
-            backgroundColor: NodeTypeColors.parameters,
-            flexShrink: 0,
-          }}
-        />
-        <Typography variant="h6" sx={{ m: 0 }}>
-          Parameters: {formData.title || 'Unnamed'}
-        </Typography>
-      </Box>
       <TextField
         error={!!errors?.title}
         helperText={errors?.title}

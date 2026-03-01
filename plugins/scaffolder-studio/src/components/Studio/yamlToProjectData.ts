@@ -59,6 +59,10 @@ const templateYamlToProjectData = (
       name: templateYaml.metadata.name,
       description: templateYaml.metadata.description || '',
       owner: templateYaml.spec.owner,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      customYamlData: (({ apiVersion, kind, metadata, spec, ...rest }) => rest)(
+        templateYaml as any,
+      ),
     },
   };
 
@@ -79,6 +83,10 @@ const templateYamlToProjectData = (
         data: {
           title: param.title,
           required: param.required || [],
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          customYamlData: (({ title, required, properties, ...rest }) => rest)(
+            param as any,
+          ),
         },
       };
     });
@@ -121,6 +129,17 @@ const templateYamlToProjectData = (
                 required: param.required?.includes(name) || false,
                 'ui:field': config['ui:field'],
                 'ui:options': config['ui:options'],
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                customYamlData: (({
+                  type,
+                  description,
+                  'ui:field': uf,
+                  'ui:options': uo,
+                  pattern,
+                  enum: e,
+                  title,
+                  ...rest
+                }) => rest)(config as any),
               },
             };
             parameterNodes.push(propertyNode);
@@ -172,6 +191,16 @@ const templateYamlToProjectData = (
         schema: schema,
         formData: step?.input,
         description: description,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        customYamlData: (({
+          id,
+          name,
+          action,
+          if: ifCond,
+          input,
+          schema: sch,
+          ...rest
+        }) => rest)(step as any),
       },
     };
   });
@@ -186,6 +215,10 @@ const templateYamlToProjectData = (
       data: {
         links: templateYaml.spec.output.links || [],
         text: templateYaml.spec.output.text || [],
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        customYamlData: (({ links, text, ...rest }) => rest)(
+          templateYaml.spec.output as any,
+        ),
       },
     };
     outputNodes.push(outputNode);

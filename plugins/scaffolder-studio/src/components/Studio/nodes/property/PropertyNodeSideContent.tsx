@@ -1,20 +1,13 @@
 import { useCallback, useMemo, useState } from 'react';
-import {
-  Typography,
-  TextField,
-  Box,
-  Checkbox,
-  FormControlLabel,
-} from '@mui/material';
+import { TextField, Box, Checkbox, FormControlLabel } from '@mui/material';
 import { PropertyNodeData, AllNodeData } from '../../types';
 import { Node, useNodes } from '@xyflow/react';
 import { propertySchema } from './schema';
 import { UIFieldConfig } from './UIFieldConfig';
-import { getPropertyBackgroundColor } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
 type PropertyFormData = Pick<
   PropertyNodeData,
-  'name'
+  | 'name'
   | 'variableType'
   | 'required'
   | 'description'
@@ -58,11 +51,16 @@ export const PropertyNodeSideContent = ({
     (
       newData: Partial<
         PropertyFormData &
-        Pick<PropertyNodeData, 'ui:field' | 'ui:options' | 'pattern' | 'enum' | 'title'>
+          Pick<
+            PropertyNodeData,
+            'ui:field' | 'ui:options' | 'pattern' | 'enum' | 'title'
+          >
       >,
     ) => {
       const updated = { ...formData, ...newData };
-      const result = propertySchema({ nodes, excludeId: id }).safeParse(updated);
+      const result = propertySchema({ nodes, excludeId: id }).safeParse(
+        updated,
+      );
       if (!result.success) {
         const fieldErrors: Record<string, string> = {};
         result.error.issues.forEach(err => {
@@ -109,7 +107,6 @@ export const PropertyNodeSideContent = ({
   }
 
   return (
-
     <Box
       sx={{
         display: 'flex',
@@ -118,21 +115,6 @@ export const PropertyNodeSideContent = ({
         opacity: disabled ? 0.7 : 1,
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-        <Box
-          sx={{
-            width: 16,
-            height: 16,
-            borderRadius: '4px',
-            backgroundColor: getPropertyBackgroundColor(formData.variableType),
-            flexShrink: 0,
-          }}
-        />
-        <Typography variant="h6" sx={{ m: 0 }}>
-          Property: {formData.name || 'Unnamed'}
-        </Typography>
-      </Box>
-
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <Box
           sx={{
@@ -274,8 +256,11 @@ export const PropertyNodeSideContent = ({
           </Box>
         </Box>
       </Box>
-      <UIFieldConfig data={currentData} onChange={handleChange} disabled={disabled} />
+      <UIFieldConfig
+        data={currentData}
+        onChange={handleChange}
+        disabled={disabled}
+      />
     </Box>
   );
-
 };
