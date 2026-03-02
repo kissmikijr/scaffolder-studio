@@ -32,6 +32,8 @@ export type PropertyNodeData = {
   pattern?: string;
   enum?: string[];
   title?: string;
+  comment?: string;
+  customYamlData?: Record<string, any>;
 };
 
 export type StepNodeData = {
@@ -43,13 +45,21 @@ export type StepNodeData = {
   formData: Record<string, unknown>;
   if: string;
   description?: string;
+  comment?: string;
   onChange: (
     nodeId: string,
     data: Pick<
       StepNodeData,
-      'name' | 'stepId' | 'if' | 'formData' | 'schema' | 'description'
+      | 'name'
+      | 'stepId'
+      | 'if'
+      | 'formData'
+      | 'schema'
+      | 'description'
+      | 'comment'
     >,
   ) => void;
+  customYamlData?: Record<string, any>;
 };
 
 // Union type for all node data types
@@ -132,7 +142,9 @@ export type OutputNodeData = {
     title: string;
     content: string;
   }[];
+  comment?: string;
   onChange: (nodeId: string, data: OutputNodeData) => void;
+  customYamlData?: Record<string, any>;
 };
 
 export type ParametersNodeData = {
@@ -143,8 +155,10 @@ export type ParametersNodeData = {
     type: string;
     required?: boolean;
   }[];
+  comment?: string;
   onChange: (nodeId: string, parameters: Record<string, unknown>) => void;
   onAddProperty?: (parentId: string) => void;
+  customYamlData?: Record<string, any>;
 };
 
 export type TemplateNodeData = {
@@ -154,13 +168,15 @@ export type TemplateNodeData = {
   description: string;
   spec: { type: string };
   annotations: Record<string, string>;
+  comment?: string;
   onChange: (
     nodeId: string,
     data: Pick<
       TemplateNodeData,
-      'name' | 'owner' | 'description' | 'spec' | 'annotations'
+      'name' | 'owner' | 'description' | 'spec' | 'annotations' | 'comment'
     >,
   ) => void;
+  customYamlData?: Record<string, any>;
 };
 
 export type PrefabQueenNodeData = {
@@ -181,6 +197,7 @@ export type PrefabQueenNodeData = {
 export type PrefabNodeData = {
   type: 'prefab';
   id: string;
+  comment?: string;
 };
 
 export type VisualTemplateProject = {
@@ -230,6 +247,7 @@ export type PrefabInstanceNodeData = {
   id: string;
   version?: string;
   refType?: string;
+  comment?: string;
 };
 
 export interface VisualTemplateProjectStore {

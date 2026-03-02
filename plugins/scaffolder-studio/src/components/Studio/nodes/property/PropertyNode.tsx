@@ -3,6 +3,7 @@ import { NodeProps, Position, Node, useEdges } from '@xyflow/react';
 import { Handle } from '../../components/Handle';
 import { Box, useTheme, Chip, Typography, Divider } from '@mui/material';
 import { PropertyNodeData } from '../../types';
+import { NodeComment } from '../NodeComment';
 import { getBackgroundColor } from '../../utils/colorUtils';
 
 import { SELECTED_BORDER_COLOR } from '../../styles';
@@ -38,8 +39,9 @@ export const PropertyNodeContent = ({
         borderRadius: '20px',
         color: theme.palette.text.primary,
         backgroundColor: theme.palette.background.paper,
-        border: `2px solid ${selected ? SELECTED_BORDER_COLOR : theme.palette.divider
-          }`,
+        border: `2px solid ${
+          selected ? SELECTED_BORDER_COLOR : theme.palette.divider
+        }`,
         pointerEvents: disabled ? 'none' : 'auto',
         filter: disabled ? 'grayscale(1)' : 'none',
         '&:hover': {
@@ -56,18 +58,33 @@ export const PropertyNodeContent = ({
             position: 'absolute',
             top: -24,
             left: 0,
+            right: 0,
             display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            gap: 0.5,
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            color: 'text.secondary',
             pointerEvents: 'none',
           }}
         >
-          Property
+          {!disabled && (
+            <Typography
+              sx={{
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                color: 'text.secondary',
+              }}
+            >
+              Property
+            </Typography>
+          )}
         </Box>
       )}
+      <NodeComment
+        comment={data.comment}
+        onChange={val => data.onChange(id, { ...data, comment: val } as any)}
+        disabled={disabled}
+        color={getBackgroundColor(data.variableType)}
+        selected={selected}
+      />
 
       <Box
         sx={{

@@ -10,10 +10,7 @@ import validator from '@rjsf/validator-ajv8';
 import { Form } from '@backstage/plugin-scaffolder-react/alpha';
 import { styledMenuProps } from '../../components/menuStyles';
 import { AllNodeData, StepNodeData, PropertyNodeData } from '../../types';
-import {
-  ScaffolderAction,
-  NodeTypeColors,
-} from '@kissmiklosjr/plugin-scaffolder-studio-common';
+import { ScaffolderAction } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { ParamAutocompleteStringField } from '../../widgets/ParamAutocompleteStringField/ParamAutocompleteStringField';
 import { useEdges, useNodes, Node } from '@xyflow/react';
 import { RJSFSchema } from '@rjsf/utils';
@@ -235,20 +232,6 @@ export const StepNodeSideContent = ({
         gap: 1.5,
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-        <Box
-          sx={{
-            width: 16,
-            height: 16,
-            borderRadius: '4px',
-            backgroundColor: NodeTypeColors.step,
-            flexShrink: 0,
-          }}
-        />
-        <Typography variant="h6" sx={{ m: 0 }}>
-          Step: {currentData?.name || currentData?.stepId || 'Unnamed'}
-        </Typography>
-      </Box>
       <Autocomplete
         disabled={disabled}
         options={[...(availableActions || [])].sort((a, b) => {

@@ -182,9 +182,10 @@ test.describe('Scaffolder Studio - Complex Template', () => {
     expect(yaml).toContain('- id: log-customer-tag');
     expect(yaml).toContain('- id: createPullRequest');
 
-    expect(yaml).toContain(`output:
-    links:
-      - title: View the pull request on GitHub
-        url: \${{  steps['createPullRequest'].output.remoteUrl }} }}`);
+    expect(yaml).toContain('output:');
+    expect(yaml).toContain('title: View the pull request on GitHub');
+    expect(yaml).toContain(
+      "url: ${{ steps['createPullRequest'].output.remoteUrl }}",
+    );
   });
 });

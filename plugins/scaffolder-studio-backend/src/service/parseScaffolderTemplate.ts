@@ -120,7 +120,9 @@ const parseScaffolderTemplate = (
                 name,
                 type: 'property',
                 variableType: config.type || 'string',
-                required: param.required?.includes(name) || false,
+                required: Array.isArray(param.required)
+                  ? param.required.includes(name)
+                  : param.required === name || false,
                 'ui:field': config['ui:field'],
                 'ui:options': config['ui:options'],
               },

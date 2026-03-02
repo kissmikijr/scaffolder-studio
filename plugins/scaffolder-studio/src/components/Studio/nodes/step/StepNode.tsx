@@ -18,12 +18,13 @@ import {
   PropertyNodeData,
   AllNodeData,
 } from '../../types';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { ExpressionViewer } from './ExpressionViewer';
 
 import { FadableContainer } from '../../components/FadableContainer';
+import { NodeComment } from '../NodeComment';
+import { StyledIconButton } from '../../components/StyledIconButton';
+import DataObjectIcon from '@mui/icons-material/DataObject';
+import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
 import { SELECTED_BORDER_COLOR } from '../../styles';
 import {
@@ -190,50 +191,74 @@ const StepNode = ({
           position: 'absolute',
           top: -20,
           left: 0,
+          right: 0,
           fontSize: '0.75rem',
           fontWeight: 600,
-          width: '100%',
           color: 'text.secondary',
           pointerEvents: 'none',
           display: 'flex',
           flexDirection: 'row',
-          alignItems: 'flex-end',
+          alignItems: 'center',
           justifyContent: 'space-between',
           zIndex: 1000,
         }}
       >
-        {!disabled && (
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>Step</Box>
-        )}
-        {(data.schema as any)?.output?.properties && (
-          <Box
-            sx={{
-              pointerEvents: 'auto',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <Tooltip title={open ? 'Hide output fields' : 'Show output fields'}>
-              <Box
-                onClick={() =>
-                  setAnchorEl(prev => (prev ? null : nodeRef.current))
-                }
-                sx={{
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                {open ? (
-                  <ChevronRightIcon fontSize="small" />
-                ) : (
-                  <ExpandMoreIcon fontSize="small" />
-                )}
-              </Box>
-            </Tooltip>
-          </Box>
-        )}
+        {!disabled && <Box>Step</Box>}
       </Box>
+      <NodeComment
+        comment={data.comment}
+        onChange={val => data.onChange(id, { ...data, comment: val })}
+        disabled={disabled}
+        color={NodeTypeColors.step}
+        selected={selected}
+      />
+      {(data.schema as any)?.output?.properties && (
+        <Box
+          className="node-output-toggle-badge"
+          data-testid="node-output-toggle-badge"
+          sx={{
+            pointerEvents: selected ? 'auto' : 'none',
+            position: 'absolute',
+            top: 14,
+            right: -10,
+            zIndex: 1000,
+            opacity: selected ? 1 : 0,
+            transition: 'opacity 0.2s',
+          }}
+        >
+          <Tooltip title={open ? 'Hide output fields' : 'Show output fields'}>
+            <StyledIconButton
+              data-testid="node-output-toggle-button"
+              size="small"
+              onClick={() =>
+                setAnchorEl(prev => (prev ? null : nodeRef.current))
+              }
+              sx={{
+                width: 20,
+                height: 20,
+                minWidth: 20,
+                backgroundColor: open
+                  ? NodeTypeColors.step
+                  : theme.palette.background.paper,
+                color: open
+                  ? theme.palette.getContrastText(NodeTypeColors.step)
+                  : theme.palette.text.secondary,
+                boxShadow: theme.shadows[2],
+                border: open ? 'none' : `1px solid ${theme.palette.divider}`,
+                padding: '2px',
+                '&:hover': {
+                  backgroundColor: open
+                    ? NodeTypeColors.step
+                    : theme.palette.action.hover,
+                  boxShadow: theme.shadows[4],
+                },
+              }}
+            >
+              <DataObjectIcon sx={{ fontSize: '0.75rem' }} />
+            </StyledIconButton>
+          </Tooltip>
+        </Box>
+      )}
       <Box>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Box

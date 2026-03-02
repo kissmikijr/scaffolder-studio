@@ -98,7 +98,7 @@ export function ShowPopperPlugin({
       const display = param;
       const baseExpression = `parameters.${param}`;
 
-      // Insert immediately - use unwrapped format since ${{ }} is already in the text from auto-complete
+      // Insert immediately
       const fullExpression = baseExpression;
       const nodeKey = insertToken(editor, display, fullExpression, color);
       lastInsertedNodeKey.current = nodeKey;
@@ -122,7 +122,7 @@ export function ShowPopperPlugin({
       const display = `${output.stepId}.${output.outputName}`;
       const baseExpression = `steps['${output.stepId}'].output['${output.outputName}']`;
 
-      // Insert immediately - use unwrapped format since ${{ }} is already in the text from auto-complete
+      // Insert immediately
       const fullExpression = baseExpression;
       const nodeKey = insertToken(editor, display, fullExpression, color);
       lastInsertedNodeKey.current = nodeKey;
@@ -265,96 +265,37 @@ export function ShowPopperPlugin({
     setSelectedToken(null);
   }, []);
 
-  const isProcessingBraces = useRef(false);
-  const prevTextContent = useRef('');
-
-  useEffect(() => {
-    const removeUpdateListener = editor.registerUpdateListener(
-      ({ editorState }) => {
-        if (isProcessingBraces.current) return;
-        editorState.read(() => {
-          const selection = $getSelection();
-          if (!selection || !selection.isCollapsed()) return;
-
-          if (!('anchor' in selection)) return;
-          const rangeSelection = selection as any;
-
-          // Get the current text content before the cursor
-          const anchorNode = rangeSelection.anchor.getNode();
-          const anchorOffset = rangeSelection.anchor.offset;
-
-          if (anchorNode.getType() !== 'text') return;
-          const textContent = anchorNode.getTextContent();
-          const textBeforeCursor = textContent.slice(0, anchorOffset);
-          const textAfterCursor = textContent.slice(anchorOffset);
-
-          if (
-            !prevTextContent.current.includes('${{') &&
-            textBeforeCursor.endsWith('${{') &&
-            !textAfterCursor.startsWith('  }}')
-          ) {
-            const rootElement = editor.getRootElement();
-            if (rootElement) {
-              setAnchorEl(rootElement);
-            }
-
-            isProcessingBraces.current = true;
-
-            editor.update(
-              () => {
-                const currentSelection = $getSelection();
-                if (currentSelection) {
-                  currentSelection.insertText('  }}');
-
-                  const newSelection = $getSelection();
-                  if (
-                    newSelection &&
-                    newSelection.isCollapsed() &&
-                    'anchor' in newSelection
-                  ) {
-                    const ns = newSelection as any;
-                    const node = ns.anchor.getNode();
-                    const currentOffset = ns.anchor.offset;
-
-                    ns.anchor.set(node.getKey(), currentOffset - 3, 'text');
-                    ns.focus.set(node.getKey(), currentOffset - 3, 'text');
-                  }
-                }
-              },
-              {
-                onUpdate: () => {
-                  isProcessingBraces.current = false;
-                },
-              },
-            );
-
-            setShowAutocomplete(true);
-            setViewMode('main');
-            setSelectedToken(null);
-            lastInsertedNodeKey.current = null;
-          }
-          prevTextContent.current = textBeforeCursor;
-        });
-      },
-    );
-
-    return () => {
-      removeUpdateListener();
-    };
-  }, [editor, setShowAutocomplete]);
-
   useEffect(() => {
     return editor.registerRootListener(rootElement => {
       if (rootElement === null) return () => {};
+
+      const handleFocus = () => {
+        setAnchorEl(rootElement);
+        setShowAutocomplete(true);
+      };
 
       const handleBlur = () => {
         setShowAutocomplete(false);
       };
 
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === ' ') {
+          setViewMode('main');
+          setSelectedToken(null);
+          lastInsertedNodeKey.current = null;
+        }
+      };
+
+      rootElement.addEventListener('focus', handleFocus, true);
+      rootElement.addEventListener('click', handleFocus, true);
       rootElement.addEventListener('blur', handleBlur, true);
+      rootElement.addEventListener('keydown', handleKeyDown, true);
 
       return () => {
+        rootElement.removeEventListener('focus', handleFocus, true);
+        rootElement.removeEventListener('click', handleFocus, true);
         rootElement.removeEventListener('blur', handleBlur, true);
+        rootElement.removeEventListener('keydown', handleKeyDown, true);
       };
     });
   }, [editor, setShowAutocomplete]);

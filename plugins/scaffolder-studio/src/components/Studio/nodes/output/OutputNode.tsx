@@ -4,6 +4,8 @@ import { Box, Typography, useTheme, Stack } from '@mui/material';
 import LaunchIcon from '@mui/icons-material/Launch';
 import InfoIcon from '@mui/icons-material/Info';
 import { OutputNodeData } from '../../types';
+import { NodeComment } from '../NodeComment';
+import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { SELECTED_BORDER_COLOR } from '../../styles';
 import {
   countIncomingConnections,
@@ -68,7 +70,10 @@ const OutputNode = ({
 
         <Stack spacing={0.5} sx={{ px: 1.5, py: 1 }}>
           {data?.links?.map((link, idx) => (
-            <Box key={`link-${idx}`} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              key={`link-${idx}`}
+              sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+            >
               <LaunchIcon sx={{ fontSize: '0.9rem', opacity: 0.7 }} />
               <Typography variant="body2" noWrap sx={{ fontSize: '0.75rem' }}>
                 {link.title}
@@ -76,7 +81,10 @@ const OutputNode = ({
             </Box>
           ))}
           {data?.text?.map((text, idx) => (
-            <Box key={`text-${idx}`} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              key={`text-${idx}`}
+              sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+            >
               <InfoIcon sx={{ fontSize: '0.9rem', opacity: 0.7 }} />
               <Typography variant="body2" noWrap sx={{ fontSize: '0.75rem' }}>
                 {text.title}
@@ -95,8 +103,9 @@ const OutputNode = ({
         borderRadius: '20px',
         backgroundColor: theme.palette.background.paper,
         color: theme.palette.text.primary,
-        border: `2px solid ${selected ? SELECTED_BORDER_COLOR : theme.palette.divider
-          }`,
+        border: `2px solid ${
+          selected ? SELECTED_BORDER_COLOR : theme.palette.divider
+        }`,
         pointerEvents: disabled ? 'none' : 'auto',
         filter: disabled ? 'grayscale(1)' : 'none',
         '&:hover': {
@@ -107,21 +116,37 @@ const OutputNode = ({
       }}
       data-interactive="true"
     >
-      {!disabled && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: -20,
-            left: 0,
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            color: 'text.secondary',
-            pointerEvents: 'none',
-          }}
-        >
-          Output
-        </Box>
-      )}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: -20,
+          left: 0,
+          right: 0,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          pointerEvents: 'none',
+        }}
+      >
+        {!disabled && (
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              color: 'text.secondary',
+            }}
+          >
+            Output
+          </Typography>
+        )}
+      </Box>
+      <NodeComment
+        comment={data.comment}
+        onChange={val => data.onChange(id, { ...data, comment: val })}
+        disabled={disabled}
+        color={NodeTypeColors.templateOutput}
+        selected={selected}
+      />
 
       {renderContent()}
 

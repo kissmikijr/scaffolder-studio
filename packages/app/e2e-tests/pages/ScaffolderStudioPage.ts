@@ -563,4 +563,139 @@ export class ScaffolderStudioPage {
       { timeout: 15000 },
     );
   }
+
+  // --- Node Comment Helpers ---
+
+  async openCommentEditor(nodeText: string) {
+    await this.collapseSideContent();
+
+    const node = this.page
+      .locator('.react-flow__node')
+      .filter({ hasText: nodeText })
+      .first();
+    await expect(node).toBeVisible();
+
+    // Select the node to make the badge visible and interactive
+    // Click center to avoid connection handles
+    const nodeBox = await node.boundingBox();
+    if (nodeBox) {
+      await this.page.mouse.click(
+        nodeBox.x + nodeBox.width / 2,
+        nodeBox.y + nodeBox.height / 2,
+      );
+    } else {
+      await node.click({ force: true });
+    }
+
+    const badge = node.getByTestId('node-comment-badge');
+    await expect(badge).toBeVisible();
+
+    const commentBtn = badge.getByTestId('node-comment-button');
+    await expect(commentBtn).toBeAttached();
+
+    await commentBtn.dispatchEvent('click');
+
+    const popover = this.page.getByTestId('comment-input-popover').first();
+    await expect(popover).toBeVisible({ timeout: 10000 });
+  }
+
+  async addComment(comment: string) {
+    const popover = this.page.getByTestId('comment-input-popover').first();
+    await expect(popover).toBeVisible();
+
+    // Existing comments open in read-only mode. Use the kebab menu to enter edit mode.
+    const submitButton = popover.getByTestId('comment-input-submit');
+    if (!(await submitButton.isVisible())) {
+      await popover.getByTestId('comment-input-menu-button').click();
+      await this.page.getByTestId('comment-input-edit-menu-item').click();
+      await expect(submitButton).toBeVisible();
+    }
+
+    const fieldRoot = popover.getByTestId('comment-input-field');
+    const input = fieldRoot.locator('textarea, input').first();
+    await expect(input).toBeVisible();
+    await input.fill(comment);
+
+    await submitButton.click();
+    await expect(popover).not.toBeVisible();
+  }
+
+  async expectCommentValue(comment: string) {
+    const popover = this.page.getByTestId('comment-input-popover').first();
+    await expect(popover).toBeVisible();
+    const fieldRoot = popover.getByTestId('comment-input-field');
+    const input = fieldRoot.locator('textarea, input').first();
+    await expect(input).toHaveValue(comment);
+  }
+
+  async addCommentViaYaml(nodeText: string, comment: string) {
+    // 1. Select node which reliably opens the sidebar
+    await this.selectNode(nodeText);
+
+    // 2. Switch to YAML
+    await this.toggleNodeYamlEditor();
+
+    // 3. Inject a 'comment' key
+    const currentYaml = await this.getNodeYamlContent();
+    // Use a simple replace or append strategy
+    let yamlWithComment = '';
+    const hasComment = currentYaml.includes('comment:');
+    if (hasComment) {
+      yamlWithComment = currentYaml.replace(
+        /comment:.*(\n|$)/g,
+        `comment: "${comment}"\n`,
+      );
+    } else {
+      yamlWithComment = `${currentYaml}\ncomment: "${comment}"`;
+    }
+
+    await this.editNodeYamlContent(yamlWithComment);
+
+    // 4. Toggle back to form view to trigger save and then close
+    await this.toggleNodeYamlEditor();
+    await this.collapseSideContent();
+  }
+
+  async expectNodeCommentBadgeVisible(text: string) {
+    const node = this.page
+      .locator('.react-flow__node')
+      .filter({ hasText: text })
+      .first();
+    await expect(node).toBeVisible();
+    await node.click({ force: true });
+
+    // The badge becomes opacity: 1 and pointer-events: auto when selected
+    const badge = node.getByTestId('node-comment-badge');
+    await expect(badge).toHaveCSS('opacity', '1');
+  }
+
+  // --- Side Drawer YAML Editor Helpers ---
+
+  async toggleNodeYamlEditor() {
+    await this.expandSideContent();
+    await this.page.getByTestId('yaml-toggle-switch').click();
+  }
+
+  async getNodeYamlContent() {
+    // Rely on the side drawer code mirror taking focus
+    const editor = this.page.locator('.cm-content').last();
+    await expect(editor).toBeVisible();
+    return await editor.innerText();
+  }
+
+  async editNodeYamlContent(newContent: string) {
+    const editor = this.page.locator('.cm-content').last();
+    await expect(editor).toBeVisible();
+    await editor.click();
+
+    // Select all text
+    await this.page.keyboard.press('Meta+A');
+    await this.page.keyboard.press('Control+A'); // Fallback for Windows/Linux
+
+    // Delete existing content
+    await this.page.keyboard.press('Backspace');
+
+    // Type new content
+    await editor.fill(newContent);
+  }
 }

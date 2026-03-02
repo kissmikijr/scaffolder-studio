@@ -1,12 +1,5 @@
 import { useEffect, useMemo, useState, ChangeEvent } from 'react';
-import {
-  Typography,
-  Grid,
-  TextField,
-  Autocomplete,
-  CircularProgress,
-  Box,
-} from '@mui/material';
+import { Grid, TextField, Autocomplete, CircularProgress } from '@mui/material';
 import { TemplateNodeData, VisualTemplateProject } from '../../types';
 import { useNodes } from '@xyflow/react';
 import { catalogApiRef } from '@backstage/plugin-catalog-react';
@@ -15,7 +8,6 @@ import { stringifyEntityRef } from '@backstage/catalog-model';
 import { templateSchema, TemplateForm } from './schema';
 import { scaffolderVisualApiRef } from '../../../../api/ScaffolderVisualClient';
 import debounce from 'lodash.debounce';
-import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
 // Maximum number of owners to display in dropdown at once
 const MAX_OWNERS_DISPLAY = 100;
@@ -197,20 +189,6 @@ export const TemplateNodeSideContent = ({ id }: { id?: string }) => {
 
   return (
     <Grid>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-        <Box
-          sx={{
-            width: 16,
-            height: 16,
-            borderRadius: '4px',
-            backgroundColor: NodeTypeColors.template,
-            flexShrink: 0,
-          }}
-        />
-        <Typography variant="h6" sx={{ m: 0 }}>
-          Template: {formValues.name || 'Unnamed'}
-        </Typography>
-      </Box>
       <TextField
         label="Name"
         variant="outlined"

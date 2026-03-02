@@ -1,13 +1,26 @@
 import { useState, useCallback, useMemo } from 'react';
-import { Typography, TextField, Box, Tooltip, Menu, MenuItem, ListSubheader } from '@mui/material';
+import {
+  Typography,
+  TextField,
+  Box,
+  Tooltip,
+  Menu,
+  MenuItem,
+  ListSubheader,
+} from '@mui/material';
 import { StyledIconButton } from '../../components/StyledIconButton';
 import AddIcon from '@mui/icons-material/Add';
-import { AllNodeData, OutputNodeData, PropertyNodeData, StepNodeData } from '../../types';
+import {
+  AllNodeData,
+  OutputNodeData,
+  PropertyNodeData,
+  StepNodeData,
+} from '../../types';
 import { Node, useNodes, useEdges } from '@xyflow/react';
 import { outputSchema } from './schema';
 import CloseIcon from '@mui/icons-material/Close';
 
-import { NodeTypeColors, traverseUpFromNode } from '@kissmiklosjr/plugin-scaffolder-studio-common';
+import { traverseUpFromNode } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { StepNodeExpressionField } from '../step/StepNodeExpressionField';
 import { MarkdownEditor } from '../../components/MarkdownEditor';
 
@@ -62,11 +75,16 @@ export const OutputNodeSideContent = ({
 
   // State for Variable Picker Menu
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [activeFieldIndex, setActiveFieldIndex] = useState<number | 'new' | null>(null);
+  const [activeFieldIndex, setActiveFieldIndex] = useState<
+    number | 'new' | null
+  >(null);
   const open = Boolean(anchorEl);
 
-
-  const [newLink, setNewLink] = useState<{ title: string; url: string; icon?: string }>({
+  const [newLink, setNewLink] = useState<{
+    title: string;
+    url: string;
+    icon?: string;
+  }>({
     title: '',
     url: '',
     icon: undefined,
@@ -199,20 +217,6 @@ export const OutputNodeSideContent = ({
         opacity: disabled ? 0.7 : 1,
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-        <Box
-          sx={{
-            width: 16,
-            height: 16,
-            borderRadius: '4px',
-            backgroundColor: NodeTypeColors.templateOutput,
-            flexShrink: 0,
-          }}
-        />
-        <Typography variant="h6" sx={{ m: 0 }}>
-          Output
-        </Typography>
-      </Box>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <Typography variant="subtitle1">Links</Typography>
         {(currentData.links || []).map((link, index) => (
@@ -269,7 +273,10 @@ export const OutputNodeSideContent = ({
               InputLabelProps={{ shrink: true }}
               onChange={e => {
                 const newLinks = [...(currentData.links || [])];
-                newLinks[index] = { ...link, icon: e.target.value || undefined };
+                newLinks[index] = {
+                  ...link,
+                  icon: e.target.value || undefined,
+                };
                 handleChange({
                   links: newLinks,
                   text: currentData.text || [],
@@ -278,7 +285,11 @@ export const OutputNodeSideContent = ({
               }}
             />
             <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ mb: 0.5, display: 'block' }}
+              >
                 URL
               </Typography>
               <StepNodeExpressionField
@@ -315,21 +326,29 @@ export const OutputNodeSideContent = ({
               borderRadius: 2,
               display: 'flex',
               flexDirection: 'column',
-              gap: 2
+              gap: 2,
             }}
           >
-            <Typography variant="subtitle2" color="text.secondary">New Link</Typography>
+            <Typography variant="subtitle2" color="text.secondary">
+              New Link
+            </Typography>
             <TextField
               label="Title"
               value={newLink.title}
               size="small"
               fullWidth
               error={!!errors.links?.[(currentData.links || []).length]?.title}
-              helperText={errors.links?.[(currentData.links || []).length]?.title}
+              helperText={
+                errors.links?.[(currentData.links || []).length]?.title
+              }
               onChange={e => setNewLink({ ...newLink, title: e.target.value })}
             />
             <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ mb: 0.5, display: 'block' }}
+              >
                 URL
               </Typography>
               <StepNodeExpressionField
@@ -351,7 +370,9 @@ export const OutputNodeSideContent = ({
               fullWidth
               placeholder="e.g. catalog, external, github"
               InputLabelProps={{ shrink: true }}
-              onChange={e => setNewLink({ ...newLink, icon: e.target.value || undefined })}
+              onChange={e =>
+                setNewLink({ ...newLink, icon: e.target.value || undefined })
+              }
             />
             <StyledIconButton
               data-testid="add-link-button"
@@ -381,8 +402,16 @@ export const OutputNodeSideContent = ({
                 bgcolor: 'background.paper',
               }}
             >
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="subtitle2" color="text.secondary">Block {index + 1}</Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <Typography variant="subtitle2" color="text.secondary">
+                  Block {index + 1}
+                </Typography>
                 <Tooltip title="Delete">
                   <span>
                     <StyledIconButton
@@ -445,16 +474,20 @@ export const OutputNodeSideContent = ({
                 borderRadius: 2,
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 2
+                gap: 2,
               }}
             >
-              <Typography variant="subtitle2" color="text.secondary">New Text Block</Typography>
+              <Typography variant="subtitle2" color="text.secondary">
+                New Text Block
+              </Typography>
               <TextField
                 label="Title"
                 value={newText.title}
                 size="small"
                 fullWidth
-                onChange={e => setNewText({ ...newText, title: e.target.value })}
+                onChange={e =>
+                  setNewText({ ...newText, title: e.target.value })
+                }
               />
               <Box>
                 <MarkdownEditor
@@ -490,26 +523,43 @@ export const OutputNodeSideContent = ({
             }}
           >
             {parameters.length > 0 && <ListSubheader>Parameters</ListSubheader>}
-            {parameters.map((param) => (
+            {parameters.map(param => (
               <MenuItem
                 key={`param-${param.name}`}
-                onClick={() => insertVariable(`\${{ parameters.${param.name} }}`)}
+                onClick={() =>
+                  insertVariable(`\${{ parameters.${param.name} }}`)
+                }
                 dense
               >
                 {param.name}
               </MenuItem>
             ))}
 
-            {allParentStepsOutputs.length > 0 && <ListSubheader>Step Outputs</ListSubheader>}
-            {allParentStepsOutputs.map((step) => (
+            {allParentStepsOutputs.length > 0 && (
+              <ListSubheader>Step Outputs</ListSubheader>
+            )}
+            {allParentStepsOutputs.map(step => (
               <Box key={`step-${step.id}`}>
-                <Typography variant="caption" sx={{ px: 2, py: 0.5, display: 'block', color: 'text.secondary', fontWeight: 'bold' }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    px: 2,
+                    py: 0.5,
+                    display: 'block',
+                    color: 'text.secondary',
+                    fontWeight: 'bold',
+                  }}
+                >
                   {step.id}
                 </Typography>
-                {Object.keys(step.outputs || {}).map((outputKey) => (
+                {Object.keys(step.outputs || {}).map(outputKey => (
                   <MenuItem
                     key={`output-${step.id}-${outputKey}`}
-                    onClick={() => insertVariable(`\${{ steps.${step.id}.output.${outputKey} }}`)}
+                    onClick={() =>
+                      insertVariable(
+                        `\${{ steps.${step.id}.output.${outputKey} }}`,
+                      )
+                    }
                     dense
                     sx={{ pl: 4 }}
                   >
@@ -519,7 +569,9 @@ export const OutputNodeSideContent = ({
                 {(!step.outputs || Object.keys(step.outputs).length === 0) && (
                   <MenuItem
                     key={`output-${step.id}-default`}
-                    onClick={() => insertVariable(`\${{ steps.${step.id}.output }}`)}
+                    onClick={() =>
+                      insertVariable(`\${{ steps.${step.id}.output }}`)
+                    }
                     dense
                     sx={{ pl: 4 }}
                   >

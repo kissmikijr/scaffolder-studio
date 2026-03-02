@@ -4,6 +4,8 @@ import { FadableContainer } from '../../components/FadableContainer';
 import { Typography, useTheme, Box, Divider } from '@mui/material';
 import { AllNodeData, TemplateNodeData } from '../../types';
 import { MarkdownContent } from '@backstage/core-components';
+import { NodeComment } from '../NodeComment';
+import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
 import { SELECTED_BORDER_COLOR } from '../../styles';
 import { getTemplateOutgoingSlots } from '../../utils/connectionLimits';
@@ -26,8 +28,9 @@ const TemplateNode = ({
         color: theme.palette.text.primary,
         pointerEvents: 'auto',
         borderRadius: '20px',
-        border: `2px solid ${selected ? SELECTED_BORDER_COLOR : theme.palette.divider
-          }`,
+        border: `2px solid ${
+          selected ? SELECTED_BORDER_COLOR : theme.palette.divider
+        }`,
         '&:hover': {
           boxShadow: 3,
           cursor: 'pointer',
@@ -41,14 +44,30 @@ const TemplateNode = ({
           position: 'absolute',
           top: -20,
           left: 0,
-          fontSize: '0.75rem',
-          fontWeight: 600,
-          color: 'text.secondary',
+          right: 0,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           pointerEvents: 'none',
         }}
       >
-        Template
+        <Typography
+          sx={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color: 'text.secondary',
+          }}
+        >
+          Template
+        </Typography>
       </Box>
+
+      <NodeComment
+        comment={data.comment}
+        onChange={val => data.onChange(id, { ...data, comment: val } as any)}
+        color={NodeTypeColors.template}
+        selected={selected}
+      />
       <Box
         sx={{
           backgroundColor: '#bd93f9', // Dracula orange
