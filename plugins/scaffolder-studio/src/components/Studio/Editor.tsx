@@ -7,7 +7,6 @@ import {
   SetStateAction,
   ReactNode,
 } from 'react';
-import {} from 'react';
 import { ReactFlow, Background } from '@xyflow/react';
 import { Box, Tooltip, Typography, useTheme, Tabs, Tab } from '@mui/material';
 import { StyledIconButton } from './components/StyledIconButton';
@@ -45,6 +44,7 @@ import { PrefabTreeView } from './TemplateOverviewPage/Prefabs/PrefabTreeView';
 import { PrefabInstanceContextMenu } from './nodes/prefab/PrefabInstanceContextMenu';
 import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import {
   useCopyPaste,
   useGroupDragDrop,
@@ -54,6 +54,7 @@ import {
   usePanning,
   useProjectSync,
   useThumbnail,
+  useDependencyEdges,
 } from './hooks';
 import { alertApiRef } from '@backstage/core-plugin-api';
 import { PublishDialog } from './TemplateOverviewPage/components/PublishDialog';
@@ -134,6 +135,7 @@ const ScaffolderStudioEditor = ({
   const alertApi = useApi(alertApiRef);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [isSideContentCollapsed, setIsSideContentCollapsed] = useState(false);
+  const [showDependencyEdges, setShowDependencyEdges] = useState(false);
   const theme = useTheme();
 
   const { id, tab } = useParams();
@@ -157,6 +159,11 @@ const ScaffolderStudioEditor = ({
   const { width, startDrag } = useSidebarResize();
   const isPanning = usePanning();
   const project = useProjectSync({ id, nodes, setViewportState });
+
+  const dependencyEdges = useDependencyEdges(nodes);
+  const displayEdges = showDependencyEdges
+    ? [...edges, ...dependencyEdges]
+    : edges;
 
   useThumbnail({
     id,
@@ -614,6 +621,28 @@ const ScaffolderStudioEditor = ({
           />
           <Tooltip
             title={
+              showDependencyEdges
+                ? 'Hide dependency edges'
+                : 'Show dependency edges'
+            }
+            arrow
+          >
+            <StyledIconButton
+              size="small"
+              color={showDependencyEdges ? 'primary' : 'secondary'}
+              data-testid="dependency-edges-toggle-button"
+              onClick={() => setShowDependencyEdges(prev => !prev)}
+              sx={{
+                width: 48,
+                height: 34,
+                borderRadius: '12px !important',
+              }}
+            >
+              <AccountTreeIcon sx={{ fontSize: '1rem' }} />
+            </StyledIconButton>
+          </Tooltip>
+          <Tooltip
+            title={
               isSideContentCollapsed
                 ? 'Expand side panel'
                 : 'Collapse side panel'
@@ -671,7 +700,7 @@ const ScaffolderStudioEditor = ({
               <ReactFlow
                 onNodesChange={handleNodesChange}
                 onViewportChange={handleViewportChange}
-                edges={edges}
+                edges={displayEdges}
                 nodes={nodes}
                 connectionRadius={42}
                 viewport={viewport}

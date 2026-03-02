@@ -10,3 +10,4 @@ export * from './useProjectSync';
 export * from './useTemplateDraftPersistence';
 export * from './useUnsavedChangesGuard';
 export * from './useThumbnail';
+export * from './useDependencyEdges';
