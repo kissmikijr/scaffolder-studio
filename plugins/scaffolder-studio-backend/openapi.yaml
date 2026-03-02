@@ -1,0 +1,980 @@
+openapi: 3.0.3
+info:
+  title: Scaffolder Studio Backend API
+  version: 1.0.0
+  description: |
+    OpenAPI specification for the `scaffolder-studio` backend plugin.
+
+    Base path is the Backstage plugin router path for `pluginId: scaffolder-studio`.
+    In a default Backstage setup this resolves to `/api/scaffolder-studio`.
+servers:
+  - url: /api/scaffolder-studio
+    description: Backstage plugin base path
+tags:
+  - name: Templates
+  - name: Publishing
+  - name: Prefabs
+  - name: Prefab Library
+  - name: Metadata
+paths:
+  /templates:
+    get:
+      tags: [Templates]
+      summary: List visual template projects
+      description: Returns templates for the authenticated user. Use `trashed=true` to list soft-deleted templates.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: trashed
+          required: false
+          schema:
+            type: boolean
+          description: If true, returns trashed templates.
+      responses:
+        '200':
+          description: Template projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VisualTemplateProject'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Templates]
+      summary: Create a new visual template project
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateProjectUpsertRequest'
+      responses:
+        '201':
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /templates/published:
+    get:
+      tags: [Publishing]
+      summary: List published templates
+      responses:
+        '200':
+          description: Published templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PublishedTemplate'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /templates/{id}:
+    get:
+      tags: [Templates]
+      summary: Get a visual template project by ID
+      parameters:
+        - $ref: '#/components/parameters/TemplateId'
+      responses:
+        '200':
+          description: Template project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisualTemplateProject'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags: [Templates]
+      summary: Update a visual template project
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TemplateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateProjectUpsertRequestWithoutId'
+      responses:
+        '204':
+          description: Updated
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /templates/delete/hard:
+    post:
+      tags: [Templates]
+      summary: Permanently delete templates
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdsRequest'
+      responses:
+        '204':
+          description: Permanently deleted
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /templates/trash:
+    post:
+      tags: [Templates]
+      summary: Soft-delete templates
+      description: Moves templates to trash.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdsRequest'
+      responses:
+        '204':
+          description: Trashed
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /templates/restore:
+    post:
+      tags: [Templates]
+      summary: Restore trashed templates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdsRequest'
+      responses:
+        '200':
+          description: Restored
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /actions:
+    get:
+      tags: [Metadata]
+      summary: List available scaffolder actions
+      responses:
+        '200':
+          description: Scaffolder actions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScaffolderAction'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /templates/{id}/dry-run-inputs:
+    get:
+      tags: [Templates]
+      summary: Get persisted dry-run inputs for a template
+      parameters:
+        - $ref: '#/components/parameters/TemplateId'
+      responses:
+        '200':
+          description: Persisted dry-run inputs (empty object when none)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyRecord'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags: [Templates]
+      summary: Persist dry-run inputs for a template
+      parameters:
+        - $ref: '#/components/parameters/TemplateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [inputs]
+              properties:
+                inputs:
+                  $ref: '#/components/schemas/AnyRecord'
+      responses:
+        '204':
+          description: Saved
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /publishers:
+    get:
+      tags: [Publishing]
+      summary: List configured publishers
+      responses:
+        '200':
+          description: Publisher extensions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Publisher'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /templates/{id}/publish:
+    post:
+      tags: [Publishing]
+      summary: Publish a visual template
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TemplateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+      responses:
+        '204':
+          description: Published
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /templates/{id}/unpublish:
+    post:
+      tags: [Publishing]
+      summary: Unpublish a visual template
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TemplateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnpublishRequest'
+      responses:
+        '204':
+          description: Unpublished
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /templates/import:
+    post:
+      tags: [Templates]
+      summary: Import a scaffolder template into visual representation
+      description: Accepts either user or service credentials.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [template, id]
+              properties:
+                template:
+                  type: object
+                  additionalProperties: true
+                id:
+                  type: string
+      responses:
+        '204':
+          description: Imported
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /template/serialize:
+    post:
+      tags: [Templates]
+      summary: Serialize graph nodes/edges to scaffolder YAML
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SerializeTemplateRequest'
+      responses:
+        '200':
+          description: Serialized YAML string
+          content:
+            application/json:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /prefabs:
+    get:
+      tags: [Prefabs]
+      summary: List personal prefabs
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Prefabs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Prefab'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Prefabs]
+      summary: Create a personal prefab
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrefabCreateRequest'
+      responses:
+        '200':
+          description: Created prefab id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /prefabs/{id}:
+    get:
+      tags: [Prefabs]
+      summary: Get personal prefab by id
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PrefabId'
+      responses:
+        '200':
+          description: Prefab
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prefab'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags: [Prefabs]
+      summary: Update personal prefab
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PrefabId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrefabUpdateRequest'
+      responses:
+        '200':
+          description: Updated (empty JSON/null response)
+          content:
+            application/json:
+              schema:
+                nullable: true
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Prefabs]
+      summary: Delete personal prefab
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PrefabId'
+      responses:
+        '200':
+          description: Deleted (empty JSON/null response)
+          content:
+            application/json:
+              schema:
+                nullable: true
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /prefabs/resolve:
+    post:
+      tags: [Prefabs]
+      summary: Resolve prefab instance nodes into concrete nodes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolvePrefabsRequest'
+      responses:
+        '200':
+          description: Resolved nodes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GraphNode'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /prefab-library/all:
+    get:
+      tags: [Prefab Library]
+      summary: List published prefab library entries
+      responses:
+        '200':
+          description: Library prefabs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Prefab'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /prefab-library/{id}:
+    get:
+      tags: [Prefab Library]
+      summary: Get prefab library entry by source prefab id and optional version
+      parameters:
+        - $ref: '#/components/parameters/PrefabId'
+        - in: query
+          name: version
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Library prefab
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prefab'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Prefab Library]
+      summary: Delete prefab library entry
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PrefabId'
+      responses:
+        '200':
+          description: Deleted (empty JSON/null response)
+          content:
+            application/json:
+              schema:
+                nullable: true
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /prefab-library:
+    post:
+      tags: [Prefab Library]
+      summary: Publish personal prefab into prefab library
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prefabId]
+              properties:
+                prefabId:
+                  type: string
+      responses:
+        '200':
+          description: Library entry id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: BackstageToken
+
+  parameters:
+    TemplateId:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+      description: Visual template id
+    PrefabId:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+      description: Prefab id
+
+  schemas:
+    AnyRecord:
+      type: object
+      additionalProperties: true
+
+    Viewport:
+      type: object
+      required: [x, y, zoom]
+      properties:
+        x:
+          type: number
+        y:
+          type: number
+        zoom:
+          type: number
+
+    Metadata:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    GraphPosition:
+      type: object
+      required: [x, y]
+      properties:
+        x:
+          type: number
+        y:
+          type: number
+
+    GraphNode:
+      type: object
+      required: [id, type, position, data]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        position:
+          $ref: '#/components/schemas/GraphPosition'
+        data:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+
+    GraphEdge:
+      type: object
+      required: [id, source, target]
+      properties:
+        id:
+          type: string
+        source:
+          type: string
+        target:
+          type: string
+        sourceHandle:
+          type: string
+        targetHandle:
+          type: string
+        type:
+          type: string
+      additionalProperties: true
+
+    VisualTemplateProject:
+      type: object
+      required: [id, metadata, nodes, edges, viewport, updated, owner, deleted, published_at]
+      properties:
+        id:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphEdge'
+        viewport:
+          $ref: '#/components/schemas/Viewport'
+        updated:
+          type: string
+          format: date-time
+        owner:
+          type: string
+        deleted:
+          type: boolean
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        dryRunInputs:
+          $ref: '#/components/schemas/AnyRecord'
+
+    TemplateProjectUpsertRequest:
+      type: object
+      required: [id, viewport, nodes, edges, updated]
+      properties:
+        id:
+          type: string
+        metadata:
+          oneOf:
+            - $ref: '#/components/schemas/Metadata'
+            - type: string
+              description: JSON-encoded metadata (accepted by router preprocess)
+        viewport:
+          oneOf:
+            - $ref: '#/components/schemas/Viewport'
+            - type: string
+              description: JSON-encoded viewport (accepted by router preprocess)
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphEdge'
+        updated:
+          type: string
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    TemplateProjectUpsertRequestWithoutId:
+      type: object
+      required: [viewport, nodes, edges, updated]
+      properties:
+        metadata:
+          oneOf:
+            - $ref: '#/components/schemas/Metadata'
+            - type: string
+              description: JSON-encoded metadata (accepted by router preprocess)
+        viewport:
+          oneOf:
+            - $ref: '#/components/schemas/Viewport'
+            - type: string
+              description: JSON-encoded viewport (accepted by router preprocess)
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphEdge'
+        updated:
+          type: string
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    PublishedTemplate:
+      type: object
+      required: [id, visual_template_id, scaffolder_template, published_at, published_by, version, unpublished]
+      properties:
+        id:
+          type: string
+        visual_template_id:
+          type: string
+        scaffolder_template:
+          type: string
+        published_at:
+          type: string
+          format: date-time
+        published_by:
+          type: string
+        version:
+          type: integer
+        unpublished:
+          type: boolean
+        unpublished_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    ScaffolderAction:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+        description:
+          type: string
+        schema:
+          type: object
+          properties:
+            input:
+              type: object
+              properties:
+                type:
+                  type: string
+                properties:
+                  $ref: '#/components/schemas/AnyRecord'
+            output:
+              type: object
+              properties:
+                type:
+                  type: string
+                properties:
+                  $ref: '#/components/schemas/AnyRecord'
+
+    Publisher:
+      type: object
+      required: [id, title]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+
+    Prefab:
+      type: object
+      required: [node]
+      properties:
+        id:
+          type: string
+        prefabId:
+          type: string
+        node:
+          $ref: '#/components/schemas/GraphNode'
+        title:
+          type: string
+        description:
+          type: string
+        owner:
+          type: string
+        version:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        published_at:
+          type: string
+          format: date-time
+        is_published:
+          type: boolean
+
+    PrefabCreateRequest:
+      type: object
+      required: [node]
+      properties:
+        node:
+          $ref: '#/components/schemas/GraphNode'
+        title:
+          type: string
+        description:
+          type: string
+
+    PrefabUpdateRequest:
+      type: object
+      required: [node, title, description]
+      properties:
+        node:
+          $ref: '#/components/schemas/GraphNode'
+        title:
+          type: string
+        description:
+          type: string
+
+    IdResponse:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+
+    PublishRequest:
+      type: object
+      required: [scaffolderTemplate]
+      properties:
+        scaffolderTemplate:
+          type: string
+        publisherId:
+          type: string
+
+    UnpublishRequest:
+      type: object
+      required: [scaffolderTemplate]
+      properties:
+        scaffolderTemplate:
+          type: string
+        publisherId:
+          type: string
+
+    IdsRequest:
+      type: object
+      required: [ids]
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+
+    SerializeTemplateRequest:
+      type: object
+      required: [nodes, edges, sourceNodeId]
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphEdge'
+        sourceNodeId:
+          type: string
+
+    ResolvePrefabsRequest:
+      type: object
+      required: [nodes]
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphNode'
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          additionalProperties: true
+        message:
+          type: string
+        statusCode:
+          type: integer
+      additionalProperties: true
+
+  responses:
+    BadRequestError:
+      description: Bad request / input validation failure
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    UnauthorizedError:
+      description: Missing/invalid credentials
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ForbiddenError:
+      description: Permission denied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

@@ -18,11 +18,28 @@ const SINGLE_OUTGOING_NODE_TYPES = new Set<NodeType>([
   'prefab',
 ]);
 
+const isRelationshipLikeEdge = (edge: Edge) => {
+  if (edge.type === 'dependency' || edge.type === 'relationship') {
+    return true;
+  }
+
+  const data = edge.data as
+    | { isRelationship?: boolean; kind?: string }
+    | undefined;
+  return (
+    data?.isRelationship === true ||
+    data?.kind === 'relationship' ||
+    data?.kind === 'dependency'
+  );
+};
+
 export const countIncomingConnections = (edges: Edge[], nodeId: string) =>
-  edges.filter(edge => edge.target === nodeId).length;
+  edges.filter(edge => edge.target === nodeId && !isRelationshipLikeEdge(edge))
+    .length;
 
 export const countOutgoingConnections = (edges: Edge[], nodeId: string) =>
-  edges.filter(edge => edge.source === nodeId).length;
+  edges.filter(edge => edge.source === nodeId && !isRelationshipLikeEdge(edge))
+    .length;
 
 export const hasIncomingCapacity = (
   nodeType: NodeType,
@@ -56,7 +73,7 @@ export const getTemplateOutgoingSlots = (
   let hasOutput = false;
 
   edges.forEach(edge => {
-    if (edge.source !== templateId) {
+    if (edge.source !== templateId || isRelationshipLikeEdge(edge)) {
       return;
     }
 
