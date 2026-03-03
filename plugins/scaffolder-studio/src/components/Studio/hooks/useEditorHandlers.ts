@@ -187,7 +187,8 @@ export const useEditorHandlers = ({
         const templateSlots = getTemplateOutgoingSlots(source, edges, nodes);
         return (
           (targetEffectiveType === 'step' && !templateSlots.hasStep) ||
-          (targetEffectiveType === 'parameters' && !templateSlots.hasParameters) ||
+          (targetEffectiveType === 'parameters' &&
+            !templateSlots.hasParameters) ||
           (targetEffectiveType === 'templateOutput' && !templateSlots.hasOutput)
         );
       }
@@ -202,7 +203,8 @@ export const useEditorHandlers = ({
 
       if (sourceEffectiveType === 'parameters') {
         return (
-          targetEffectiveType === 'parameters' || targetEffectiveType === 'property'
+          targetEffectiveType === 'parameters' ||
+          targetEffectiveType === 'property'
         );
       }
 
@@ -366,9 +368,7 @@ export const useEditorHandlers = ({
                   const draggingWidth =
                     node.measured?.width ?? node.width ?? 150;
                   const staticWidth =
-                    connectedNode.measured?.width ??
-                    connectedNode.width ??
-                    150;
+                    connectedNode.measured?.width ?? connectedNode.width ?? 150;
 
                   // Vertical alignment (snap to X)
                   // Handles are typically horizontally centered
@@ -412,7 +412,27 @@ export const useEditorHandlers = ({
         });
       }
 
-      setNodes(oldNodes => applyNodeChanges(processedChanges, oldNodes));
+      setNodes(oldNodes => {
+        const updatedNodes = applyNodeChanges(processedChanges, oldNodes);
+
+        // Keep one node selected at all times so the side panel always has context.
+        if (updatedNodes.some(n => n.selected) || updatedNodes.length === 0) {
+          return updatedNodes;
+        }
+
+        const previousSelected = oldNodes.find(
+          n => n.selected && updatedNodes.some(un => un.id === n.id),
+        );
+        const fallbackNode =
+          previousSelected ??
+          updatedNodes.find(n => isTemplateNode(n)) ??
+          updatedNodes[0];
+
+        return updatedNodes.map(n => ({
+          ...n,
+          selected: n.id === fallbackNode.id,
+        }));
+      });
     },
     [setNodes, isShiftPressed, nodes, edges],
   );
@@ -487,12 +507,14 @@ export const useEditorHandlers = ({
         }
         return;
       }
-    }, [
-    handleAddOutputNode,
-    handleAddStepNode,
-    handleAddParametersNode,
-    handleAddPropertyNode,
-  ]);
+    },
+    [
+      handleAddOutputNode,
+      handleAddStepNode,
+      handleAddParametersNode,
+      handleAddPropertyNode,
+    ],
+  );
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -520,9 +542,11 @@ export const useEditorHandlers = ({
               n =>
                 isParametersNode(n) &&
                 position.x >= n.position.x &&
-                position.x <= n.position.x + (n.measured?.width ?? n.width ?? 0) &&
+                position.x <=
+                  n.position.x + (n.measured?.width ?? n.width ?? 0) &&
                 position.y >= n.position.y &&
-                position.y <= n.position.y + (n.measured?.height ?? n.height ?? 0)
+                position.y <=
+                  n.position.y + (n.measured?.height ?? n.height ?? 0),
             );
 
             if (parentNode) {
