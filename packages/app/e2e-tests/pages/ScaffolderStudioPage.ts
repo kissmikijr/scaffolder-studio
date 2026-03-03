@@ -177,8 +177,7 @@ export class ScaffolderStudioPage {
     await editor.click();
 
     // Select all text
-    await this.page.keyboard.press('Meta+A');
-    await this.page.keyboard.press('Control+A'); // Fallback for Windows/Linux
+    await this.page.keyboard.press('ControlOrMeta+a');
 
     // Delete existing content
     await this.page.keyboard.press('Backspace');
@@ -707,8 +706,7 @@ export class ScaffolderStudioPage {
     await editor.click();
 
     // Select all text
-    await this.page.keyboard.press('Meta+A');
-    await this.page.keyboard.press('Control+A'); // Fallback for Windows/Linux
+    await this.page.keyboard.press('ControlOrMeta+a');
 
     // Delete existing content
     await this.page.keyboard.press('Backspace');

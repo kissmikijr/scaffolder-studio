@@ -39,8 +39,7 @@ test.describe('AutoPairPlugin', () => {
     await lexicalEditor.click();
 
     // Delete any existing text if present (e.g. from InitialEditorStatePlugin)
-    await page.keyboard.press('Meta+A');
-    await page.keyboard.press('Control+A'); // Fallback for Linux/Windows
+    await page.keyboard.press('ControlOrMeta+a');
     await page.keyboard.press('Backspace');
 
     // Type a single array bracket [
@@ -49,7 +48,7 @@ test.describe('AutoPairPlugin', () => {
 
     // Clear it correctly by selecting all and deleting
     await lexicalEditor.click();
-    await page.keyboard.press('Meta+a');
+    await page.keyboard.press('ControlOrMeta+a');
     await page.keyboard.press('Backspace');
     await expect(lexicalEditor).toHaveText('');
 
@@ -62,7 +61,7 @@ test.describe('AutoPairPlugin', () => {
     await expect(lexicalEditor).toHaveText('{{}}');
 
     // Clear it correctly
-    await page.keyboard.press('Meta+a');
+    await page.keyboard.press('ControlOrMeta+a');
     await page.keyboard.press('Backspace');
     await expect(lexicalEditor).toHaveText('');
 
