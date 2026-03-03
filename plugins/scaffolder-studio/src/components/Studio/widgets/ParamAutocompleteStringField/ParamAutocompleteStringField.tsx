@@ -5,6 +5,7 @@ import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
 import { ShowPopperPlugin } from './components/ShowPopperPlugin';
+import { AutoPairPlugin } from './components/AutoPairPlugin';
 import { styled, useTheme } from '@mui/material/styles';
 import { $getRoot } from 'lexical';
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
@@ -208,6 +209,7 @@ export const ParamAutocompleteStringField = ({
         }
       />
       <HistoryPlugin />
+      <AutoPairPlugin />
       <OnChangePlugin onChange={handleEditorChange} />
       <InitialEditorStatePlugin
         initialEditorState={

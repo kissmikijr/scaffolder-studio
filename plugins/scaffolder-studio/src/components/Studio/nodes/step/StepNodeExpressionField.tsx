@@ -20,6 +20,7 @@ import debounce from 'lodash.debounce';
 import { ShowPopperPlugin } from '../../widgets/ParamAutocompleteStringField/components/ShowPopperPlugin';
 import { InitialEditorStatePlugin } from '../../widgets/ParamAutocompleteStringField/components/InitialEditorStatePlugin';
 import { ExpressionTokenNode } from '../../widgets/ParamAutocompleteStringField/ExpressionTokenNode';
+import { AutoPairPlugin } from '../../widgets/ParamAutocompleteStringField/components/AutoPairPlugin';
 
 const StyledLexicalComposer = styled(LexicalComposer)({
   position: 'relative',
@@ -150,6 +151,17 @@ export const StepNodeExpressionField = ({
     };
   }, [debouncedOnChange]);
 
+  const initialConfig = useMemo(
+    () => ({
+      ...editorConfig,
+      editable: !disabled,
+      onError: (_error: Error) => {
+        // Silent error
+      },
+    }),
+    [disabled],
+  );
+
   const handleEditorChange = (editorState: any) => {
     editorState.read(() => {
       const root = $getRoot();
@@ -205,15 +217,7 @@ export const StepNodeExpressionField = ({
           height: '100%',
         }}
       >
-        <StyledLexicalComposer
-          initialConfig={{
-            ...editorConfig,
-            editable: !disabled,
-            onError: (_error: Error) => {
-              // Silent error
-            },
-          }}
-        >
+        <StyledLexicalComposer initialConfig={initialConfig}>
           <RichTextPlugin
             ErrorBoundary={LexicalErrorBoundary}
             contentEditable={
@@ -231,6 +235,7 @@ export const StepNodeExpressionField = ({
             placeholder={null}
           />
           <HistoryPlugin />
+          <AutoPairPlugin />
           <OnChangePlugin onChange={handleEditorChange} />
           <InitialEditorStatePlugin
             initialEditorState={value}
