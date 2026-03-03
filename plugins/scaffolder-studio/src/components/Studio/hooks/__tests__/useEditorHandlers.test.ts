@@ -65,6 +65,7 @@ describe('useEditorHandlers snapping', () => {
         handleAddParametersNode: mockHandleAddParametersNode,
         handleAddPropertyNode: mockHandleAddPropertyNode,
         onChange: jest.fn(),
+        setSelectedEdge: jest.fn(),
       }),
     );
   };

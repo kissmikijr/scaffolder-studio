@@ -64,6 +64,7 @@ interface UseEditorHandlersProps {
     sourceHandleId?: string;
   }) => void;
   onChange: (id: string, data: any) => void;
+  setSelectedEdge: (edge: Edge | undefined) => void;
 }
 
 export const useEditorHandlers = ({
@@ -81,8 +82,9 @@ export const useEditorHandlers = ({
   handleAddParametersNode,
   handleAddPropertyNode,
   onChange,
+  setSelectedEdge,
 }: UseEditorHandlersProps) => {
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, getEdges } = useReactFlow();
   const [isShiftPressed, setIsShiftPressed] = useState(false);
   const nodesRef = useRef(nodes);
   const blockedEdgeRemovalIdsRef = useRef<Set<string>>(new Set());
@@ -275,10 +277,22 @@ export const useEditorHandlers = ({
     (_: React.MouseEvent, node: Node<AllNodeData>) => {
       if (node) {
         setSelectedNode(node);
+        setSelectedEdge(undefined);
         handleTabChange('form');
       }
     },
-    [setSelectedNode, handleTabChange],
+    [setSelectedNode, setSelectedEdge, handleTabChange],
+  );
+
+  const handleOnEdgeClick = useCallback(
+    (_: React.MouseEvent, edge: Edge) => {
+      if (edge) {
+        setSelectedEdge(edge);
+        setSelectedNode(undefined);
+        handleTabChange('form');
+      }
+    },
+    [setSelectedEdge, setSelectedNode, handleTabChange],
   );
 
   const onNodeContextMenu = useCallback(
@@ -298,6 +312,8 @@ export const useEditorHandlers = ({
 
   const handleNodesChange: OnNodesChange<Node<AllNodeData>> = useCallback(
     changes => {
+      // eslint-disable-next-line no-console
+      console.log('Nodes changes:', JSON.stringify(changes));
       const blockedTemplateRemovalIds = changes
         .filter(change => change.type === 'remove')
         .map(change => change.id)
@@ -412,30 +428,34 @@ export const useEditorHandlers = ({
         });
       }
 
-      setNodes(oldNodes => {
-        const updatedNodes = applyNodeChanges(processedChanges, oldNodes);
+      setNodes(oldNodes => applyNodeChanges(processedChanges, oldNodes));
+    },
+    [setNodes, isShiftPressed, nodes, edges],
+  );
 
-        // Keep one node selected at all times so the side panel always has context.
-        if (updatedNodes.some(n => n.selected) || updatedNodes.length === 0) {
-          return updatedNodes;
-        }
+  useEffect(() => {
+    // Keep one node selected at all times so the side panel always has context.
+    const anyNodeSelected = nodes.some(n => n.selected);
+    const anyEdgeSelected = edges.some(e => e.selected);
 
-        const previousSelected = oldNodes.find(
-          n => n.selected && updatedNodes.some(un => un.id === n.id),
-        );
-        const fallbackNode =
-          previousSelected ??
-          updatedNodes.find(n => isTemplateNode(n)) ??
-          updatedNodes[0];
+    if (!anyNodeSelected && !anyEdgeSelected && nodes.length > 0) {
+      setNodes(nds => {
+        // Re-check inside functional update for latest state
+        if (nds.some(n => n.selected)) return nds;
+        const currentEdges = getEdges();
+        if (currentEdges.some(e => e.selected)) return nds;
 
-        return updatedNodes.map(n => ({
+        const templateNode = nds.find(n => isTemplateNode(n));
+        const fallbackNode = templateNode ?? nds[0];
+        if (!fallbackNode) return nds;
+
+        return nds.map(n => ({
           ...n,
           selected: n.id === fallbackNode.id,
         }));
       });
-    },
-    [setNodes, isShiftPressed, nodes, edges],
-  );
+    }
+  }, [nodes, edges, setNodes, getEdges]);
 
   const handleEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
@@ -446,9 +466,21 @@ export const useEditorHandlers = ({
       });
 
       blockedEdgeRemovalIdsRef.current = new Set();
-      setEdges(eds => applyEdgeChanges(filteredChanges, eds));
+      setEdges(eds => {
+        const updatedEdges = applyEdgeChanges(filteredChanges, eds);
+        const selected = updatedEdges.find(e => e.selected);
+        if (selected) {
+          setSelectedEdge(selected);
+          setSelectedNode(undefined);
+        } else if (!nodes.some(n => n.selected)) {
+          // If no edge and no node is selected, EdgeSideContent will be empty.
+          // But our useEffect normally picks a fallback node.
+          setSelectedEdge(undefined);
+        }
+        return updatedEdges;
+      });
     },
-    [setEdges],
+    [setEdges, setSelectedEdge, setSelectedNode, nodes],
   );
 
   const onConnectStart: OnConnectStart = useCallback(
@@ -591,6 +623,7 @@ export const useEditorHandlers = ({
     onNodeContextMenu,
     handleNodesChange,
     handleEdgesChange,
+    handleOnEdgeClick,
     onConnectStart,
     onConnectEnd,
     handleDrop,

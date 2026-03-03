@@ -1,3 +1,4 @@
+import { Edge } from '@xyflow/react';
 import {
   NodeSideContent,
   NodeSideContentProps,
@@ -11,9 +12,14 @@ export const RightSideFormContent = ({
   availableActions,
   children,
   node,
-}: NodeSideContentProps) => {
+  edge,
+}: NodeSideContentProps & { edge?: Edge }) => {
   return (
-    <NodeSideContent node={node} availableActions={availableActions}>
+    <NodeSideContent
+      node={node}
+      edge={edge}
+      availableActions={availableActions}
+    >
       {children}
     </NodeSideContent>
   );

@@ -92,6 +92,10 @@ test.describe('Scaffolder Studio', () => {
     await editorPage.deleteEdge();
     await expect(page.locator('.react-flow__edge')).toHaveCount(0);
 
+    // Wait a bit for state to settle after deletion
+    await page.waitForTimeout(500);
+
+    // Use regular expressions for more robust finding
     await editorPage.connectNodes('Template', 'right', 'Step', 'left');
     await expect(page.locator('.react-flow__edge')).toHaveCount(1);
   });

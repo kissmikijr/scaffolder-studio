@@ -130,6 +130,7 @@ const ScaffolderStudioEditor = ({
   const [selectedNode, setSelectedNode] = useState<
     Node<AllNodeData> | undefined
   >(undefined);
+  const [selectedEdge, setSelectedEdge] = useState<Edge | undefined>(undefined);
   const connectSourceNodeIdRef = useRef<string | null>(null);
   const contextMenuNodeIdRef = useRef<string | null>(null);
   const api = useApi<ScaffolderStudioApi>(scaffolderVisualApiRef);
@@ -220,6 +221,7 @@ const ScaffolderStudioEditor = ({
     handleAddParametersNode,
     handleAddPropertyNode,
     onChange,
+    setSelectedEdge,
   });
 
   const { onNodeDragStop } = useGroupDragDrop({ nodes, setNodes });
@@ -907,6 +909,7 @@ const ScaffolderStudioEditor = ({
                     {activeTab === 'form' && (
                       <RightSideFormContent
                         node={selectedNode}
+                        edge={selectedEdge}
                         availableActions={availableActions}
                       />
                     )}

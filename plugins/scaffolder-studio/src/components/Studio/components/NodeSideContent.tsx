@@ -1,10 +1,11 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
-import { Node } from '@xyflow/react';
+import { Node, Edge } from '@xyflow/react';
 import { StepNodeSideContent } from '../nodes/step/StepNodeSideContent';
 import { TemplateNodeSideContent } from '../nodes/template/TemplateNodeSideContent';
 import { ParametersNodeSideContent } from '../nodes/parameters/ParametersNodeSideContent';
 import { OutputNodeSideContent } from '../nodes/output/OutputNodeSideContent';
 import { PropertyNodeSideContent } from '../nodes/property/PropertyNodeSideContent';
+import { EdgeSideContent } from './EdgeSideContent';
 import { PrefabInstanceNodeSideContent } from '../TemplateOverviewPage/Prefabs/PrefabInstanceNodeSideContent';
 import { usePrefabData } from '../hooks/usePrefabData';
 import {
@@ -28,6 +29,7 @@ import { YamlNodeEditor } from './YamlNodeEditor';
 
 export interface NodeSideContentProps {
   node: Node<AllNodeData> | undefined;
+  edge?: Edge | undefined;
   availableActions: ScaffolderAction[];
   children?: ReactNode;
   /** Which node types to render. Default: all types */
@@ -51,6 +53,7 @@ const defaultSupportedTypes: NodeSideContentProps['supportedTypes'] = [
  */
 export const NodeSideContent = ({
   node,
+  edge,
   availableActions,
   children,
   supportedTypes = defaultSupportedTypes,
@@ -118,7 +121,9 @@ export const NodeSideContent = ({
     return { title: 'Unknown', color: NodeTypeColors.unknown };
   };
 
-  const { title, color } = getHeaderInfo();
+  const { title, color } = edge
+    ? { title: 'Edge Connection', color: '#888' }
+    : getHeaderInfo();
   const isTypeSupported = (type: string) =>
     supportedTypes?.includes(type as any);
   useEffect(() => {
@@ -238,9 +243,12 @@ export const NodeSideContent = ({
 
       <Box sx={{ position: 'relative', flex: 1, minHeight: 0 }}>
         <Box
-          key={`form-pane-${node?.id ?? 'none'}-${formRenderVersion}`}
+          key={`form-pane-${
+            node?.id ?? edge?.id ?? 'none'
+          }-${formRenderVersion}`}
           sx={contentPaneSx(!isYamlMode)}
         >
+          {edge && <EdgeSideContent edge={edge} />}
           {node && isStepNode(node) && isTypeSupported('step') && (
             <StepNodeSideContent
               node={node}

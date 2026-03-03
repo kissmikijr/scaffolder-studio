@@ -217,8 +217,26 @@ export class ScaffolderStudioPage {
       .locator('.react-flow__node')
       .filter({ hasText: targetNodeText })
       .first();
-    await expect(sourceNode).toBeVisible();
-    await expect(targetNode).toBeVisible();
+
+    try {
+      await expect(sourceNode).toBeVisible({ timeout: 5000 });
+      await expect(targetNode).toBeVisible({ timeout: 5000 });
+    } catch (e) {
+      const allNodes = await this.page.locator('.react-flow__node').all();
+      const nodeInfos = await Promise.all(
+        allNodes.map(async n => ({
+          text: (await n.innerText()).replace(/\n/g, '\\n'),
+          selected: (await n.getAttribute('class'))?.includes('selected'),
+          id: await n.getAttribute('data-id'),
+        })),
+      );
+      // eslint-disable-next-line no-console
+      console.log(
+        'MISSING NODE DIAGNOSTICS:',
+        JSON.stringify(nodeInfos, null, 2),
+      );
+      throw e;
+    }
 
     await this.panNodeToViewportCenter(sourceNode);
     await this.panNodeToViewportCenter(targetNode);
