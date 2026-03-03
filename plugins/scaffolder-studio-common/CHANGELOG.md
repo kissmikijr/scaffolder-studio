@@ -1,5 +1,15 @@
 # @kissmiklosjr/plugin-scaffolder-studio-common
 
+## 1.1.0
+
+### Minor Changes
+
+- 11a121f: Add comment and single node edit feature
+
+### Patch Changes
+
+- bb4ff3c: Don't count the relationships towards edges
+
 ## 1.0.0
 
 ### Major Changes
