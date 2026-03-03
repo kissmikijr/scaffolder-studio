@@ -1,4 +1,9 @@
 import { useEffect } from 'react';
+import {
+  isKeyboardEventFromEditableTarget,
+  isLetterShortcutKey,
+  isPrimaryShortcutModifierPressed,
+} from './keyboardShortcutUtils';
 
 interface UseKeyboardShortcutsProps {
   onUndo: () => void;
@@ -21,13 +26,20 @@ export const useKeyboardShortcuts = ({
 }: UseKeyboardShortcutsProps) => {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Check for Cmd (Mac) or Ctrl (Windows/Linux)
-      const isModifierPressed = event.metaKey || event.ctrlKey;
+      if (event.defaultPrevented || event.isComposing || event.repeat) {
+        return;
+      }
 
-      if (!isModifierPressed) return;
+      if (isKeyboardEventFromEditableTarget(event)) {
+        return;
+      }
+
+      if (!isPrimaryShortcutModifierPressed(event)) {
+        return;
+      }
 
       if (
-        event.key.toLowerCase() === 's' &&
+        isLetterShortcutKey(event, 's') &&
         !event.shiftKey &&
         !event.altKey &&
         onSave &&
@@ -39,12 +51,19 @@ export const useKeyboardShortcuts = ({
         return;
       }
 
-      // Prevent default browser behavior and handle our shortcuts
-      if (event.key === 'z' && !event.shiftKey && canUndo) {
+      if (
+        isLetterShortcutKey(event, 'z') &&
+        !event.shiftKey &&
+        !event.altKey &&
+        canUndo
+      ) {
         event.preventDefault();
         onUndo();
       } else if (
-        ((event.key === 'z' && event.shiftKey) || event.key === 'y') &&
+        ((isLetterShortcutKey(event, 'z') && event.shiftKey && !event.altKey) ||
+          (isLetterShortcutKey(event, 'y') &&
+            !event.shiftKey &&
+            !event.altKey)) &&
         canRedo
       ) {
         event.preventDefault();

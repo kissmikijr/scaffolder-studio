@@ -55,6 +55,7 @@ import {
   useProjectSync,
   useThumbnail,
   useDependencyEdges,
+  useEditorKeyboardShortcuts,
 } from './hooks';
 import { alertApiRef } from '@backstage/core-plugin-api';
 import { PublishDialog } from './TemplateOverviewPage/components/PublishDialog';
@@ -412,44 +413,22 @@ const ScaffolderStudioEditor = ({
     onAddProperty(targetParametersNodeId);
   }, [getSelectedParametersNodeId, onAddProperty, alertApi]);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.metaKey || event.ctrlKey || event.altKey) {
-        return;
-      }
+  const toggleDependencyEdges = useCallback(() => {
+    setShowDependencyEdges(prev => !prev);
+  }, []);
 
-      if (
-        ['INPUT', 'TEXTAREA', 'SELECT'].includes(
-          document.activeElement?.tagName || '',
-        ) ||
-        (document.activeElement as HTMLElement)?.isContentEditable
-      ) {
-        return;
-      }
+  const toggleSideContent = useCallback(() => {
+    setIsSideContentCollapsed(prev => !prev);
+  }, []);
 
-      if (event.key === '1') {
-        event.preventDefault();
-        handleAddStepFromToolbar();
-      } else if (event.key === '2') {
-        event.preventDefault();
-        handleAddParametersFromToolbar();
-      } else if (event.key === '3') {
-        event.preventDefault();
-        handleAddPropertyFromToolbar();
-      } else if (event.key === '4') {
-        event.preventDefault();
-        handleAddOutputFromToolbar();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [
-    handleAddStepFromToolbar,
-    handleAddParametersFromToolbar,
-    handleAddPropertyFromToolbar,
-    handleAddOutputFromToolbar,
-  ]);
+  useEditorKeyboardShortcuts({
+    onAddStep: handleAddStepFromToolbar,
+    onAddParameters: handleAddParametersFromToolbar,
+    onAddProperty: handleAddPropertyFromToolbar,
+    onAddOutput: handleAddOutputFromToolbar,
+    onToggleDependencyEdges: toggleDependencyEdges,
+    onToggleSideContent: toggleSideContent,
+  });
 
   const handleViewportChange = useCallback(
     (v: { x: number; y: number; zoom: number }) => {
@@ -622,8 +601,8 @@ const ScaffolderStudioEditor = ({
           <Tooltip
             title={
               showDependencyEdges
-                ? 'Hide dependency edges'
-                : 'Show dependency edges'
+                ? 'Hide dependency edges (Cmd/Ctrl+4)'
+                : 'Show dependency edges (Cmd/Ctrl+4)'
             }
             arrow
           >
@@ -631,7 +610,7 @@ const ScaffolderStudioEditor = ({
               size="small"
               color={showDependencyEdges ? 'primary' : 'secondary'}
               data-testid="dependency-edges-toggle-button"
-              onClick={() => setShowDependencyEdges(prev => !prev)}
+              onClick={toggleDependencyEdges}
               sx={{
                 width: 48,
                 height: 34,
@@ -644,8 +623,8 @@ const ScaffolderStudioEditor = ({
           <Tooltip
             title={
               isSideContentCollapsed
-                ? 'Expand side panel'
-                : 'Collapse side panel'
+                ? 'Expand side panel (Option+Cmd+B)'
+                : 'Collapse side panel (Option+Cmd+B)'
             }
             arrow
           >
@@ -653,7 +632,7 @@ const ScaffolderStudioEditor = ({
               size="small"
               color="secondary"
               data-testid="sidecontent-toggle-button"
-              onClick={() => setIsSideContentCollapsed(prev => !prev)}
+              onClick={toggleSideContent}
               sx={{
                 width: 48,
                 height: 34,

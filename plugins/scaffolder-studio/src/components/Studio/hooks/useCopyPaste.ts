@@ -6,6 +6,11 @@ import {
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { getNodeBase } from '../nodeBase';
 import { onChange } from '../handlers';
+import {
+  isKeyboardEventFromEditableTarget,
+  isLetterShortcutKey,
+  isPrimaryShortcutModifierPressed,
+} from './keyboardShortcutUtils';
 
 interface UseCopyPasteProps {
   selectedNode?: Node<AllNodeData>;
@@ -73,17 +78,22 @@ export const useCopyPaste = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Check if focus is on an input, textarea, or contenteditable element
-      // If so, don't intercept copy/paste - let native behavior handle it
-      const activeElement = document.activeElement;
-      const isInputFocused =
-        activeElement instanceof HTMLInputElement ||
-        activeElement instanceof HTMLTextAreaElement ||
-        activeElement?.getAttribute('contenteditable') === 'true' ||
-        activeElement?.closest('[contenteditable="true"]') !== null;
+      if (e.defaultPrevented || e.isComposing || e.repeat) {
+        return;
+      }
+
+      if (!isPrimaryShortcutModifierPressed(e)) {
+        return;
+      }
+
+      if (e.shiftKey || e.altKey) {
+        return;
+      }
+
+      const isInputFocused = isKeyboardEventFromEditableTarget(e);
 
       // Platform agnostic copy (Ctrl+C on Windows/Linux, Cmd+C on Mac)
-      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+      if (isLetterShortcutKey(e, 'c')) {
         // Only copy node if not focused on an input
         if (!isInputFocused) {
           handleCopy();
@@ -94,7 +104,7 @@ export const useCopyPaste = ({
       }
 
       // Platform agnostic paste (Ctrl+V on Windows/Linux, Cmd+V on Mac)
-      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+      if (isLetterShortcutKey(e, 'v')) {
         // Only paste node if not focused on an input and we have a copied node
         if (!isInputFocused && copiedNodeRef.current) {
           handlePaste();

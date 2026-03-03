@@ -59,4 +59,95 @@ describe('useKeyboardShortcuts', () => {
 
     expect(onSave).not.toHaveBeenCalled();
   });
+
+  it('triggers undo and redo shortcuts', () => {
+    const onUndo = jest.fn();
+    const onRedo = jest.fn();
+
+    renderHook(() =>
+      useKeyboardShortcuts({
+        onUndo,
+        onRedo,
+        canUndo: true,
+        canRedo: true,
+      }),
+    );
+
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'z',
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'z',
+        ctrlKey: true,
+        shiftKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+    expect(onUndo).toHaveBeenCalledTimes(1);
+    expect(onRedo).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not trigger shortcuts while typing in input fields', () => {
+    const onUndo = jest.fn();
+    const onRedo = jest.fn();
+    const onSave = jest.fn();
+
+    renderHook(() =>
+      useKeyboardShortcuts({
+        onUndo,
+        onRedo,
+        canUndo: true,
+        canRedo: true,
+        onSave,
+        canSave: true,
+      }),
+    );
+
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 's',
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'z',
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'z',
+        ctrlKey: true,
+        shiftKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(onUndo).not.toHaveBeenCalled();
+    expect(onRedo).not.toHaveBeenCalled();
+
+    document.body.removeChild(input);
+  });
 });
