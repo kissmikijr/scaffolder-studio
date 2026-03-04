@@ -1,4 +1,4 @@
-import { Page, expect } from '@playwright/test';
+import { Page, Locator, expect } from '@playwright/test';
 
 export class ScaffolderStudioPage {
   private readonly page: Page;
@@ -55,6 +55,95 @@ export class ScaffolderStudioPage {
     await this.page.getByTestId('toolbar-add-output-button').click();
   }
 
+  async toggleRelationshipEdges() {
+    await this.page.getByTestId('dependency-edges-toggle-button').click();
+  }
+
+  async pressRelationshipShortcut() {
+    await this.page.keyboard.press('ControlOrMeta+4');
+  }
+
+  async fitView() {
+    await this.page.getByTestId('toolbar-fit-view-button').click();
+    await this.page.waitForTimeout(500); // Wait for animation
+  }
+
+  async waitForTimeout(ms: number) {
+    await this.page.waitForTimeout(ms);
+  }
+
+  async countRelationshipEdges() {
+    return this.page.locator('.react-flow__edge[data-id*="rel-"]').count();
+  }
+
+  async waitForRelationshipEdges(
+    countOrPredicate: number | ((count: number) => boolean),
+    timeout = 10000,
+  ) {
+    if (typeof countOrPredicate === 'number') {
+      await expect
+        .poll(() => this.countRelationshipEdges(), { timeout })
+        .toBe(countOrPredicate);
+      return;
+    }
+
+    await expect
+      .poll(async () => countOrPredicate(await this.countRelationshipEdges()), {
+        timeout,
+      })
+      .toBe(true);
+  }
+
+  async readDraftFromLocalStorage(templateId: string): Promise<any | null> {
+    const key = `scaffolder-studio:draft:${templateId}`;
+    return this.page.evaluate(storageKey => {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    }, key);
+  }
+
+  async waitForDraftIoExpanded(templateId: string, expected: boolean) {
+    const key = `scaffolder-studio:draft:${templateId}`;
+    await expect
+      .poll(
+        () =>
+          this.page.evaluate(
+            ({ storageKey, expectedValue }) => {
+              const raw = localStorage.getItem(storageKey);
+              if (!raw) return false;
+              try {
+                const parsed = JSON.parse(raw);
+                const nodes = Array.isArray(parsed?.state?.nodes)
+                  ? parsed.state.nodes
+                  : [];
+                return nodes.some(
+                  (node: any) =>
+                    node?.type === 'step' &&
+                    node?.data?.uiState?.ioExpanded === expectedValue,
+                );
+              } catch {
+                return false;
+              }
+            },
+            { storageKey: key, expectedValue: expected },
+          ),
+        { timeout: 10000 },
+      )
+      .toBe(true);
+  }
+
+  getNodeLocatorByText(text: string): Locator {
+    return this.page
+      .locator('.react-flow__node')
+      .filter({ hasText: text })
+      .first();
+  }
+
   async clickDryRun() {
     await this.page
       .getByRole('button', { name: 'Dry Run', exact: true })
@@ -104,9 +193,7 @@ export class ScaffolderStudioPage {
   }
 
   async verifyNodeExists(text: string) {
-    await expect(
-      this.page.locator('.react-flow__node').filter({ hasText: text }).first(),
-    ).toBeVisible();
+    await expect(this.getNodeLocatorByText(text)).toBeVisible();
   }
 
   async addParametersNode() {
@@ -131,11 +218,15 @@ export class ScaffolderStudioPage {
   }
 
   async selectNode(text: string) {
-    await this.page
-      .locator('.react-flow__node')
-      .filter({ hasText: text })
-      .first()
-      .click({ force: true });
+    await this.getNodeLocatorByText(text).click({ force: true });
+  }
+
+  async toggleStepIoByNodeText(nodeText: string) {
+    const node = this.getNodeLocatorByText(nodeText);
+    await expect(node).toBeVisible();
+    const toggleButton = node.getByTestId('node-output-toggle-button');
+    await expect(toggleButton).toBeAttached();
+    await toggleButton.dispatchEvent('click');
   }
 
   async editTemplateNode(name: string, owner: string, description: string) {
@@ -150,9 +241,11 @@ export class ScaffolderStudioPage {
     await this.page.getByLabel('Description').fill(description);
   }
   async goToYamlTab() {
+    await this.expandSideContent();
     await this.page.getByRole('tab', { name: 'Yaml' }).click();
   }
   async goToPrefabsTab() {
+    await this.expandSideContent();
     await this.page.getByRole('tab', { name: 'Prefabs' }).click();
   }
   async verifyPrefabVisible(title: string, sectionTitle?: string) {
@@ -208,34 +301,69 @@ export class ScaffolderStudioPage {
       .locator('.react-flow__edge')
       .count();
 
-    const sourceNode = this.page
-      .locator('.react-flow__node')
-      .filter({ hasText: sourceNodeText })
+    const sourceNode = this.getNodeLocatorByText(sourceNodeText);
+    const targetNode = this.getNodeLocatorByText(targetNodeText);
+
+    await expect(sourceNode).toBeVisible({ timeout: 5000 });
+    await expect(targetNode).toBeVisible({ timeout: 5000 });
+
+    // Try more specific test-id based locator for StepNode handles, fallback to generic
+    const sourceHandle = sourceNode
+      .locator(
+        `[data-testid^="step-node-source-handle-${sourceHandleId}-"], .react-flow__handle.source[data-handleid="${sourceHandleId}"]:not(.step-node-io-handle)`,
+      )
       .first();
-    const targetNode = this.page
-      .locator('.react-flow__node')
-      .filter({ hasText: targetNodeText })
+    const targetHandle = targetNode
+      .locator(
+        `[data-testid^="step-node-handle-${targetHandleId}-"], .react-flow__handle.target[data-handleid="${targetHandleId}"]:not(.step-node-io-handle)`,
+      )
       .first();
 
-    try {
-      await expect(sourceNode).toBeVisible({ timeout: 5000 });
-      await expect(targetNode).toBeVisible({ timeout: 5000 });
-    } catch (e) {
-      const allNodes = await this.page.locator('.react-flow__node').all();
-      const nodeInfos = await Promise.all(
-        allNodes.map(async n => ({
-          text: (await n.innerText()).replace(/\n/g, '\\n'),
-          selected: (await n.getAttribute('class'))?.includes('selected'),
-          id: await n.getAttribute('data-id'),
-        })),
-      );
-      // eslint-disable-next-line no-console
-      console.log(
-        'MISSING NODE DIAGNOSTICS:',
-        JSON.stringify(nodeInfos, null, 2),
-      );
-      throw e;
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      // On first attempt, use fitView. On subsequent attempts, try more aggressive panning.
+      if (attempt === 0) {
+        await this.fitView();
+      } else {
+        await this.panNodeToViewportCenter(sourceNode);
+        await this.panNodeToViewportCenter(targetNode);
+      }
+
+      await sourceHandle.scrollIntoViewIfNeeded();
+      await targetHandle.scrollIntoViewIfNeeded();
+
+      await this.dragBetweenHandles(sourceHandle, targetHandle);
+      try {
+        await expect(async () => {
+          const edgeCount = await this.page
+            .locator('.react-flow__edge')
+            .count();
+          expect(edgeCount).toBeGreaterThan(initialEdgeCount);
+        }).toPass({ timeout: 5000 });
+        return;
+      } catch (error) {
+        lastError = error;
+        // Small wait between attempts
+        await this.page.waitForTimeout(500);
+      }
     }
+    throw lastError;
+  }
+
+  async connectRelationship(
+    sourceNodeText: string,
+    sourceHandleId: string,
+    targetNodeText: string,
+    targetHandleId: string,
+    expectEdgeIncrease = true,
+  ) {
+    await this.collapseSideContent();
+    const initialRelationshipEdgeCount = await this.countRelationshipEdges();
+    const sourceNode = this.getNodeLocatorByText(sourceNodeText);
+    const targetNode = this.getNodeLocatorByText(targetNodeText);
+
+    await expect(sourceNode).toBeVisible({ timeout: 5000 });
+    await expect(targetNode).toBeVisible({ timeout: 5000 });
 
     await this.panNodeToViewportCenter(sourceNode);
     await this.panNodeToViewportCenter(targetNode);
@@ -247,46 +375,34 @@ export class ScaffolderStudioPage {
       `.react-flow__handle.target[data-handleid="${targetHandleId}"]`,
     );
 
-    await expect(sourceHandle).toBeVisible();
-    await expect(targetHandle).toBeVisible();
+    // Ensure handles are in view. Since fitView() was likely called, they should be,
+    // but we'll scroll them into view just in case they are slightly clipped.
+    await sourceHandle.scrollIntoViewIfNeeded();
+    await targetHandle.scrollIntoViewIfNeeded();
 
-    const sourceBox = await sourceHandle.boundingBox();
-    const targetBox = await targetHandle.boundingBox();
+    await expect(sourceHandle).toBeVisible({ timeout: 5000 });
+    await expect(targetHandle).toBeVisible({ timeout: 5000 });
 
-    if (!sourceBox || !targetBox) {
-      throw new Error('Handle bounding box not found');
+    if (expectEdgeIncrease) {
+      let lastError: unknown;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        await this.dragBetweenHandles(sourceHandle, targetHandle);
+        try {
+          await expect
+            .poll(() => this.countRelationshipEdges(), { timeout: 3500 })
+            .toBeGreaterThan(initialRelationshipEdgeCount);
+          return;
+        } catch (error) {
+          lastError = error;
+        }
+      }
+      throw lastError;
+    } else {
+      await this.dragBetweenHandles(sourceHandle, targetHandle);
+      await expect
+        .poll(() => this.countRelationshipEdges(), { timeout: 10000 })
+        .toBe(initialRelationshipEdgeCount);
     }
-
-    const sourceX = sourceBox.x + sourceBox.width / 2;
-    const sourceY = sourceBox.y + sourceBox.height / 2;
-    const targetX = targetBox.x + targetBox.width / 2;
-    const targetY = targetBox.y + targetBox.height / 2;
-
-    // Drop close to the target so React Flow auto-snaps the connection.
-    // This avoids brittle "pixel-perfect on top of handle" dragging.
-    const deltaX = targetX - sourceX;
-    const deltaY = targetY - sourceY;
-    const distance = Math.hypot(deltaX, deltaY);
-    const snapProximityPx = 14;
-    const releaseX =
-      distance > snapProximityPx
-        ? targetX - (deltaX / distance) * snapProximityPx
-        : targetX;
-    const releaseY =
-      distance > snapProximityPx
-        ? targetY - (deltaY / distance) * snapProximityPx
-        : targetY;
-
-    await this.page.mouse.move(sourceX, sourceY);
-    await this.page.mouse.down();
-    await this.page.mouse.move(releaseX, releaseY, { steps: 24 });
-    await this.page.waitForTimeout(40);
-    await this.page.mouse.up();
-
-    await expect(async () => {
-      const edgeCount = await this.page.locator('.react-flow__edge').count();
-      expect(edgeCount).toBeGreaterThan(initialEdgeCount);
-    }).toPass({ timeout: 10000 });
   }
 
   async addProperty({
@@ -379,21 +495,103 @@ export class ScaffolderStudioPage {
       await this.page.getByLabel('name', { exact: true }).fill(name);
     }
 
+    // Ensure the entry is visible in the side content
+    const sideContent = this.page.locator('[data-testid="side-content-form"]');
+    if (!(await sideContent.isVisible())) {
+      await this.expandSideContent();
+    }
+
     // Fill RJSF form values
     for (const [key, value] of Object.entries(formValues)) {
-      const inputLabel = new RegExp(`^${key}`, 'i');
-      const input = this.page.getByLabel(inputLabel).first();
-
-      if (await input.isVisible()) {
-        const tagName = await input.evaluate(el => el.tagName.toLowerCase());
+      // Case 1: Standard inputs (MUI TextField, etc.)
+      const label = this.page.getByLabel(key, { exact: false }).first();
+      if (await label.isVisible()) {
+        const tagName = await label.evaluate(el => el.tagName.toLowerCase());
         if (tagName === 'input' || tagName === 'textarea') {
-          await input.fill(value.toString());
+          await label.fill(value.toString());
+          continue;
         } else if (tagName === 'select') {
-          await input.selectOption(value.toString());
+          await label.selectOption(value.toString());
+          continue;
         }
-      } else {
-        const byPlaceholder = this.page.getByPlaceholder(key);
-        if (await byPlaceholder.isVisible()) {
+      }
+
+      // Case 2: Lexical-based input (contenteditable div)
+      // Look for a textbox within the container that has the label text or is near it
+      const lexicalTextbox = this.page
+        .locator(
+          `xpath=//*[translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')=translate('${key}', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz') or translate(@label, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')=translate('${key}', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')]/ancestor::div[contains(@class, "MuiBox-root") or contains(@class, "MuiFormControl-root")][1]//*[ @role="textbox" ]`,
+        )
+        .first();
+
+      let targetTextbox = lexicalTextbox;
+      if (!(await targetTextbox.isVisible())) {
+        // Relaxed search for Lexical
+        targetTextbox = this.page
+          .locator(
+            `xpath=//*[contains(text(), "${key}")]/ancestor::div[1]//*[ @role="textbox" ]`,
+          )
+          .first();
+      }
+
+      if (await targetTextbox.isVisible()) {
+        await targetTextbox.click({ force: true });
+        await this.page.waitForTimeout(300);
+        await targetTextbox.focus();
+
+        // Select all and delete to clear existing content
+        await this.page.keyboard.press('ControlOrMeta+a');
+        await this.page.keyboard.press('Backspace');
+        await this.page.waitForTimeout(200);
+
+        // Type the value slowly
+        await this.page.keyboard.type(value.toString(), { delay: 50 });
+        await this.page.waitForTimeout(300);
+
+        // Trigger blur to ensure state committed
+        await this.page.keyboard.press('Tab');
+        continue;
+      }
+
+      // Aggressive fallback Case 2b: Search for any element with the key text and find nearest role="textbox"
+      const anyLabel = this.page
+        .locator(`xpath=//*[contains(text(), "${key}")]`)
+        .first();
+      if (await anyLabel.isVisible()) {
+        const nearestTextbox = anyLabel
+          .locator('xpath=./ancestor::div[1]//*[ @role="textbox" ]')
+          .first();
+        if (await nearestTextbox.isVisible()) {
+          await nearestTextbox.click({ force: true });
+          await nearestTextbox.evaluate((el, val) => {
+            el.focus();
+            document.execCommand('selectAll', false);
+            document.execCommand('delete', false);
+            document.execCommand('insertText', false, val);
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.blur();
+          }, value.toString());
+          await this.page.waitForTimeout(200);
+          await this.page.keyboard.press('Tab');
+          continue;
+        }
+      }
+
+      // Case 3: Fallback to placeholder search
+      const byPlaceholder = this.page.getByPlaceholder(key);
+      if (await byPlaceholder.isVisible()) {
+        const tagName = await byPlaceholder.evaluate(el =>
+          el.tagName.toLowerCase(),
+        );
+        if (
+          tagName === 'div' &&
+          (await byPlaceholder.getAttribute('role')) === 'textbox'
+        ) {
+          await byPlaceholder.click();
+          await this.page.keyboard.press('ControlOrMeta+a');
+          await this.page.keyboard.press('Backspace');
+          await this.page.keyboard.type(value.toString());
+        } else {
           await byPlaceholder.fill(value.toString());
         }
       }
@@ -484,6 +682,28 @@ export class ScaffolderStudioPage {
     }
     await this.page.getByTestId('sidecontent-toggle-button').click();
     await expect(panel).toHaveAttribute('data-collapsed', 'false');
+  }
+
+  private async dragBetweenHandles(
+    sourceHandle: Locator,
+    targetHandle: Locator,
+  ) {
+    if (
+      !(await sourceHandle.isVisible()) ||
+      !(await targetHandle.isVisible())
+    ) {
+      await this.fitView();
+    }
+
+    await sourceHandle.scrollIntoViewIfNeeded();
+    await targetHandle.scrollIntoViewIfNeeded();
+
+    await sourceHandle.dragTo(targetHandle, {
+      force: true,
+      timeout: 10000,
+    });
+
+    await this.page.waitForTimeout(500);
   }
 
   private async panNodeToViewportCenter(node: ReturnType<Page['locator']>) {
@@ -583,6 +803,30 @@ export class ScaffolderStudioPage {
 
   // --- Node Comment Helpers ---
 
+  async hoverNodeCommentHotspot(nodeText: string) {
+    const node = this.page
+      .locator('.react-flow__node')
+      .filter({ hasText: nodeText })
+      .first();
+    await expect(node).toBeVisible();
+
+    // Select the node to make the comment affordance eligible for hover.
+    const nodeBox = await node.boundingBox();
+    if (nodeBox) {
+      await this.page.mouse.click(
+        nodeBox.x + nodeBox.width / 2,
+        nodeBox.y + nodeBox.height / 2,
+      );
+      // Move mouse to top-right corner to trigger the hotspot hover
+      await this.page.mouse.move(nodeBox.x + nodeBox.width - 5, nodeBox.y + 5, {
+        steps: 10,
+      });
+    } else {
+      await node.click({ force: true });
+      await node.locator('.node-controls-hotspot').hover({ force: true });
+    }
+  }
+
   async openCommentEditor(nodeText: string) {
     await this.collapseSideContent();
 
@@ -592,20 +836,8 @@ export class ScaffolderStudioPage {
       .first();
     await expect(node).toBeVisible();
 
-    // Select the node to make the badge visible and interactive
-    // Click center to avoid connection handles
-    const nodeBox = await node.boundingBox();
-    if (nodeBox) {
-      await this.page.mouse.click(
-        nodeBox.x + nodeBox.width / 2,
-        nodeBox.y + nodeBox.height / 2,
-      );
-    } else {
-      await node.click({ force: true });
-    }
-
+    await this.hoverNodeCommentHotspot(nodeText);
     const badge = node.getByTestId('node-comment-badge');
-    await expect(badge).toBeVisible();
 
     const commentBtn = badge.getByTestId('node-comment-button');
     await expect(commentBtn).toBeAttached();
@@ -679,10 +911,38 @@ export class ScaffolderStudioPage {
       .filter({ hasText: text })
       .first();
     await expect(node).toBeVisible();
-    await node.click({ force: true });
+    await this.hoverNodeCommentHotspot(text);
 
-    // The badge becomes opacity: 1 and pointer-events: auto when selected
+    // The badge becomes visible only when hovering the top-right hotspot.
     const badge = node.getByTestId('node-comment-badge');
+    await expect(badge).toHaveCSS('opacity', '1');
+  }
+
+  async expectNodeCommentBadgeHiddenUntilTopRightHover(text: string) {
+    const node = this.page
+      .locator('.react-flow__node')
+      .filter({ hasText: text })
+      .first();
+    await expect(node).toBeVisible();
+
+    const nodeBox = await node.boundingBox();
+    if (nodeBox) {
+      await this.page.mouse.click(
+        nodeBox.x + nodeBox.width / 2,
+        nodeBox.y + nodeBox.height / 2,
+      );
+      await this.page.mouse.move(
+        nodeBox.x + nodeBox.width / 2,
+        nodeBox.y + nodeBox.height / 2,
+      );
+    } else {
+      await node.click({ force: true });
+    }
+
+    const badge = node.getByTestId('node-comment-badge');
+    await expect(badge).toHaveCSS('opacity', '0');
+
+    await this.hoverNodeCommentHotspot(text);
     await expect(badge).toHaveCSS('opacity', '1');
   }
 

@@ -112,6 +112,11 @@ const OutputNode = ({
           boxShadow: 3,
           cursor: 'pointer',
         },
+        '& .node-controls-hotspot:hover + .node-comment-badge, & .node-comment-badge:hover, & .node-comment-badge:focus-within, &:focus-within .node-comment-badge':
+          {
+            opacity: 1,
+            pointerEvents: 'auto',
+          },
         outline: 'none',
       }}
       data-interactive="true"
@@ -140,12 +145,34 @@ const OutputNode = ({
           </Typography>
         )}
       </Box>
+      <Box
+        className="node-controls-hotspot"
+        sx={{
+          position: 'absolute',
+          top: -22,
+          right: -22,
+          width: 58,
+          height: 58,
+          borderTopRightRadius: '20px',
+          pointerEvents: 'auto',
+          zIndex: 4500,
+        }}
+      />
       <NodeComment
         comment={data.comment}
         onChange={val => data.onChange(id, { ...data, comment: val })}
         disabled={disabled}
         color={NodeTypeColors.templateOutput}
-        selected={selected}
+        selected
+        containerSx={{
+          top: -10,
+          right: -10,
+          left: 'auto',
+          zIndex: 5000,
+          opacity: 0,
+          pointerEvents: 'none',
+          transition: 'opacity 0.16s ease',
+        }}
       />
 
       {renderContent()}

@@ -45,7 +45,7 @@ export const StepNodeSideContent = ({
   const edges = useEdges();
 
   const foundNode = useMemo(() => nodes.find(n => n.id === id), [nodes, id]);
-  const currentNode = node || foundNode;
+  const currentNode = foundNode || node;
   const currentData = currentNode?.data as StepNodeData;
 
   const allParentSteps = traverseUpFromNode(

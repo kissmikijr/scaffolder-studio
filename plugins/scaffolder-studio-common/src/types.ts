@@ -46,6 +46,9 @@ export type StepNodeData = {
   if: string;
   description?: string;
   comment?: string;
+  uiState?: {
+    ioExpanded?: boolean;
+  };
   onChange: (
     nodeId: string,
     data: Pick<
@@ -57,6 +60,7 @@ export type StepNodeData = {
       | 'schema'
       | 'description'
       | 'comment'
+      | 'uiState'
     >,
   ) => void;
   customYamlData?: Record<string, any>;

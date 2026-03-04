@@ -1,6 +1,7 @@
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useLayoutEffect, useMemo } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { $getRoot, $createParagraphNode, $createTextNode } from 'lexical';
+import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
 import { createToken } from '../createToken';
 import { getColorForType } from '../../../utils/colorUtils';
@@ -8,13 +9,12 @@ import {
   findAllTokens,
   parseTokenContent,
   createParameterTypeMap,
-  createOutputTypeMap,
 } from '../../../utils/tokenParser';
 
 export const InitialEditorStatePlugin = ({
   initialEditorState,
   parameters = [],
-  outputs = [],
+  outputs: _outputs = [],
 }: {
   initialEditorState: string;
   parameters?: Array<{ name: string; type: string }>;
@@ -24,85 +24,87 @@ export const InitialEditorStatePlugin = ({
 
   const parameterTypeMap = useMemo(
     () => createParameterTypeMap(parameters),
-    [parameters]
+    [parameters],
   );
 
-  const outputTypeMap = useMemo(
-    () => createOutputTypeMap(outputs),
-    [outputs]
-  );
-
-  // Track whether we've initialized - this ref is reset when component remounts
-  const hasInitialized = useRef(false);
-  // Keep track of the initial value we received on mount
-  const initialValueOnMount = useRef(initialEditorState);
-
-  // Use useLayoutEffect to initialize synchronously before paint/OnChangePlugin
+  // Keep Lexical state in sync with external form value changes (e.g. relationship drag insertion).
   useLayoutEffect(() => {
-    if (!editor || hasInitialized.current) {
+    if (!editor) {
       return;
     }
 
-    // Only initialize if there's actually content to initialize
-    const valueToInitialize = initialValueOnMount.current;
-    if (valueToInitialize === undefined || valueToInitialize === '') {
-      hasInitialized.current = true;
-      return;
-    }
+    const valueToInitialize = initialEditorState ?? '';
+    let currentEditorValue = '';
 
-    hasInitialized.current = true;
-
-    editor.update(() => {
+    editor.getEditorState().read(() => {
       const root = $getRoot();
-      root.clear();
-      const paragraph = $createParagraphNode();
-      root.append(paragraph);
+      const textNodes = root.getAllTextNodes();
 
-      const tokens = findAllTokens(valueToInitialize);
-      let lastIndex = 0;
+      currentEditorValue = textNodes
+        .map(node => {
+          if (node.getType() === 'expression-token-node') {
+            return (node as any).getFullExpression?.() ?? '';
+          }
+          return node.getTextContent();
+        })
+        .join('');
+    });
 
-      tokens.forEach(token => {
-        // Add text before the token
-        if (token.index > lastIndex) {
-          const textNode = $createTextNode(
-            valueToInitialize.slice(lastIndex, token.index),
-          );
+    if (currentEditorValue === valueToInitialize) {
+      return;
+    }
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+
+        const tokens = findAllTokens(valueToInitialize);
+        let lastIndex = 0;
+
+        tokens.forEach(token => {
+          // Add text before the token
+          if (token.index > lastIndex) {
+            const textNode = $createTextNode(
+              valueToInitialize.slice(lastIndex, token.index),
+            );
+            paragraph.append(textNode);
+          }
+
+          const parsed = parseTokenContent(token.content);
+          let display = token.content;
+          let color = '#F1FA8C';
+
+          if (parsed) {
+            display = parsed.display;
+            if (parsed.type === 'step' && parsed.stepId && parsed.outputName) {
+              color = NodeTypeColors.step;
+            } else if (parsed.type === 'parameter' && parsed.paramName) {
+              const paramType = parameterTypeMap.get(parsed.paramName);
+              color = getColorForType(paramType);
+            }
+          }
+
+          const tokenNode = createToken({
+            display,
+            fullExpression: token.fullMatch,
+            color,
+          });
+          paragraph.append(tokenNode);
+
+          lastIndex = token.index + token.length;
+        });
+
+        if (lastIndex < valueToInitialize.length) {
+          const textNode = $createTextNode(valueToInitialize.slice(lastIndex));
           paragraph.append(textNode);
         }
-
-        const parsed = parseTokenContent(token.content);
-        let display = token.content;
-        let color = '#F1FA8C';
-
-        if (parsed) {
-          display = parsed.display;
-          if (parsed.type === 'step' && parsed.stepId && parsed.outputName) {
-            const baseName = `${parsed.stepId}.${parsed.outputName}`;
-            const outputType = outputTypeMap.get(baseName);
-            color = getColorForType(outputType);
-          } else if (parsed.type === 'parameter' && parsed.paramName) {
-            const paramType = parameterTypeMap.get(parsed.paramName);
-            color = getColorForType(paramType);
-          }
-        }
-
-        const tokenNode = createToken({
-          display,
-          fullExpression: token.fullMatch,
-          color,
-        });
-        paragraph.append(tokenNode);
-
-        lastIndex = token.index + token.length;
-      });
-
-      if (lastIndex < valueToInitialize.length) {
-        const textNode = $createTextNode(valueToInitialize.slice(lastIndex));
-        paragraph.append(textNode);
-      }
-    }, { discrete: true });
-  }, [editor, parameterTypeMap, outputTypeMap]);
+      },
+      { discrete: true },
+    );
+  }, [editor, initialEditorState, parameterTypeMap]);
 
   return null;
 };
-

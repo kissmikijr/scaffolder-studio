@@ -2,12 +2,19 @@ import { renderHook, act } from '@testing-library/react';
 import { useEditorHandlers } from '../useEditorHandlers';
 import { Node, Edge, NodePositionChange } from '@xyflow/react';
 import { AllNodeData } from '@kissmiklosjr/plugin-scaffolder-studio-common';
+import {
+  RELATIONSHIP_IF_INPUT_HANDLE,
+  RELATIONSHIP_PROPERTY_OUTPUT_HANDLE,
+  toInputHandleId,
+  toOutputHandleId,
+} from '../useDependencyEdges';
 
 // Mock dependencies
 jest.mock('@xyflow/react', () => ({
   ...jest.requireActual('@xyflow/react'),
   useReactFlow: () => ({
     screenToFlowPosition: ({ x, y }: { x: number; y: number }) => ({ x, y }),
+    getEdges: () => [],
   }),
   applyNodeChanges: jest.fn((changes, nodes) => {
     // Simple mock of applyNodeChanges just for position changes
@@ -32,6 +39,7 @@ describe('useEditorHandlers snapping', () => {
   let mockHandleAddStepNode: jest.Mock;
   let mockHandleAddParametersNode: jest.Mock;
   let mockHandleAddPropertyNode: jest.Mock;
+  let mockOnRelationshipConnectionDrawn: jest.Mock;
   let contextMenuNodeIdRef: { current: string | null };
   let connectSourceNodeIdRef: { current: string | null };
 
@@ -44,6 +52,7 @@ describe('useEditorHandlers snapping', () => {
     mockHandleAddStepNode = jest.fn();
     mockHandleAddParametersNode = jest.fn();
     mockHandleAddPropertyNode = jest.fn();
+    mockOnRelationshipConnectionDrawn = jest.fn();
     contextMenuNodeIdRef = { current: null };
     connectSourceNodeIdRef = { current: null };
   });
@@ -64,11 +73,17 @@ describe('useEditorHandlers snapping', () => {
         handleAddStepNode: mockHandleAddStepNode,
         handleAddParametersNode: mockHandleAddParametersNode,
         handleAddPropertyNode: mockHandleAddPropertyNode,
+        onRelationshipConnectionDrawn: mockOnRelationshipConnectionDrawn,
         onChange: jest.fn(),
         setSelectedEdge: jest.fn(),
       }),
     );
   };
+
+  const getLatestSetNodesUpdater = () =>
+    mockSetNodes.mock.calls[mockSetNodes.mock.calls.length - 1][0];
+  const getLatestSetEdgesUpdater = () =>
+    mockSetEdges.mock.calls[mockSetEdges.mock.calls.length - 1][0];
 
   it('should NOT snap when Shift is NOT pressed', () => {
     const nodeA: Node<AllNodeData> = {
@@ -94,7 +109,7 @@ describe('useEditorHandlers snapping', () => {
     });
 
     expect(mockSetNodes).toHaveBeenCalled();
-    const callback = mockSetNodes.mock.calls[0][0];
+    const callback = getLatestSetNodesUpdater();
     const updatedNodes = callback([nodeA, nodeB]);
 
     // Should NOT snap: A's Y should be 50
@@ -132,7 +147,7 @@ describe('useEditorHandlers snapping', () => {
     });
 
     expect(mockSetNodes).toHaveBeenCalled();
-    const callback = mockSetNodes.mock.calls[0][0];
+    const callback = getLatestSetNodesUpdater();
     const updatedNodes = callback([nodeA, nodeB]);
 
     // A.y + A.height*0.5 = B.y + B.height*0.5
@@ -174,7 +189,7 @@ describe('useEditorHandlers snapping', () => {
     });
 
     expect(mockSetNodes).toHaveBeenCalled();
-    const callback = mockSetNodes.mock.calls[0][0];
+    const callback = getLatestSetNodesUpdater();
     const updatedNodes = callback([nodeA, nodeB]);
 
     // Should snap X because |180 - 200| < |50 - 200|
@@ -221,7 +236,7 @@ describe('useEditorHandlers snapping', () => {
       result.current.handleNodesChange(changes);
     });
 
-    const callback = mockSetNodes.mock.calls[0][0];
+    const callback = getLatestSetNodesUpdater();
     const updatedNodes = callback([nodeTemplate, nodeStep]);
     const updatedStep = updatedNodes.find((n: Node) => n.id === 'step');
 
@@ -269,7 +284,7 @@ describe('useEditorHandlers snapping', () => {
       result.current.handleNodesChange(changes);
     });
 
-    const callback = mockSetNodes.mock.calls[0][0];
+    const callback = getLatestSetNodesUpdater();
     const updatedNodes = callback([nodeTemplate, nodeParams]);
     const updatedParams = updatedNodes.find((n: Node) => n.id === 'params');
 
@@ -314,7 +329,7 @@ describe('useEditorHandlers snapping', () => {
       result.current.handleNodesChange(changes);
     });
 
-    const callback = mockSetNodes.mock.calls[0][0];
+    const callback = getLatestSetNodesUpdater();
     const updatedNodes = callback([nodeA, nodeB]);
     expect(updatedNodes.find((n: Node) => n.id === 'A').position.y).toBe(50);
   });
@@ -342,5 +357,430 @@ describe('useEditorHandlers snapping', () => {
 
     expect(mockHandleAddParametersNode).toHaveBeenCalled();
     expect(mockHandleAddPropertyNode).not.toHaveBeenCalled();
+  });
+
+  it('validates relationship handle connections to step inputs', () => {
+    const propertyNode: Node<AllNodeData> = {
+      id: 'property',
+      type: 'property',
+      position: { x: 0, y: 0 },
+      data: {
+        name: 'repoUrl',
+        variableType: 'string',
+        onChange: jest.fn(),
+      } as any,
+    };
+    const stepNode: Node<AllNodeData> = {
+      id: 'step',
+      type: 'step',
+      position: { x: 0, y: 0 },
+      selected: true,
+      data: {
+        type: 'step',
+        stepId: 'publish',
+        if: '',
+        formData: { repoUrl: '' },
+        schema: {
+          input: {
+            type: 'object',
+            properties: { repoUrl: { type: 'string' } },
+          },
+          output: {
+            type: 'object',
+            properties: { result: { type: 'string' } },
+          },
+        },
+        onChange: jest.fn(),
+      } as any,
+    };
+
+    const { result } = setup([propertyNode, stepNode], []);
+
+    expect(
+      result.current.isValidConnection({
+        source: propertyNode.id,
+        sourceHandle: RELATIONSHIP_PROPERTY_OUTPUT_HANDLE,
+        target: stepNode.id,
+        targetHandle: toInputHandleId('repoUrl'),
+      } as any),
+    ).toBe(true);
+  });
+
+  it('inserts a parameters token when connecting relationship handles into input', () => {
+    const propertyNode: Node<AllNodeData> = {
+      id: 'property',
+      type: 'property',
+      position: { x: 0, y: 0 },
+      data: {
+        name: 'repoUrl',
+        variableType: 'string',
+        onChange: jest.fn(),
+      } as any,
+    };
+    const stepNode: Node<AllNodeData> = {
+      id: 'step',
+      type: 'step',
+      position: { x: 0, y: 0 },
+      selected: true,
+      data: {
+        type: 'step',
+        stepId: 'publish',
+        if: '',
+        formData: { repoUrl: '' },
+        schema: {
+          input: {
+            type: 'object',
+            properties: { repoUrl: { type: 'string' } },
+          },
+          output: {
+            type: 'object',
+            properties: { result: { type: 'string' } },
+          },
+        },
+        onChange: jest.fn(),
+      } as any,
+    };
+
+    const { result } = setup([propertyNode, stepNode], []);
+    mockSetNodes.mockClear();
+    mockSetEdges.mockClear();
+
+    act(() => {
+      result.current.onConnect({
+        source: propertyNode.id,
+        sourceHandle: RELATIONSHIP_PROPERTY_OUTPUT_HANDLE,
+        target: stepNode.id,
+        targetHandle: toInputHandleId('repoUrl'),
+      } as any);
+    });
+
+    expect(mockSetEdges).not.toHaveBeenCalled();
+    expect(mockSetNodes).toHaveBeenCalled();
+    expect(mockOnRelationshipConnectionDrawn).toHaveBeenCalledTimes(1);
+    const updater = getLatestSetNodesUpdater();
+    const nextNodes = updater([propertyNode, stepNode]);
+    const nextStep = nextNodes.find((n: Node<AllNodeData>) => n.id === 'step');
+    expect((nextStep?.data as any).formData.repoUrl).toBe(
+      '${{ parameters.repoUrl }}',
+    );
+  });
+
+  it('inserts a parameters token when connecting relationship handles into if', () => {
+    const propertyNode: Node<AllNodeData> = {
+      id: 'property',
+      type: 'property',
+      position: { x: 0, y: 0 },
+      data: {
+        name: 'repoUrl',
+        variableType: 'string',
+        onChange: jest.fn(),
+      } as any,
+    };
+    const targetStep: Node<AllNodeData> = {
+      id: 'target-step',
+      type: 'step',
+      position: { x: 0, y: 0 },
+      selected: true,
+      data: {
+        type: 'step',
+        stepId: 'publish',
+        if: '',
+        formData: {},
+        schema: {
+          input: { type: 'object', properties: {} },
+          output: {
+            type: 'object',
+            properties: { done: { type: 'string' } },
+          },
+        },
+        onChange: jest.fn(),
+      } as any,
+    };
+
+    const { result } = setup([propertyNode, targetStep], []);
+    mockSetNodes.mockClear();
+
+    act(() => {
+      result.current.onConnect({
+        source: propertyNode.id,
+        sourceHandle: RELATIONSHIP_PROPERTY_OUTPUT_HANDLE,
+        target: targetStep.id,
+        targetHandle: RELATIONSHIP_IF_INPUT_HANDLE,
+      } as any);
+    });
+
+    expect(mockSetNodes).toHaveBeenCalled();
+    expect(mockOnRelationshipConnectionDrawn).toHaveBeenCalledTimes(1);
+    const updater = getLatestSetNodesUpdater();
+    const nextNodes = updater([propertyNode, targetStep]);
+    const nextStep = nextNodes.find(
+      (n: Node<AllNodeData>) => n.id === 'target-step',
+    );
+    expect((nextStep?.data as any).if).toBe('${{ parameters.repoUrl }}');
+  });
+
+  it('inserts a step output token when connecting to if handle', () => {
+    const sourceStep: Node<AllNodeData> = {
+      id: 'source-step',
+      type: 'step',
+      position: { x: 0, y: 0 },
+      data: {
+        type: 'step',
+        stepId: 'build',
+        if: '',
+        formData: {},
+        schema: {
+          input: { type: 'object', properties: {} },
+          output: {
+            type: 'object',
+            properties: { result: { type: 'string' } },
+          },
+        },
+        onChange: jest.fn(),
+      } as any,
+    };
+    const targetStep: Node<AllNodeData> = {
+      id: 'target-step',
+      type: 'step',
+      position: { x: 0, y: 0 },
+      selected: true,
+      data: {
+        type: 'step',
+        stepId: 'publish',
+        if: '${{ parameters.repoUrl | lower }}',
+        formData: {},
+        schema: {
+          input: { type: 'object', properties: {} },
+          output: {
+            type: 'object',
+            properties: { done: { type: 'string' } },
+          },
+        },
+        onChange: jest.fn(),
+      } as any,
+    };
+
+    const { result } = setup([sourceStep, targetStep], []);
+    mockSetNodes.mockClear();
+
+    act(() => {
+      result.current.onConnect({
+        source: sourceStep.id,
+        sourceHandle: toOutputHandleId('result'),
+        target: targetStep.id,
+        targetHandle: RELATIONSHIP_IF_INPUT_HANDLE,
+      } as any);
+    });
+
+    expect(mockSetNodes).toHaveBeenCalled();
+    expect(mockOnRelationshipConnectionDrawn).toHaveBeenCalledTimes(1);
+    const updater = getLatestSetNodesUpdater();
+    const nextNodes = updater([sourceStep, targetStep]);
+    const nextStep = nextNodes.find(
+      (n: Node<AllNodeData>) => n.id === 'target-step',
+    );
+    expect((nextStep?.data as any).if).toBe(
+      "${{ parameters.repoUrl | lower }} ${{ steps['build'].output['result'] }}",
+    );
+  });
+
+  it('inserts a step output token when connecting to a step input handle', () => {
+    const sourceStep: Node<AllNodeData> = {
+      id: 'source-step',
+      type: 'step',
+      position: { x: 0, y: 0 },
+      data: {
+        type: 'step',
+        stepId: 'build',
+        if: '',
+        formData: {},
+        schema: {
+          input: { type: 'object', properties: {} },
+          output: {
+            type: 'object',
+            properties: { result: { type: 'string' } },
+          },
+        },
+        onChange: jest.fn(),
+      } as any,
+    };
+    const targetStep: Node<AllNodeData> = {
+      id: 'target-step',
+      type: 'step',
+      position: { x: 0, y: 0 },
+      selected: true,
+      data: {
+        type: 'step',
+        stepId: 'publish',
+        if: '',
+        formData: { message: '${{ parameters.repoUrl }}' },
+        schema: {
+          input: {
+            type: 'object',
+            properties: { message: { type: 'string' } },
+          },
+          output: {
+            type: 'object',
+            properties: { done: { type: 'string' } },
+          },
+        },
+        onChange: jest.fn(),
+      } as any,
+    };
+
+    const { result } = setup([sourceStep, targetStep], []);
+    mockSetNodes.mockClear();
+
+    act(() => {
+      result.current.onConnect({
+        source: sourceStep.id,
+        sourceHandle: toOutputHandleId('result'),
+        target: targetStep.id,
+        targetHandle: toInputHandleId('message'),
+      } as any);
+    });
+
+    expect(mockSetNodes).toHaveBeenCalled();
+    expect(mockOnRelationshipConnectionDrawn).toHaveBeenCalledTimes(1);
+    const updater = getLatestSetNodesUpdater();
+    const nextNodes = updater([sourceStep, targetStep]);
+    const nextStep = nextNodes.find(
+      (n: Node<AllNodeData>) => n.id === 'target-step',
+    );
+    expect((nextStep?.data as any).formData.message).toBe(
+      "${{ parameters.repoUrl }} ${{ steps['build'].output['result'] }}",
+    );
+  });
+
+  it('does not auto-create nodes when relationship handle drag ends on pane', () => {
+    const propertyNode: Node<AllNodeData> = {
+      id: 'property',
+      type: 'property',
+      position: { x: 100, y: 100 },
+      data: {
+        name: 'repoUrl',
+        variableType: 'string',
+        onChange: jest.fn(),
+      } as any,
+    };
+
+    const { result } = setup([propertyNode], []);
+    mockHandleAddPropertyNode.mockClear();
+    mockHandleAddStepNode.mockClear();
+
+    act(() => {
+      result.current.onConnectEnd(
+        { clientX: 300, clientY: 260 } as any,
+        {
+          fromNode: propertyNode as any,
+          fromHandle: { id: RELATIONSHIP_PROPERTY_OUTPUT_HANDLE },
+          toHandle: null,
+        } as any,
+      );
+    });
+
+    expect(mockHandleAddPropertyNode).not.toHaveBeenCalled();
+    expect(mockHandleAddStepNode).not.toHaveBeenCalled();
+  });
+
+  it('does not notify relationship toggle callback for structural connections', () => {
+    const sourceStep: Node<AllNodeData> = {
+      id: 'source-step',
+      type: 'step',
+      position: { x: 0, y: 0 },
+      data: {
+        type: 'step',
+        stepId: 'build',
+        if: '',
+        formData: {},
+        schema: {
+          input: { type: 'object', properties: {} },
+          output: { type: 'object', properties: {} },
+        },
+        onChange: jest.fn(),
+      } as any,
+    };
+    const targetStep: Node<AllNodeData> = {
+      id: 'target-step',
+      type: 'step',
+      position: { x: 0, y: 0 },
+      data: {
+        type: 'step',
+        stepId: 'publish',
+        if: '',
+        formData: {},
+        schema: {
+          input: { type: 'object', properties: {} },
+          output: { type: 'object', properties: {} },
+        },
+        onChange: jest.fn(),
+      } as any,
+    };
+
+    const { result } = setup([sourceStep, targetStep], []);
+    mockSetEdges.mockClear();
+    mockOnRelationshipConnectionDrawn.mockClear();
+
+    act(() => {
+      result.current.onConnect({
+        source: sourceStep.id,
+        sourceHandle: 'right',
+        target: targetStep.id,
+        targetHandle: 'left',
+      } as any);
+    });
+
+    expect(mockSetEdges).toHaveBeenCalled();
+    expect(mockOnRelationshipConnectionDrawn).not.toHaveBeenCalled();
+  });
+
+  it('reconnects step edges through top handles when deleting intermediate step', () => {
+    const stepA: Node<AllNodeData> = {
+      id: 'step-a',
+      type: 'step',
+      position: { x: 0, y: 0 },
+      data: {} as any,
+    };
+    const stepB: Node<AllNodeData> = {
+      id: 'step-b',
+      type: 'step',
+      position: { x: 200, y: 0 },
+      data: {} as any,
+    };
+    const stepC: Node<AllNodeData> = {
+      id: 'step-c',
+      type: 'step',
+      position: { x: 400, y: 0 },
+      data: {} as any,
+    };
+
+    const edges: Edge[] = [
+      { id: 'e1', source: 'step-a', target: 'step-b' },
+      { id: 'e2', source: 'step-b', target: 'step-c' },
+    ];
+
+    const { result } = setup([stepA, stepB, stepC], edges);
+    mockSetEdges.mockClear();
+
+    act(() => {
+      result.current.handleNodesDelete([stepB]);
+    });
+
+    const setNodesUpdater = getLatestSetNodesUpdater();
+    setNodesUpdater([stepA, stepB, stepC]);
+
+    expect(mockSetEdges).toHaveBeenCalled();
+    const setEdgesUpdater = getLatestSetEdgesUpdater();
+    const nextEdges = setEdgesUpdater(edges);
+
+    expect(nextEdges).toEqual([
+      {
+        id: 'step-a-step-c',
+        source: 'step-a',
+        target: 'step-c',
+        sourceHandle: 'top',
+        targetHandle: 'top',
+      },
+    ]);
   });
 });

@@ -175,4 +175,42 @@ describe('useNodeCreator', () => {
     const createdEdges = setEdgesCallback([]);
     expect(createdEdges[0].targetHandle).toBe('bottom');
   });
+
+  it('should honor explicit step target handle override', () => {
+    const sourceStepNode: Node<AllNodeData> = {
+      id: 'source-step',
+      type: 'step',
+      position: { x: 100, y: 100 },
+      data: {} as any,
+      width: 220,
+      height: 120,
+    };
+
+    const { result } = renderHook(() =>
+      useNodeCreator({
+        nodes: [sourceStepNode],
+        setNodes: mockSetNodes,
+        setEdges: mockSetEdges,
+        connectSourceNodeIdRef: connectSourceNodeIdRef as any,
+        setSelectedNode: mockSetSelectedNode,
+        handleTabChange: mockHandleTabChange,
+        onAddProperty: jest.fn(),
+      }),
+    );
+
+    act(() => {
+      result.current.createStepNode({
+        position: { x: 420, y: 100 },
+        sourceNodeId: 'source-step',
+        sourceHandle: 'top',
+        targetHandle: 'top',
+      });
+    });
+
+    expect(mockSetEdges).toHaveBeenCalled();
+    const setEdgesCallback = mockSetEdges.mock.calls[0][0];
+    const createdEdges = setEdgesCallback([]);
+    expect(createdEdges[0].sourceHandle).toBe('top');
+    expect(createdEdges[0].targetHandle).toBe('top');
+  });
 });

@@ -1,10 +1,17 @@
 import { useMemo } from 'react';
-import { NodeProps, Position, Node, useEdges } from '@xyflow/react';
+import {
+  NodeProps,
+  Position,
+  Node,
+  useEdges,
+  Handle as FlowHandle,
+} from '@xyflow/react';
 import { Handle } from '../../components/Handle';
-import { Box, useTheme, Chip, Typography, Divider } from '@mui/material';
+import { Box, useTheme, Chip, Typography, Divider, alpha } from '@mui/material';
 import { PropertyNodeData } from '../../types';
 import { NodeComment } from '../NodeComment';
 import { getBackgroundColor } from '../../utils/colorUtils';
+import { RELATIONSHIP_PROPERTY_OUTPUT_HANDLE } from '../../hooks/useDependencyEdges';
 
 import { SELECTED_BORDER_COLOR } from '../../styles';
 import {
@@ -30,6 +37,10 @@ export const PropertyNodeContent = ({
     () => hasOutgoingCapacity('property', countOutgoingConnections(edges, id)),
     [edges, id],
   );
+  const relationshipAccent =
+    theme.palette.mode === 'light'
+      ? theme.palette.primary.main
+      : theme.palette.info.light;
 
   return (
     <Box
@@ -48,6 +59,11 @@ export const PropertyNodeContent = ({
           boxShadow: 3,
           cursor: 'pointer',
         },
+        '& .node-controls-hotspot:hover + .node-comment-badge, & .node-comment-badge:hover, & .node-comment-badge:focus-within, &:focus-within .node-comment-badge':
+          {
+            opacity: 1,
+            pointerEvents: 'auto',
+          },
         outline: 'none',
       }}
       data-interactive="true"
@@ -78,12 +94,34 @@ export const PropertyNodeContent = ({
           )}
         </Box>
       )}
+      <Box
+        className="node-controls-hotspot"
+        sx={{
+          position: 'absolute',
+          top: -22,
+          right: -22,
+          width: 58,
+          height: 58,
+          borderTopRightRadius: '20px',
+          pointerEvents: 'auto',
+          zIndex: 4500,
+        }}
+      />
       <NodeComment
         comment={data.comment}
         onChange={val => data.onChange(id, { ...data, comment: val } as any)}
         disabled={disabled}
         color={getBackgroundColor(data.variableType)}
-        selected={selected}
+        selected
+        containerSx={{
+          top: -10,
+          right: -10,
+          left: 'auto',
+          zIndex: 5000,
+          opacity: 0,
+          pointerEvents: 'none',
+          transition: 'opacity 0.16s ease',
+        }}
       />
 
       <Box
@@ -213,6 +251,26 @@ export const PropertyNodeContent = ({
             position={Position.Right}
             id="right"
             disabled={!canAcceptOutgoing}
+          />
+          <FlowHandle
+            type="source"
+            position={Position.Right}
+            id={RELATIONSHIP_PROPERTY_OUTPUT_HANDLE}
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: '50%',
+              border: `1px solid ${alpha(relationshipAccent, 0.95)}`,
+              backgroundColor: alpha(relationshipAccent, 0.78),
+              right: 0,
+              top: '28%',
+              transform: 'translate(50%, -50%)',
+              cursor: 'crosshair',
+              boxShadow: `0 0 0 3px ${alpha(relationshipAccent, 0.18)}`,
+              zIndex: 4600,
+              pointerEvents: 'all',
+            }}
+            data-testid={`property-relationship-handle-${id}`}
           />
           <Handle
             type="source"

@@ -6,8 +6,9 @@ import {
   useEdges,
 } from '@xyflow/react';
 import { Handle } from '../../components/Handle';
-import { Box } from '@mui/material';
+import { Box, useTheme, alpha } from '@mui/material';
 import { ParametersNodeData } from '../../types';
+import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
 import { SELECTED_BORDER_COLOR } from '../../styles';
 import {
@@ -22,6 +23,7 @@ const ParametersNode = ({
   selected,
   data,
 }: NodeProps<Node<ParametersNodeData>>) => {
+  const theme = useTheme();
   const edges = useEdges();
   const canAcceptIncoming = hasIncomingCapacity(
     'parameters',
@@ -31,6 +33,8 @@ const ParametersNode = ({
     'parameters',
     countOutgoingConnections(edges, id),
   );
+  const isLightTheme = theme.palette.mode === 'light';
+  const parametersAccent = isLightTheme ? '#14B8A6' : NodeTypeColors.parameters;
 
   return (
     <>
@@ -50,11 +54,13 @@ const ParametersNode = ({
           pt: 3, // Create space for title
           position: 'relative',
           borderRadius: '12px',
-          backgroundColor: 'rgba(79, 255, 224, 0.1)', // Semi-transparent
-          color: '#282a36',
+          backgroundColor: alpha(parametersAccent, isLightTheme ? 0.12 : 0.1),
+          color: theme.palette.text.primary,
           pointerEvents: 'all',
           border: `2px ${selected ? 'solid' : 'dashed'} ${
-            selected ? SELECTED_BORDER_COLOR : 'rgba(79, 255, 224, 0.8)'
+            selected
+              ? SELECTED_BORDER_COLOR
+              : alpha(parametersAccent, isLightTheme ? 0.55 : 0.8)
           }`,
           '&:hover': {
             cursor: 'grab',
@@ -69,11 +75,15 @@ const ParametersNode = ({
             top: -12,
             left: 12,
             px: 1,
-            backgroundColor: '#4fffe0',
+            backgroundColor: isLightTheme ? '#99F6E4' : '#4fffe0',
             borderRadius: '4px',
             fontSize: '0.8rem',
             fontWeight: 600,
-            color: '#282a36',
+            color: isLightTheme ? '#134E4A' : '#282a36',
+            border: `1px solid ${alpha(
+              parametersAccent,
+              isLightTheme ? 0.35 : 0.2,
+            )}`,
             pointerEvents: 'all',
             display: 'flex',
             alignItems: 'center',

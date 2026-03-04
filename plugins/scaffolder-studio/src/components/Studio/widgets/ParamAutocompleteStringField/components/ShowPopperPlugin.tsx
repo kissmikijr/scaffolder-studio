@@ -1,6 +1,7 @@
 import { useRef, useCallback, useEffect, useState, useMemo } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { $getSelection, $getNodeByKey } from 'lexical';
+import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { createToken } from '../createToken';
 import { getColorForType } from '../../../utils/colorUtils';
 import {
@@ -47,22 +48,6 @@ export function ShowPopperPlugin({
     });
     return map;
   }, [allParams]);
-
-  // Create a lookup map for output types
-  const outputTypeMap = useMemo(() => {
-    const map = new Map<string, string>();
-    allOutputs.forEach((output: { id: string; outputs: any }) => {
-      if (output.outputs) {
-        Object.entries(output.outputs).forEach(
-          ([key, value]: [string, any]) => {
-            const fullKey = `${output.id}.${key}`;
-            map.set(fullKey, value?.type);
-          },
-        );
-      }
-    });
-    return map;
-  }, [allOutputs]);
 
   // Merge built-in and custom filters, grouped by category
   const allFilters = [...NUNJUCKS_FILTERS, ...customFilters];
@@ -115,9 +100,7 @@ export function ShowPopperPlugin({
 
   const handleOutputSelect = useCallback(
     (output: { stepId: string; outputName: string }) => {
-      const fullKey = `${output.stepId}.${output.outputName}`;
-      const outputType = outputTypeMap.get(fullKey);
-      const color = getColorForType(outputType);
+      const color = NodeTypeColors.step;
 
       const display = `${output.stepId}.${output.outputName}`;
       const baseExpression = `steps['${output.stepId}'].output['${output.outputName}']`;
@@ -134,7 +117,7 @@ export function ShowPopperPlugin({
       });
       setViewMode('filters');
     },
-    [outputTypeMap, editor],
+    [editor],
   );
 
   const handleFilterSelect = useCallback(

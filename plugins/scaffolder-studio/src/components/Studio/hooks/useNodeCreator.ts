@@ -240,15 +240,19 @@ export const useNodeCreator = ({
       position,
       sourceNodeId,
       sourceHandle,
+      targetHandle,
     }: {
       position: { x: number; y: number };
       sourceNodeId?: string;
       sourceHandle?: string;
+      targetHandle?: string;
     }) => {
       const baseNode = getNodeBase();
       const node = sourceNodeId
         ? nodes.find(n => n.id === sourceNodeId)
         : undefined;
+      const resolvedSourceHandle =
+        sourceHandle === 'step' ? 'right' : sourceHandle ?? 'right';
 
       const newNode: Node<StepNodeData> = {
         ...baseNode,
@@ -277,14 +281,15 @@ export const useNodeCreator = ({
             id: `${node.id}-${baseNode.id}`,
             source: node.id,
             target: baseNode.id,
-            sourceHandle:
-              sourceHandle === 'step' ? 'right' : sourceHandle ?? 'right',
-            targetHandle: getClosestTargetHandle({
-              sourceNode: node,
-              sourceHandleId: sourceHandle,
-              targetPosition: position,
-              targetType: 'step',
-            }),
+            sourceHandle: resolvedSourceHandle,
+            targetHandle:
+              targetHandle ??
+              getClosestTargetHandle({
+                sourceNode: node,
+                sourceHandleId: resolvedSourceHandle,
+                targetPosition: position,
+                targetType: 'step',
+              }),
           },
         ]);
       }

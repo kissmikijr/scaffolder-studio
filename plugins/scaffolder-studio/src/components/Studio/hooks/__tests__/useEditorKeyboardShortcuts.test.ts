@@ -9,6 +9,7 @@ describe('useEditorKeyboardShortcuts', () => {
     const onAddOutput = jest.fn();
     const onToggleDependencyEdges = jest.fn();
     const onToggleSideContent = jest.fn();
+    const onFitView = jest.fn();
 
     renderHook(() =>
       useEditorKeyboardShortcuts({
@@ -18,6 +19,7 @@ describe('useEditorKeyboardShortcuts', () => {
         onAddOutput,
         onToggleDependencyEdges,
         onToggleSideContent,
+        onFitView,
       }),
     );
 
@@ -28,6 +30,7 @@ describe('useEditorKeyboardShortcuts', () => {
       onAddOutput,
       onToggleDependencyEdges,
       onToggleSideContent,
+      onFitView,
     };
   };
 
@@ -39,6 +42,7 @@ describe('useEditorKeyboardShortcuts', () => {
       onAddOutput,
       onToggleDependencyEdges,
       onToggleSideContent,
+      onFitView,
     } = setup();
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' }));
@@ -52,6 +56,7 @@ describe('useEditorKeyboardShortcuts', () => {
     expect(onAddOutput).toHaveBeenCalledTimes(1);
     expect(onToggleDependencyEdges).not.toHaveBeenCalled();
     expect(onToggleSideContent).not.toHaveBeenCalled();
+    expect(onFitView).not.toHaveBeenCalled();
   });
 
   it('triggers dependency edge toggle on Cmd/Ctrl+4', () => {
@@ -82,6 +87,19 @@ describe('useEditorKeyboardShortcuts', () => {
     expect(onToggleSideContent).toHaveBeenCalledTimes(1);
   });
 
+  it('triggers fit view on Cmd/Ctrl+0', () => {
+    const { onFitView } = setup();
+
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: '0',
+        ctrlKey: true,
+      }),
+    );
+
+    expect(onFitView).toHaveBeenCalledTimes(1);
+  });
+
   it('does not trigger shortcuts when an input is focused', () => {
     const callbacks = setup();
     const input = document.createElement('input');
@@ -106,6 +124,7 @@ describe('useEditorKeyboardShortcuts', () => {
     expect(callbacks.onAddStep).not.toHaveBeenCalled();
     expect(callbacks.onToggleDependencyEdges).not.toHaveBeenCalled();
     expect(callbacks.onToggleSideContent).not.toHaveBeenCalled();
+    expect(callbacks.onFitView).not.toHaveBeenCalled();
 
     document.body.removeChild(input);
   });

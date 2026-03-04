@@ -32,7 +32,7 @@ export const PropertyNodeSideContent = ({
   const nodes = useNodes<Node<AllNodeData>>();
 
   const foundNode = useMemo(() => nodes.find(n => n.id === id), [nodes, id]);
-  const currentNode = node || foundNode;
+  const currentNode = foundNode || node;
   const currentData = currentNode?.data as PropertyNodeData;
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<PropertyFormData>({

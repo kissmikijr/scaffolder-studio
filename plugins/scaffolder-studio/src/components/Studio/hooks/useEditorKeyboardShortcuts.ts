@@ -13,6 +13,7 @@ interface UseEditorKeyboardShortcutsProps {
   onAddOutput: () => void;
   onToggleDependencyEdges: () => void;
   onToggleSideContent: () => void;
+  onFitView: () => void;
 }
 
 export const useEditorKeyboardShortcuts = ({
@@ -22,6 +23,7 @@ export const useEditorKeyboardShortcuts = ({
   onAddOutput,
   onToggleDependencyEdges,
   onToggleSideContent,
+  onFitView,
 }: UseEditorKeyboardShortcutsProps) => {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -43,6 +45,17 @@ export const useEditorKeyboardShortcuts = ({
       ) {
         event.preventDefault();
         onToggleDependencyEdges();
+        return;
+      }
+
+      if (
+        hasPrimaryModifier &&
+        !event.shiftKey &&
+        !event.altKey &&
+        isDigitShortcutKey(event, 0)
+      ) {
+        event.preventDefault();
+        onFitView();
         return;
       }
 
@@ -85,5 +98,6 @@ export const useEditorKeyboardShortcuts = ({
     onAddStep,
     onToggleDependencyEdges,
     onToggleSideContent,
+    onFitView,
   ]);
 };

@@ -109,13 +109,13 @@ test.describe('Dry Run Feature', () => {
     await editorPage.configureStep('log-message', 'Log Message', {
       message: 'Hello Dry Run',
     });
-    await page
+    const paragraph = page
       .locator('form')
       .getByRole('paragraph')
-      .filter({ hasText: /^$/ })
-      .fill('${{}}');
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('ArrowLeft');
+      .filter({ hasText: 'Hello Dry Run' });
+    await paragraph.click();
+    await page.keyboard.press('End');
+    await page.keyboard.type(' ${{');
     await page.getByRole('button', { name: 'testParam', exact: true }).click();
 
     await page.waitForTimeout(500);
@@ -127,15 +127,19 @@ test.describe('Dry Run Feature', () => {
       page.getByRole('heading', { name: 'Template Parameters' }),
     ).toBeVisible();
 
-    await page.getByLabel('Test Parameter').fill('Hello Dry Run');
+    await page
+      .getByLabel('Test Parameter')
+      .fill(' Filling out param for dry run');
 
     await completeDryRunStepper({ page });
 
     await waitForDryRunResults({ page });
     await expect(
-      page.getByText('"message": "Hello Dry Run"').first(),
+      page
+        .getByText('"message": "Hello Dry Run Filling out param for dry run"')
+        .first(),
     ).toBeVisible({
-      timeout: 15000,
+      timeout: 10000,
     });
   });
 

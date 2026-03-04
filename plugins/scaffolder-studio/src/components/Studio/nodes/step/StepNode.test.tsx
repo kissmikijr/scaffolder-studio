@@ -1,9 +1,8 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { ReactFlowProvider } from '@xyflow/react';
 import StepNode from './StepNode';
 import { ThemeProvider, createTheme } from '@mui/material';
 
-// Mock ResizeObserver
 class ResizeObserver {
   observe() {}
   unobserve() {}
@@ -20,6 +19,8 @@ const renderWithProviders = (ui: React.ReactElement) => {
 };
 
 describe('StepNode', () => {
+  const onChange = jest.fn();
+
   const defaultProps = {
     id: 'test-node-1',
     data: {
@@ -27,14 +28,20 @@ describe('StepNode', () => {
       name: 'Test Step',
       stepId: 'test_step_1',
       actionId: 'test:action',
-      formData: {},
-      if: '',
-      onChange: jest.fn(),
+      formData: {
+        url: '${{ parameters.repoUrl }}',
+      },
+      if: "${{ steps['build'].output['result'] }}",
+      onChange,
       schema: {
+        input: {
+          properties: {
+            url: { type: 'string' },
+          },
+        },
         output: {
           properties: {
-            result1: { type: 'string' },
-            result2: { type: 'number' },
+            result: { type: 'string' },
           },
         },
       },
@@ -55,52 +62,67 @@ describe('StepNode', () => {
     jest.clearAllMocks();
   });
 
-  describe('Show Output Fields Toggle', () => {
-    it('renders the output toggle button when the node has output properties', () => {
-      renderWithProviders(<StepNode {...(defaultProps as any)} />);
+  it('renders the I/O toggle button when node has input/output fields', () => {
+    renderWithProviders(<StepNode {...(defaultProps as any)} />);
+    expect(screen.getByTestId('node-output-toggle-button')).toBeInTheDocument();
+  });
 
-      const toggleButton = screen.getByTestId('node-output-toggle-button');
-      expect(toggleButton).toBeInTheDocument();
+  it('is collapsed by default when no persisted uiState exists', () => {
+    renderWithProviders(<StepNode {...(defaultProps as any)} />);
+    expect(
+      screen.queryByTestId('step-node-io-section'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders expanded input/output rows when persisted uiState.ioExpanded=true', () => {
+    const expandedProps = {
+      ...defaultProps,
+      data: {
+        ...defaultProps.data,
+        uiState: { ioExpanded: true },
+      },
+    };
+
+    renderWithProviders(<StepNode {...(expandedProps as any)} />);
+
+    expect(screen.getByTestId('step-node-io-section')).toBeInTheDocument();
+    expect(screen.getByTestId('step-node-input-row-url')).toBeInTheDocument();
+    expect(screen.getByTestId('step-node-input-row-if')).toBeInTheDocument();
+    expect(
+      screen.getByTestId('step-node-output-row-result'),
+    ).toBeInTheDocument();
+  });
+
+  it('toggles persisted expansion state via onChange', () => {
+    renderWithProviders(<StepNode {...(defaultProps as any)} />);
+
+    fireEvent.click(screen.getByTestId('node-output-toggle-button'));
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith('test-node-1', {
+      uiState: { ioExpanded: true },
     });
+  });
 
-    it('does not render the toggle button when there are no output properties', () => {
-      const propsWithoutOutput = {
-        ...defaultProps,
-        data: {
+  it('force expands in relationship mode and disables manual collapse', () => {
+    renderWithProviders(
+      <StepNode
+        {...(defaultProps as any)}
+        forceIoExpanded
+        relationshipMode
+        data={{
           ...defaultProps.data,
-          schema: {},
-        },
-      };
+          uiState: { ioExpanded: false },
+        }}
+      />,
+    );
 
-      renderWithProviders(<StepNode {...(propsWithoutOutput as any)} />);
+    expect(screen.getByTestId('step-node-io-section')).toBeInTheDocument();
 
-      const toggleBadge = screen.queryByTestId('node-output-toggle-badge');
-      expect(toggleBadge).not.toBeInTheDocument();
-    });
+    const toggleButton = screen.getByTestId('node-output-toggle-button');
+    expect(toggleButton).toBeDisabled();
 
-    it('opens and closes the output fields popover when clicked', async () => {
-      renderWithProviders(<StepNode {...(defaultProps as any)} />);
-
-      const toggleButton = screen.getByTestId('node-output-toggle-button');
-
-      // Initially not visible
-      expect(screen.queryByText('Output Fields')).not.toBeInTheDocument();
-
-      // Click to open
-      fireEvent.click(toggleButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Output Fields')).toBeInTheDocument();
-        expect(screen.getByText('result1')).toBeInTheDocument();
-        expect(screen.getByText('string')).toBeInTheDocument();
-      });
-
-      // Click to close
-      fireEvent.click(toggleButton);
-
-      await waitFor(() => {
-        expect(screen.queryByText('Output Fields')).not.toBeInTheDocument();
-      });
-    });
+    fireEvent.click(toggleButton);
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

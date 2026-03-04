@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useMemo,
   useState,
   useCallback,
   useRef,
@@ -7,7 +8,7 @@ import {
   SetStateAction,
   ReactNode,
 } from 'react';
-import { ReactFlow, Background } from '@xyflow/react';
+import { ReactFlow, Background, useReactFlow } from '@xyflow/react';
 import { Box, Tooltip, Typography, useTheme, Tabs, Tab } from '@mui/material';
 import { StyledIconButton } from './components/StyledIconButton';
 import type { Edge, Node } from '@xyflow/react';
@@ -25,7 +26,7 @@ import CloudOffOutlinedIcon from '@mui/icons-material/CloudOffOutlined';
 import SyncRoundedIcon from '@mui/icons-material/SyncRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import { useParams, useNavigate } from 'react-router-dom';
-import { nodeTypes } from './nodes/nodeTypes';
+import { createNodeTypes } from './nodes/nodeTypes';
 import { defaultEdgeOptions, edgeTypes } from './edges';
 import { AllNodeData } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { ScaffolderAction } from '@kissmiklosjr/plugin-scaffolder-studio-common';
@@ -45,6 +46,7 @@ import { PrefabInstanceContextMenu } from './nodes/prefab/PrefabInstanceContextM
 import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
 import {
   useCopyPaste,
   useGroupDragDrop,
@@ -137,7 +139,46 @@ const ScaffolderStudioEditor = ({
   const alertApi = useApi(alertApiRef);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [isSideContentCollapsed, setIsSideContentCollapsed] = useState(false);
-  const [showDependencyEdges, setShowDependencyEdges] = useState(false);
+  const [showRelationshipEdges, setShowRelationshipEdges] = useState(false);
+  const ensureRelationshipEdgesShown = useCallback(() => {
+    setShowRelationshipEdges(true);
+  }, []);
+  const { fitView } = useReactFlow();
+  const fitViewAnimationFrameRef = useRef<number | null>(null);
+  const fitViewRetryTimeoutRef = useRef<number | null>(null);
+  const runFitView = useCallback(
+    (duration: number) => {
+      void fitView({ padding: 0.2, duration });
+    },
+    [fitView],
+  );
+  const handleFitView = useCallback(() => {
+    runFitView(400);
+
+    if (fitViewAnimationFrameRef.current !== null) {
+      window.cancelAnimationFrame(fitViewAnimationFrameRef.current);
+    }
+    fitViewAnimationFrameRef.current = window.requestAnimationFrame(() => {
+      runFitView(0);
+    });
+
+    if (fitViewRetryTimeoutRef.current !== null) {
+      window.clearTimeout(fitViewRetryTimeoutRef.current);
+    }
+    fitViewRetryTimeoutRef.current = window.setTimeout(() => {
+      runFitView(0);
+    }, 180);
+  }, [runFitView]);
+  useEffect(() => {
+    return () => {
+      if (fitViewAnimationFrameRef.current !== null) {
+        window.cancelAnimationFrame(fitViewAnimationFrameRef.current);
+      }
+      if (fitViewRetryTimeoutRef.current !== null) {
+        window.clearTimeout(fitViewRetryTimeoutRef.current);
+      }
+    };
+  }, []);
   const theme = useTheme();
 
   const { id, tab } = useParams();
@@ -162,9 +203,23 @@ const ScaffolderStudioEditor = ({
   const isPanning = usePanning();
   const project = useProjectSync({ id, nodes, setViewportState });
 
-  const dependencyEdges = useDependencyEdges(nodes);
-  const displayEdges = showDependencyEdges
-    ? [...edges, ...dependencyEdges]
+  const { relationshipEdges, relatedStepNodeIds } = useDependencyEdges(nodes);
+  const relatedStepNodeIdsRef = useRef<Set<string>>(new Set());
+  relatedStepNodeIdsRef.current = relatedStepNodeIds;
+  const shouldForceExpandStep = useCallback(
+    (stepNodeId: string) => relatedStepNodeIdsRef.current.has(stepNodeId),
+    [],
+  );
+  const flowNodeTypes = useMemo(
+    () =>
+      createNodeTypes({
+        relationshipMode: showRelationshipEdges,
+        shouldForceExpandStep,
+      }),
+    [showRelationshipEdges, shouldForceExpandStep],
+  );
+  const displayEdges = showRelationshipEdges
+    ? [...edges, ...relationshipEdges]
     : edges;
 
   useThumbnail({
@@ -220,6 +275,7 @@ const ScaffolderStudioEditor = ({
     handleAddStepNode,
     handleAddParametersNode,
     handleAddPropertyNode,
+    onRelationshipConnectionDrawn: ensureRelationshipEdgesShown,
     onChange,
     setSelectedEdge,
   });
@@ -305,7 +361,8 @@ const ScaffolderStudioEditor = ({
         y: source.position.y,
       },
       sourceNodeId: source.id,
-      sourceHandle: 'right',
+      sourceHandle: isStepNode(source) ? 'top' : 'right',
+      targetHandle: isStepNode(source) ? 'top' : undefined,
     });
   }, [nodes, getTemplateNode, getNodeDimensions, createStepNode, viewport]);
 
@@ -416,7 +473,7 @@ const ScaffolderStudioEditor = ({
   }, [getSelectedParametersNodeId, onAddProperty, alertApi]);
 
   const toggleDependencyEdges = useCallback(() => {
-    setShowDependencyEdges(prev => !prev);
+    setShowRelationshipEdges(prev => !prev);
   }, []);
 
   const toggleSideContent = useCallback(() => {
@@ -430,6 +487,7 @@ const ScaffolderStudioEditor = ({
     onAddOutput: handleAddOutputFromToolbar,
     onToggleDependencyEdges: toggleDependencyEdges,
     onToggleSideContent: toggleSideContent,
+    onFitView: handleFitView,
   });
 
   const handleViewportChange = useCallback(
@@ -602,15 +660,15 @@ const ScaffolderStudioEditor = ({
           />
           <Tooltip
             title={
-              showDependencyEdges
-                ? 'Hide dependency edges (Cmd/Ctrl+4)'
-                : 'Show dependency edges (Cmd/Ctrl+4)'
+              showRelationshipEdges
+                ? 'Hide relationship edges (Cmd/Ctrl+4)'
+                : 'Show relationship edges (Cmd/Ctrl+4)'
             }
             arrow
           >
             <StyledIconButton
               size="small"
-              color={showDependencyEdges ? 'primary' : 'secondary'}
+              color={showRelationshipEdges ? 'primary' : 'secondary'}
               data-testid="dependency-edges-toggle-button"
               onClick={toggleDependencyEdges}
               sx={{
@@ -696,7 +754,7 @@ const ScaffolderStudioEditor = ({
                 maxZoom={1.5}
                 minZoom={0.3}
                 onEdgesChange={handleEdgesChange}
-                nodeTypes={nodeTypes}
+                nodeTypes={flowNodeTypes}
                 edgeTypes={edgeTypes}
                 defaultEdgeOptions={defaultEdgeOptions}
                 onConnect={onConnect}
@@ -804,6 +862,15 @@ const ScaffolderStudioEditor = ({
                       <RedoIcon />
                     </StyledIconButton>
                   </span>
+                </Tooltip>
+                <Tooltip title="Fit View (0)" arrow>
+                  <StyledIconButton
+                    onClick={handleFitView}
+                    size="small"
+                    data-testid="toolbar-fit-view-button"
+                  >
+                    {renderShortcutIcon(<ZoomOutMapIcon />, '0')}
+                  </StyledIconButton>
                 </Tooltip>
               </Box>
             </Box>

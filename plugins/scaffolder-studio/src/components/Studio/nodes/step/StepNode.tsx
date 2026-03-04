@@ -1,16 +1,14 @@
-import { useRef, useState, useMemo } from 'react';
-import { NodeProps, Position, Node, useNodes, useEdges } from '@xyflow/react';
-import { Handle } from '../../components/Handle';
+import { useMemo } from 'react';
 import {
-  Box,
-  useTheme,
-  Tooltip,
-  Typography,
-  Popper,
-  alpha,
-  Fade,
-  Paper,
-} from '@mui/material';
+  NodeProps,
+  Position,
+  Node,
+  useNodes,
+  useEdges,
+  Handle as FlowHandle,
+} from '@xyflow/react';
+import { Box, useTheme, Tooltip, Typography, alpha, Chip } from '@mui/material';
+import { Handle } from '../../components/Handle';
 import {
   StepNodeData,
   isPropertyNode,
@@ -19,13 +17,11 @@ import {
   AllNodeData,
 } from '../../types';
 import { ExpressionViewer } from './ExpressionViewer';
-
 import { FadableContainer } from '../../components/FadableContainer';
 import { NodeComment } from '../NodeComment';
 import { StyledIconButton } from '../../components/StyledIconButton';
-import DataObjectIcon from '@mui/icons-material/DataObject';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
-
 import { SELECTED_BORDER_COLOR } from '../../styles';
 import {
   countIncomingConnections,
@@ -33,19 +29,50 @@ import {
   hasIncomingCapacity,
   hasOutgoingCapacity,
 } from '../../utils/connectionLimits';
+import {
+  RELATIONSHIP_IF_INPUT_HANDLE,
+  toInputHandleId,
+  toOutputHandleId,
+} from '../../hooks/useDependencyEdges';
+
+type StepNodeProps = NodeProps<Node<StepNodeData>> & {
+  disabled?: boolean;
+  forceIoExpanded?: boolean;
+  relationshipMode?: boolean;
+};
+
+const relationshipHandleStyle = {
+  width: 10,
+  height: 10,
+  borderRadius: '50%',
+  border: `1px solid ${alpha(NodeTypeColors.step, 0.8)}`,
+  backgroundColor: alpha(NodeTypeColors.step, 0.72),
+  boxShadow: `0 0 0 3px ${alpha(NodeTypeColors.step, 0.18)}`,
+  pointerEvents: 'all' as const,
+  cursor: 'crosshair',
+  zIndex: 3200,
+};
+
+const inferTypeFromValue = (value: unknown): string => {
+  if (value === null) return 'null';
+  if (Array.isArray(value)) return 'array';
+  if (typeof value === 'object') return 'object';
+  if (typeof value === 'undefined') return 'unknown';
+  return typeof value;
+};
+
+const sanitizeTestId = (value: string): string =>
+  value.replace(/[^a-zA-Z0-9_-]/g, '_');
 
 const StepNode = ({
   selected,
   id,
   data,
   disabled = false,
-}: NodeProps<Node<StepNodeData>> & {
-  disabled?: boolean;
-}) => {
+  forceIoExpanded = false,
+  relationshipMode = false,
+}: StepNodeProps) => {
   const theme = useTheme();
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
-  const nodeRef = useRef<HTMLDivElement | null>(null);
   const nodes = useNodes<Node<AllNodeData>>();
   const edges = useEdges();
 
@@ -72,16 +99,125 @@ const StepNode = ({
       .filter((n): n is Node<StepNodeData> => isStepNode(n) && n.id !== id)
       .map(n => ({
         id: n.data.stepId || '',
-        outputs: n.data.schema?.output,
+        outputs: (n.data.schema as any)?.output?.properties,
       }));
   }, [nodes, id]);
 
+  const inputSchemaProperties =
+    ((data.schema as any)?.input?.properties as
+      | Record<string, { type?: string }>
+      | undefined) ?? undefined;
+
+  const outputSchemaProperties =
+    ((data.schema as any)?.output?.properties as
+      | Record<string, { type?: string }>
+      | undefined) ?? undefined;
+
+  const inputFieldKeys = useMemo(() => {
+    if (
+      inputSchemaProperties &&
+      Object.keys(inputSchemaProperties).length > 0
+    ) {
+      return Object.keys(inputSchemaProperties);
+    }
+
+    if (data.formData && typeof data.formData === 'object') {
+      return Object.keys(data.formData);
+    }
+
+    return [];
+  }, [inputSchemaProperties, data.formData]);
+
+  const outputFieldKeys = useMemo(() => {
+    if (!outputSchemaProperties) {
+      return [];
+    }
+    return Object.keys(outputSchemaProperties);
+  }, [outputSchemaProperties]);
+
+  const hasIoContent = true;
+  const isLightTheme = theme.palette.mode === 'light';
+
+  const persistedExpanded = Boolean(data.uiState?.ioExpanded);
+  const isForceExpanded = Boolean(forceIoExpanded);
+  const isExpanded = hasIoContent && (persistedExpanded || isForceExpanded);
+
+  const ioSectionBackgroundColor = isLightTheme
+    ? theme.palette.grey[100]
+    : alpha(theme.palette.grey[700], 0.46);
+  const ioSectionBorderColor = isLightTheme
+    ? theme.palette.divider
+    : alpha(theme.palette.divider, 0.8);
+  const ioRowBackgroundColor = isLightTheme
+    ? theme.palette.common.white
+    : alpha(theme.palette.background.paper, 0.26);
+  const ioRowBorder = isLightTheme
+    ? `1px solid ${theme.palette.divider}`
+    : `1px solid ${alpha(theme.palette.divider, 0.42)}`;
+  const ioHeadingColor = isLightTheme
+    ? theme.palette.text.primary
+    : theme.palette.text.secondary;
+
+  const toggleIoExpanded = () => {
+    if (!hasIoContent || isForceExpanded) {
+      return;
+    }
+
+    data.onChange(id, {
+      uiState: {
+        ...(data.uiState ?? {}),
+        ioExpanded: !persistedExpanded,
+      },
+    } as any);
+  };
+
+  const renderTypeChip = (typeLabel: string) => {
+    if (!typeLabel) {
+      return null;
+    }
+
+    return (
+      <Chip
+        size="small"
+        label={typeLabel}
+        sx={{
+          height: 18,
+          fontSize: '0.62rem',
+          fontWeight: 700,
+          backgroundColor: alpha(NodeTypeColors.step, 0.1),
+          color: NodeTypeColors.step,
+          '& .MuiChip-label': {
+            px: 0.75,
+          },
+        }}
+      />
+    );
+  };
+
+  let toggleTooltipTitle = 'Show step inputs/outputs';
+  if (isForceExpanded) {
+    toggleTooltipTitle = 'Expanded while relationship mode is enabled';
+  } else if (isExpanded) {
+    toggleTooltipTitle = 'Hide step inputs/outputs';
+  }
+
+  let toggleHoverBackgroundColor = theme.palette.grey[200];
+  if (isExpanded) {
+    toggleHoverBackgroundColor = NodeTypeColors.step;
+  } else if (theme.palette.mode === 'dark') {
+    toggleHoverBackgroundColor = theme.palette.grey[700];
+  }
+
+  let commentHoverBackgroundColor = theme.palette.grey[200];
+  if (theme.palette.mode === 'dark') {
+    commentHoverBackgroundColor = theme.palette.grey[700];
+  }
+
   return (
     <Box
-      ref={nodeRef}
       sx={{
-        minWidth: 150,
-        maxWidth: 300,
+        minWidth: 180,
+        maxWidth: 360,
         borderRadius: '20px',
         border: `2px solid ${
           selected ? SELECTED_BORDER_COLOR : theme.palette.divider
@@ -96,96 +232,17 @@ const StepNode = ({
           cursor: 'pointer',
           boxShadow: 4,
         },
-        pointerEvents: disabled ? 'none' : 'auto', // Corrected from 'none' : 'none'
+        '& .node-controls-hotspot:hover + .node-comment-badge, & .node-comment-badge:hover, & .node-comment-badge:focus-within, &:focus-within .node-comment-badge':
+          {
+            opacity: 1,
+            pointerEvents: 'auto',
+          },
+        pointerEvents: disabled ? 'none' : 'auto',
         outline: 'none',
       }}
       data-testid={`step-node-${id}`}
       data-interactive="true"
     >
-      <Popper
-        open={Boolean((data.schema as any)?.output?.properties && open)}
-        anchorEl={nodeRef.current}
-        placement="right-start"
-        disablePortal
-        transition
-      >
-        {({ TransitionProps }) => (
-          <Fade {...TransitionProps} timeout={350}>
-            <Paper
-              elevation={8}
-              sx={{
-                p: 1.5,
-                m: 1,
-                backgroundColor: alpha(theme.palette.background.paper, 0.85),
-                backdropFilter: 'blur(12px)',
-                borderRadius: '12px',
-                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                minWidth: 160,
-                boxShadow: `0 4px 20px 0 ${alpha(
-                  theme.palette.common.black,
-                  0.2,
-                )}`,
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  color: theme.palette.text.secondary,
-                  display: 'block',
-                  mb: 1,
-                  letterSpacing: '0.05rem',
-                  fontSize: '0.6rem',
-                }}
-              >
-                Output Fields
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                {Object.entries(
-                  (data.schema as any)?.output?.properties || {},
-                ).map(([key, val]: any) => (
-                  <Box
-                    key={key}
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: 1.5,
-                    }}
-                  >
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        fontWeight: 600,
-                        color: theme.palette.text.primary,
-                        fontSize: '0.75rem',
-                      }}
-                    >
-                      {key}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        backgroundColor: alpha(NodeTypeColors.step, 0.1),
-                        color: NodeTypeColors.step,
-                        px: 0.8,
-                        py: 0.2,
-                        borderRadius: '4px',
-                        fontSize: '0.65rem',
-                        fontWeight: 700,
-                        fontFamily: 'Monospace',
-                      }}
-                    >
-                      {val.type}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-            </Paper>
-          </Fade>
-        )}
-      </Popper>
       <Box
         sx={{
           position: 'absolute',
@@ -205,60 +262,113 @@ const StepNode = ({
       >
         {!disabled && <Box>Step</Box>}
       </Box>
+
+      <Box
+        className="node-controls-hotspot"
+        sx={{
+          position: 'absolute',
+          top: -22,
+          right: -22,
+          width: 58,
+          height: 58,
+          borderTopRightRadius: '20px',
+          pointerEvents: 'auto',
+          zIndex: 4500,
+        }}
+      />
+
       <NodeComment
         comment={data.comment}
         onChange={val => data.onChange(id, { ...data, comment: val })}
         disabled={disabled}
         color={NodeTypeColors.step}
-        selected={selected}
-      />
-      {(data.schema as any)?.output?.properties && (
-        <Box
-          className="node-output-toggle-badge"
-          data-testid="node-output-toggle-badge"
-          sx={{
-            pointerEvents: selected ? 'auto' : 'none',
-            position: 'absolute',
-            top: 14,
-            right: -10,
-            zIndex: 1000,
-            opacity: selected ? 1 : 0,
-            transition: 'opacity 0.2s',
-          }}
-        >
-          <Tooltip title={open ? 'Hide output fields' : 'Show output fields'}>
-            <StyledIconButton
-              data-testid="node-output-toggle-button"
-              size="small"
-              onClick={() =>
-                setAnchorEl(prev => (prev ? null : nodeRef.current))
-              }
-              sx={{
-                width: 20,
-                height: 20,
-                minWidth: 20,
-                backgroundColor: open
-                  ? NodeTypeColors.step
-                  : theme.palette.background.paper,
-                color: open
-                  ? theme.palette.getContrastText(NodeTypeColors.step)
-                  : theme.palette.text.secondary,
-                boxShadow: theme.shadows[2],
-                border: open ? 'none' : `1px solid ${theme.palette.divider}`,
-                padding: '2px',
-                '&:hover': {
-                  backgroundColor: open
-                    ? NodeTypeColors.step
-                    : theme.palette.action.hover,
-                  boxShadow: theme.shadows[4],
-                },
-              }}
+        selected
+        containerSx={{
+          top: -18,
+          right: -10,
+          left: 'auto',
+          zIndex: 5000,
+          opacity: 0,
+          pointerEvents: 'none',
+          transition: 'opacity 0.16s ease',
+          px: 0.35,
+          py: 0.35,
+          borderRadius: '999px',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 0.25,
+          backgroundColor:
+            theme.palette.mode === 'dark'
+              ? theme.palette.grey[900]
+              : theme.palette.grey[50],
+          border: `1px solid ${theme.palette.divider}`,
+        }}
+        buttonSx={{
+          width: 24,
+          height: 24,
+          minWidth: 24,
+          padding: 0,
+          border: 'none',
+          boxShadow: 'none',
+          backgroundColor: data.comment ? NodeTypeColors.step : 'transparent',
+          color: data.comment
+            ? theme.palette.getContrastText(NodeTypeColors.step)
+            : theme.palette.text.primary,
+          '&:hover': {
+            backgroundColor: data.comment
+              ? NodeTypeColors.step
+              : commentHoverBackgroundColor,
+            border: 'none',
+            boxShadow: 'none',
+          },
+        }}
+        slotAfterSeparator="horizontal"
+        slotAfter={
+          hasIoContent ? (
+            <Box
+              className="node-output-toggle-badge"
+              data-testid="node-output-toggle-badge"
             >
-              <DataObjectIcon sx={{ fontSize: '0.75rem' }} />
-            </StyledIconButton>
-          </Tooltip>
-        </Box>
-      )}
+              <Tooltip
+                title={toggleTooltipTitle}
+                enterDelay={900}
+                enterNextDelay={700}
+              >
+                <span>
+                  <StyledIconButton
+                    data-testid="node-output-toggle-button"
+                    size="small"
+                    onClick={toggleIoExpanded}
+                    disabled={isForceExpanded}
+                    sx={{
+                      width: 24,
+                      height: 24,
+                      minWidth: 24,
+                      padding: 0,
+                      border: 'none',
+                      boxShadow: 'none',
+                      backgroundColor: isExpanded
+                        ? NodeTypeColors.step
+                        : 'transparent',
+                      color: isExpanded
+                        ? theme.palette.getContrastText(NodeTypeColors.step)
+                        : theme.palette.text.primary,
+                      '&:hover': {
+                        backgroundColor: toggleHoverBackgroundColor,
+                        border: 'none',
+                        boxShadow: 'none',
+                      },
+                    }}
+                  >
+                    <SettingsIcon sx={{ fontSize: '0.9rem' }} />
+                  </StyledIconButton>
+                </span>
+              </Tooltip>
+            </Box>
+          ) : undefined
+        }
+      />
+
       <Box>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Box
@@ -294,6 +404,7 @@ const StepNode = ({
           </Box>
         </Box>
       </Box>
+
       <Box
         sx={{
           border: '1px solid',
@@ -310,7 +421,7 @@ const StepNode = ({
           flexDirection: 'column',
           gap: 1,
           overflow: 'hidden',
-          minHeight: '64px', // Ensure consistent body size
+          minHeight: '64px',
         }}
       >
         <Box
@@ -405,64 +516,229 @@ const StepNode = ({
           )}
         </Box>
 
-        {data.if && (
-          <FadableContainer
-            sx={{
-              fontSize: '0.75rem',
-              display: 'flex',
-              alignItems: 'center',
-              width: '100%',
-            }}
-          >
-            <span
-              style={{
-                color: 'text.secondary',
-                marginRight: '6px',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              if:
-            </span>
-            <div style={{ display: 'inline-block' }}>
-              <ExpressionViewer
-                value={data.if}
-                parameters={parameters}
-                outputs={outputs}
-              />
-            </div>
-          </FadableContainer>
-        )}
-      </Box>
-      {!disabled && (
-        <>
-          <Handle
-            type="target"
-            position={Position.Top}
-            id="top"
-            disabled={!canAcceptIncoming}
-            data-testid={`step-node-handle-top-${id}`}
-          />
-          <Handle
-            type="target"
-            position={Position.Right}
-            id="right"
-            disabled={!canAcceptIncoming}
-            data-testid={`step-node-handle-right-${id}`}
-          />
-          <Handle
-            type="target"
-            position={Position.Bottom}
-            id="bottom"
-            disabled={!canAcceptIncoming}
-            data-testid={`step-node-handle-bottom-${id}`}
-          />
-          <Handle
+        <Box
+          data-testid="step-node-input-row-if"
+          sx={{
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            gap: 1,
+            minHeight: 24,
+            pl: 1,
+            pr: 0.5,
+            py: 0.55,
+            borderRadius: '8px',
+            backgroundColor: ioRowBackgroundColor,
+            border: ioRowBorder,
+          }}
+        >
+          <FlowHandle
+            id={RELATIONSHIP_IF_INPUT_HANDLE}
             type="target"
             position={Position.Left}
-            id="left"
-            disabled={!canAcceptIncoming}
-            data-testid={`step-node-handle-left-${id}`}
+            style={{
+              ...relationshipHandleStyle,
+              left: 0,
+              top: '50%',
+              transform: 'translate(-50%, -50%)',
+            }}
           />
+
+          <Typography
+            sx={{ fontSize: '0.72rem', fontWeight: 600, flexShrink: 0 }}
+          >
+            if
+          </Typography>
+
+          {data.if ? (
+            <Tooltip title={data.if} placement="top" arrow>
+              <Box sx={{ flex: 1, minWidth: 0, pl: 0.1 }}>
+                <ExpressionViewer
+                  value={data.if}
+                  parameters={parameters}
+                  outputs={outputs}
+                />
+              </Box>
+            </Tooltip>
+          ) : (
+            <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>
+              No condition
+            </Typography>
+          )}
+        </Box>
+
+        {isExpanded && (
+          <Box
+            data-testid="step-node-io-section"
+            sx={{
+              mt: 0.5,
+              p: 1,
+              borderRadius: '12px',
+              border: `1px solid ${ioSectionBorderColor}`,
+              backgroundColor: ioSectionBackgroundColor,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 0.75,
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{
+                fontSize: '0.62rem',
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+                color: ioHeadingColor,
+                fontWeight: 700,
+              }}
+            >
+              Inputs
+            </Typography>
+
+            {inputFieldKeys.map(inputKey => {
+              const displayType =
+                inputSchemaProperties?.[inputKey]?.type ??
+                inferTypeFromValue(
+                  (data.formData as Record<string, unknown>)?.[inputKey],
+                );
+
+              return (
+                <Box
+                  key={inputKey}
+                  data-testid={`step-node-input-row-${sanitizeTestId(
+                    inputKey,
+                  )}`}
+                  sx={{
+                    position: 'relative',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 1,
+                    minHeight: 22,
+                    pl: 1,
+                    pr: 0.5,
+                    borderRadius: '8px',
+                    backgroundColor: ioRowBackgroundColor,
+                    border: ioRowBorder,
+                  }}
+                >
+                  <FlowHandle
+                    id={toInputHandleId(inputKey)}
+                    type="target"
+                    position={Position.Left}
+                    style={{
+                      ...relationshipHandleStyle,
+                      left: 0,
+                      top: '50%',
+                      transform: 'translate(-50%, -50%)',
+                    }}
+                  />
+                  <Typography
+                    sx={{
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      maxWidth: 180,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {inputKey}
+                  </Typography>
+                  {renderTypeChip(displayType)}
+                </Box>
+              );
+            })}
+
+            {inputFieldKeys.length === 0 && (
+              <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>
+                No input fields found
+              </Typography>
+            )}
+
+            <Typography
+              variant="caption"
+              sx={{
+                mt: 0.5,
+                fontSize: '0.62rem',
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+                color: ioHeadingColor,
+                fontWeight: 700,
+              }}
+            >
+              Outputs
+            </Typography>
+
+            {outputFieldKeys.map(outputKey => {
+              const displayType =
+                outputSchemaProperties?.[outputKey]?.type ?? 'unknown';
+
+              return (
+                <Box
+                  key={outputKey}
+                  data-testid={`step-node-output-row-${sanitizeTestId(
+                    outputKey,
+                  )}`}
+                  sx={{
+                    position: 'relative',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 1,
+                    minHeight: 22,
+                    pl: 1,
+                    pr: 0.5,
+                    borderRadius: '8px',
+                    backgroundColor: ioRowBackgroundColor,
+                    border: ioRowBorder,
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      maxWidth: 180,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {outputKey}
+                  </Typography>
+                  {renderTypeChip(displayType)}
+                  <FlowHandle
+                    id={toOutputHandleId(outputKey)}
+                    type="source"
+                    position={Position.Right}
+                    style={{
+                      ...relationshipHandleStyle,
+                      right: 0,
+                      top: '50%',
+                      transform: 'translate(50%, -50%)',
+                    }}
+                  />
+                </Box>
+              );
+            })}
+
+            {outputFieldKeys.length === 0 && (
+              <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>
+                No output fields found
+              </Typography>
+            )}
+
+            {relationshipMode && isForceExpanded && (
+              <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
+                Expanded by relationship mode
+              </Typography>
+            )}
+          </Box>
+        )}
+      </Box>
+
+      {!disabled && (
+        <>
           <Handle
             type="source"
             position={Position.Top}
@@ -490,6 +766,34 @@ const StepNode = ({
             id="left"
             disabled={!canAcceptOutgoing}
             data-testid={`step-node-source-handle-left-${id}`}
+          />
+          <Handle
+            type="target"
+            position={Position.Top}
+            id="top"
+            disabled={!canAcceptIncoming}
+            data-testid={`step-node-handle-top-${id}`}
+          />
+          <Handle
+            type="target"
+            position={Position.Right}
+            id="right"
+            disabled={!canAcceptIncoming}
+            data-testid={`step-node-handle-right-${id}`}
+          />
+          <Handle
+            type="target"
+            position={Position.Bottom}
+            id="bottom"
+            disabled={!canAcceptIncoming}
+            data-testid={`step-node-handle-bottom-${id}`}
+          />
+          <Handle
+            type="target"
+            position={Position.Left}
+            id="left"
+            disabled={!canAcceptIncoming}
+            data-testid={`step-node-handle-left-${id}`}
           />
         </>
       )}

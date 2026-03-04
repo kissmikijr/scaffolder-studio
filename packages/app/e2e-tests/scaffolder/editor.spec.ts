@@ -239,6 +239,43 @@ test.describe('Scaffolder Studio', () => {
     expect(xPositions[1]).toBeGreaterThan(xPositions[0] + 120);
   });
 
+  test('should render relationship edges and force-expand step I/O in relationship mode', async ({
+    page,
+  }) => {
+    await listPage.goto();
+    await listPage.createNewTemplate();
+    await editorPage.verifyLoaded();
+
+    await editorPage.clickAddParametersToolbarButton();
+    await editorPage.configureParametersNode({ title: 'Input Params' });
+    await editorPage.selectNode('Input Params');
+    await editorPage.clickAddPropertyToolbarButton();
+    await editorPage.configureProperty('repoUrl', 'string');
+
+    await editorPage.addStepAndSelectAction('debug:log');
+    await editorPage.configureStep('build', 'Build', {
+      message: '${{ parameters.repoUrl }}',
+    });
+    await editorPage.collapseSideContent();
+
+    await expect
+      .poll(() => editorPage.countRelationshipEdges(), { timeout: 5000 })
+      .toBe(0);
+    await expect(page.getByTestId('step-node-io-section')).toHaveCount(0);
+
+    await editorPage.toggleRelationshipEdges();
+    await expect
+      .poll(() => editorPage.countRelationshipEdges(), { timeout: 10000 })
+      .toBeGreaterThan(0);
+    await expect(page.getByTestId('step-node-io-section')).toHaveCount(1);
+
+    await editorPage.toggleRelationshipEdges();
+    await expect
+      .poll(() => editorPage.countRelationshipEdges(), { timeout: 5000 })
+      .toBe(0);
+    await expect(page.getByTestId('step-node-io-section')).toHaveCount(0);
+  });
+
   test('should auto-sync changes in background', async ({ page }) => {
     const templatePutRequests: string[] = [];
 

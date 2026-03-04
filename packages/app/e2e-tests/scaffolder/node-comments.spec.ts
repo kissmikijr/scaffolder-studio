@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import { ScaffolderStudioListPage } from '../pages/ScaffolderStudioListPage';
 import { ScaffolderStudioPage } from '../pages/ScaffolderStudioPage';
 
@@ -28,8 +28,10 @@ test.describe('Scaffolder Studio - Node Comments', () => {
     await editorPage.openCommentEditor('Comment Test Step');
     await editorPage.addComment('This is a test comment');
 
-    // badge should now be visible
-    await editorPage.expectNodeCommentBadgeVisible('Comment Test Step');
+    // badge should only show when hovering the top-right hotspot
+    await editorPage.expectNodeCommentBadgeHiddenUntilTopRightHover(
+      'Comment Test Step',
+    );
 
     // comment should be persisted in the popover field
     await editorPage.openCommentEditor('Comment Test Step');
@@ -45,7 +47,9 @@ test.describe('Scaffolder Studio - Node Comments', () => {
     await editorPage.configureStep('comment-step', 'Comment Hide Step', {});
     await editorPage.openCommentEditor('Comment Hide Step');
     await editorPage.addComment('To be deleted');
-    await editorPage.expectNodeCommentBadgeVisible('Comment Hide Step');
+    await editorPage.expectNodeCommentBadgeHiddenUntilTopRightHover(
+      'Comment Hide Step',
+    );
 
     // remove the comment via UI
     await editorPage.openCommentEditor('Comment Hide Step');

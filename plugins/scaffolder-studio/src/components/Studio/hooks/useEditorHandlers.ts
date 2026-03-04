@@ -15,6 +15,7 @@ import {
 } from '@xyflow/react';
 import {
   AllNodeData,
+  StepNodeData,
   isPrefabNode,
   isTemplateNode,
   isStepNode,
@@ -29,6 +30,13 @@ import {
   hasIncomingCapacity,
   hasOutgoingCapacity,
 } from '../utils/connectionLimits';
+import {
+  RELATIONSHIP_PROPERTY_OUTPUT_HANDLE,
+  fromInputHandleId,
+  fromOutputHandleId,
+  isRelationshipSourceHandleId,
+  isRelationshipTargetHandleId,
+} from './useDependencyEdges';
 
 interface UseEditorHandlersProps {
   nodes: Node<AllNodeData>[];
@@ -63,6 +71,7 @@ interface UseEditorHandlersProps {
     y: number;
     sourceHandleId?: string;
   }) => void;
+  onRelationshipConnectionDrawn?: () => void;
   onChange: (id: string, data: any) => void;
   setSelectedEdge: (edge: Edge | undefined) => void;
 }
@@ -81,6 +90,7 @@ export const useEditorHandlers = ({
   handleAddStepNode,
   handleAddParametersNode,
   handleAddPropertyNode,
+  onRelationshipConnectionDrawn,
   onChange,
   setSelectedEdge,
 }: UseEditorHandlersProps) => {
@@ -155,9 +165,151 @@ export const useEditorHandlers = ({
     };
   }, [setNodes, setSelectedNode, handleTabChange]);
 
+  const mergeNunjucksToken = useCallback(
+    (currentValue: string, token: string) => {
+      const trimmedCurrent = currentValue.trim();
+      if (!trimmedCurrent) {
+        return token;
+      }
+      if (trimmedCurrent.includes(token)) {
+        return currentValue;
+      }
+
+      const separator = currentValue.endsWith(' ') ? '' : ' ';
+      return `${currentValue}${separator}${token}`;
+    },
+    [],
+  );
+
+  const buildRelationshipToken = useCallback(
+    (sourceNode: Node<AllNodeData>, sourceHandleId: string): string | null => {
+      if (isPropertyNode(sourceNode)) {
+        if (sourceHandleId !== RELATIONSHIP_PROPERTY_OUTPUT_HANDLE) {
+          return null;
+        }
+
+        const propertyName = (sourceNode.data as any).name?.trim();
+        if (!propertyName) {
+          return null;
+        }
+
+        return `\${{ parameters.${propertyName} }}`;
+      }
+
+      if (isStepNode(sourceNode)) {
+        const outputKey = fromOutputHandleId(sourceHandleId);
+        const sourceStepId = (sourceNode.data as StepNodeData).stepId?.trim();
+        if (!outputKey || !sourceStepId) {
+          return null;
+        }
+
+        const outputProperties = (
+          (sourceNode.data as StepNodeData).schema as any
+        )?.output?.properties as Record<string, unknown> | undefined;
+        if (
+          !outputProperties ||
+          !Object.prototype.hasOwnProperty.call(outputProperties, outputKey)
+        ) {
+          return null;
+        }
+
+        return `\${{ steps['${sourceStepId}'].output['${outputKey}'] }}`;
+      }
+
+      return null;
+    },
+    [],
+  );
+
+  const applyRelationshipConnection = useCallback(
+    (connection: Connection): boolean => {
+      const { source, target, sourceHandle, targetHandle } = connection;
+
+      if (
+        !source ||
+        !target ||
+        !isRelationshipSourceHandleId(sourceHandle) ||
+        !isRelationshipTargetHandleId(targetHandle)
+      ) {
+        return false;
+      }
+
+      const sourceNode = nodes.find(n => n.id === source);
+      const targetNode = nodes.find(n => n.id === target);
+
+      if (!sourceNode || !targetNode || !isStepNode(targetNode)) {
+        return false;
+      }
+
+      const targetInputKey = fromInputHandleId(targetHandle);
+      if (!targetInputKey) {
+        return false;
+      }
+
+      const token = buildRelationshipToken(sourceNode, sourceHandle!);
+      if (!token) {
+        return false;
+      }
+
+      setNodes(prevNodes =>
+        prevNodes.map(node => {
+          if (node.id !== targetNode.id || !isStepNode(node)) {
+            return node;
+          }
+
+          const stepData = node.data as StepNodeData;
+          if (targetInputKey === 'if') {
+            const currentIf = stepData.if ?? '';
+            const nextIf = mergeNunjucksToken(currentIf, token);
+            if (nextIf === currentIf) {
+              return node;
+            }
+
+            return {
+              ...node,
+              data: {
+                ...stepData,
+                if: nextIf,
+              },
+            };
+          }
+
+          const currentFormData =
+            stepData.formData && typeof stepData.formData === 'object'
+              ? stepData.formData
+              : {};
+          const currentRawValue = currentFormData[targetInputKey];
+          const currentStringValue =
+            typeof currentRawValue === 'string' ? currentRawValue : '';
+          const nextValue = mergeNunjucksToken(currentStringValue, token);
+          if (
+            typeof currentRawValue === 'string' &&
+            nextValue === currentRawValue
+          ) {
+            return node;
+          }
+
+          return {
+            ...node,
+            data: {
+              ...stepData,
+              formData: {
+                ...currentFormData,
+                [targetInputKey]: nextValue,
+              },
+            },
+          };
+        }),
+      );
+
+      return true;
+    },
+    [nodes, setNodes, buildRelationshipToken, mergeNunjucksToken],
+  );
+
   const isValidConnection = useCallback<IsValidConnection<Edge>>(
     connectionOrEdge => {
-      const { source, target } = connectionOrEdge;
+      const { source, target, sourceHandle, targetHandle } = connectionOrEdge;
       if (!source || !target || source === target) {
         return false;
       }
@@ -177,6 +329,84 @@ export const useEditorHandlers = ({
 
       const sourceEffectiveType = getEffectiveType(sourceNode);
       const targetEffectiveType = getEffectiveType(targetNode);
+
+      const isRelationshipSourceHandle =
+        isRelationshipSourceHandleId(sourceHandle);
+      const isRelationshipTargetHandle =
+        isRelationshipTargetHandleId(targetHandle);
+
+      if (isRelationshipSourceHandle || isRelationshipTargetHandle) {
+        if (!isRelationshipSourceHandle || !isRelationshipTargetHandle) {
+          return false;
+        }
+
+        if (targetEffectiveType !== 'step') {
+          return false;
+        }
+
+        if (
+          sourceEffectiveType !== 'step' &&
+          sourceEffectiveType !== 'property'
+        ) {
+          return false;
+        }
+
+        const targetInputKey = fromInputHandleId(targetHandle);
+        if (!targetInputKey) {
+          return false;
+        }
+
+        if (!isStepNode(targetNode)) {
+          return false;
+        }
+
+        if (targetInputKey === 'if') {
+          if (sourceEffectiveType === 'property') {
+            return sourceHandle === RELATIONSHIP_PROPERTY_OUTPUT_HANDLE;
+          }
+          if (sourceEffectiveType === 'step') {
+            return Boolean(
+              fromOutputHandleId(sourceHandle) &&
+                (sourceNode.data as StepNodeData).stepId,
+            );
+          }
+          return false;
+        }
+
+        const inputProperties = (
+          (targetNode.data as StepNodeData).schema as any
+        )?.input?.properties as Record<string, unknown> | undefined;
+        const inputKeys =
+          inputProperties && Object.keys(inputProperties).length > 0
+            ? Object.keys(inputProperties)
+            : Object.keys((targetNode.data as StepNodeData).formData ?? {});
+        if (!inputKeys.includes(targetInputKey)) {
+          return false;
+        }
+
+        if (sourceEffectiveType === 'property') {
+          return sourceHandle === RELATIONSHIP_PROPERTY_OUTPUT_HANDLE;
+        }
+
+        if (sourceEffectiveType === 'step') {
+          const outputKey = fromOutputHandleId(sourceHandle);
+          if (!outputKey || !(sourceNode.data as StepNodeData).stepId) {
+            return false;
+          }
+          const sourceOutputProperties = (
+            (sourceNode.data as StepNodeData).schema as any
+          )?.output?.properties as Record<string, unknown> | undefined;
+          return Boolean(
+            sourceOutputProperties &&
+              Object.prototype.hasOwnProperty.call(
+                sourceOutputProperties,
+                outputKey,
+              ),
+          );
+        }
+
+        return false;
+      }
 
       const sourceOutgoingCount = countOutgoingConnections(edges, source);
       const targetIncomingCount = countIncomingConnections(edges, target);
@@ -221,9 +451,13 @@ export const useEditorHandlers = ({
 
   const onConnect = useCallback(
     (connection: Connection) => {
+      if (applyRelationshipConnection(connection)) {
+        onRelationshipConnectionDrawn?.();
+        return;
+      }
       setEdges(eds => addEdge(connection, eds));
     },
-    [setEdges],
+    [setEdges, applyRelationshipConnection, onRelationshipConnectionDrawn],
   );
 
   const handleNodesDelete = useCallback(
@@ -242,15 +476,27 @@ export const useEditorHandlers = ({
           const nodeId = deletedNode.id;
           const incomingEdges = edges.filter(e => e.target === nodeId);
           const outgoingEdges = edges.filter(e => e.source === nodeId);
-          const parentIds = incomingEdges.map(e => e.source);
           const childIds = outgoingEdges.map(e => e.target);
 
-          const newEdges = parentIds.flatMap(parentId =>
-            childIds.map(childId => ({
-              id: `${parentId}-${childId}`,
-              source: parentId,
-              target: childId,
-            })),
+          const newEdges = incomingEdges.flatMap(incomingEdge =>
+            outgoingEdges.map(outgoingEdge => {
+              const parentId = incomingEdge.source;
+              const childId = outgoingEdge.target;
+              const parentNode = nodes.find(n => n.id === parentId);
+              const childNode = nodes.find(n => n.id === childId);
+
+              return {
+                id: `${parentId}-${childId}`,
+                source: parentId,
+                target: childId,
+                sourceHandle:
+                  incomingEdge.sourceHandle ??
+                  (parentNode && isStepNode(parentNode) ? 'top' : undefined),
+                targetHandle:
+                  outgoingEdge.targetHandle ??
+                  (childNode && isStepNode(childNode) ? 'top' : undefined),
+              };
+            }),
           );
 
           setEdges(eds =>
@@ -271,7 +517,7 @@ export const useEditorHandlers = ({
         return remainingNodes;
       });
     },
-    [edges, setNodes, setEdges],
+    [edges, nodes, setNodes, setEdges],
   );
   const handleOnNodeClick = useCallback(
     (_: React.MouseEvent, node: Node<AllNodeData>) => {
@@ -312,8 +558,6 @@ export const useEditorHandlers = ({
 
   const handleNodesChange: OnNodesChange<Node<AllNodeData>> = useCallback(
     changes => {
-      // eslint-disable-next-line no-console
-      console.log('Nodes changes:', JSON.stringify(changes));
       const blockedTemplateRemovalIds = changes
         .filter(change => change.type === 'remove')
         .map(change => change.id)
@@ -496,6 +740,10 @@ export const useEditorHandlers = ({
       const sourceHandleId = fromHandle?.id ?? undefined;
 
       if (fromHandle && toHandle) {
+        return;
+      }
+
+      if (isRelationshipSourceHandleId(sourceHandleId)) {
         return;
       }
 
