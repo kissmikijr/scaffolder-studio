@@ -148,10 +148,16 @@ const StepNode = ({ selected, id, data, disabled = false }: StepNodeProps) => {
           height: 18,
           fontSize: '0.62rem',
           fontWeight: 700,
+          lineHeight: 1,
           backgroundColor: alpha(NodeTypeColors.step, 0.1),
           color: NodeTypeColors.step,
+          alignSelf: 'center',
+          margin: 0.5,
           '& .MuiChip-label': {
             px: 0.75,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           },
         }}
       />
