@@ -97,11 +97,11 @@ export const useEditorHandlers = ({
   const { screenToFlowPosition, getEdges } = useReactFlow();
   const [isShiftPressed, setIsShiftPressed] = useState(false);
   const nodesRef = useRef(nodes);
+  const edgesRef = useRef(edges);
   const blockedEdgeRemovalIdsRef = useRef<Set<string>>(new Set());
 
-  useEffect(() => {
-    nodesRef.current = nodes;
-  }, [nodes]);
+  nodesRef.current = nodes;
+  edgesRef.current = edges;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -234,8 +234,9 @@ export const useEditorHandlers = ({
         return false;
       }
 
-      const sourceNode = nodes.find(n => n.id === source);
-      const targetNode = nodes.find(n => n.id === target);
+      const currentNodes = nodesRef.current;
+      const sourceNode = currentNodes.find(n => n.id === source);
+      const targetNode = currentNodes.find(n => n.id === target);
 
       if (!sourceNode || !targetNode || !isStepNode(targetNode)) {
         return false;
@@ -304,7 +305,7 @@ export const useEditorHandlers = ({
 
       return true;
     },
-    [nodes, setNodes, buildRelationshipToken, mergeNunjucksToken],
+    [setNodes, buildRelationshipToken, mergeNunjucksToken],
   );
 
   const isValidConnection = useCallback<IsValidConnection<Edge>>(
@@ -314,8 +315,10 @@ export const useEditorHandlers = ({
         return false;
       }
 
-      const sourceNode = nodes.find(n => n.id === source);
-      const targetNode = nodes.find(n => n.id === target);
+      const currentNodes = nodesRef.current;
+      const currentEdges = edgesRef.current;
+      const sourceNode = currentNodes.find(n => n.id === source);
+      const targetNode = currentNodes.find(n => n.id === target);
       if (!sourceNode || !targetNode) {
         return false;
       }
@@ -408,15 +411,25 @@ export const useEditorHandlers = ({
         return false;
       }
 
-      const sourceOutgoingCount = countOutgoingConnections(edges, source);
-      const targetIncomingCount = countIncomingConnections(edges, target);
+      const sourceOutgoingCount = countOutgoingConnections(
+        currentEdges,
+        source,
+      );
+      const targetIncomingCount = countIncomingConnections(
+        currentEdges,
+        target,
+      );
 
       if (!hasIncomingCapacity(targetEffectiveType, targetIncomingCount)) {
         return false;
       }
 
       if (isTemplateNode(sourceNode)) {
-        const templateSlots = getTemplateOutgoingSlots(source, edges, nodes);
+        const templateSlots = getTemplateOutgoingSlots(
+          source,
+          currentEdges,
+          currentNodes,
+        );
         return (
           (targetEffectiveType === 'step' && !templateSlots.hasStep) ||
           (targetEffectiveType === 'parameters' &&
@@ -446,7 +459,7 @@ export const useEditorHandlers = ({
 
       return false;
     },
-    [edges, nodes],
+    [],
   );
 
   const onConnect = useCallback(
@@ -467,6 +480,9 @@ export const useEditorHandlers = ({
         return;
       }
 
+      const currentEdges = edgesRef.current;
+      const currentNodes = nodesRef.current;
+
       setNodes(nds => {
         const remainingNodes = nds.filter(
           n => !deletableNodes.some(dn => dn.id === n.id),
@@ -474,16 +490,16 @@ export const useEditorHandlers = ({
 
         deletableNodes.forEach(deletedNode => {
           const nodeId = deletedNode.id;
-          const incomingEdges = edges.filter(e => e.target === nodeId);
-          const outgoingEdges = edges.filter(e => e.source === nodeId);
+          const incomingEdges = currentEdges.filter(e => e.target === nodeId);
+          const outgoingEdges = currentEdges.filter(e => e.source === nodeId);
           const childIds = outgoingEdges.map(e => e.target);
 
           const newEdges = incomingEdges.flatMap(incomingEdge =>
             outgoingEdges.map(outgoingEdge => {
               const parentId = incomingEdge.source;
               const childId = outgoingEdge.target;
-              const parentNode = nodes.find(n => n.id === parentId);
-              const childNode = nodes.find(n => n.id === childId);
+              const parentNode = currentNodes.find(n => n.id === parentId);
+              const childNode = currentNodes.find(n => n.id === childId);
 
               return {
                 id: `${parentId}-${childId}`,
@@ -517,7 +533,7 @@ export const useEditorHandlers = ({
         return remainingNodes;
       });
     },
-    [edges, nodes, setNodes, setEdges],
+    [setNodes, setEdges],
   );
   const handleOnNodeClick = useCallback(
     (_: React.MouseEvent, node: Node<AllNodeData>) => {
@@ -558,17 +574,19 @@ export const useEditorHandlers = ({
 
   const handleNodesChange: OnNodesChange<Node<AllNodeData>> = useCallback(
     changes => {
+      const currentNodes = nodesRef.current;
+      const currentEdges = edgesRef.current;
       const blockedTemplateRemovalIds = changes
         .filter(change => change.type === 'remove')
         .map(change => change.id)
         .filter(id => {
-          const node = nodes.find(n => n.id === id);
+          const node = currentNodes.find(n => n.id === id);
           return Boolean(node && isTemplateNode(node));
         });
 
       if (blockedTemplateRemovalIds.length > 0) {
         blockedEdgeRemovalIdsRef.current = new Set(
-          edges
+          currentEdges
             .filter(
               edge =>
                 blockedTemplateRemovalIds.includes(edge.source) ||
@@ -580,16 +598,16 @@ export const useEditorHandlers = ({
 
       let processedChanges = changes.filter(change => {
         if (change.type !== 'remove') return true;
-        const node = nodes.find(n => n.id === change.id);
+        const node = currentNodes.find(n => n.id === change.id);
         return !node || !isTemplateNode(node);
       });
 
       if (isShiftPressed) {
         processedChanges = processedChanges.map(change => {
           if (change.type === 'position' && change.position) {
-            const node = nodes.find(n => n.id === change.id);
+            const node = currentNodes.find(n => n.id === change.id);
             if (node) {
-              const connectedEdges = edges.filter(
+              const connectedEdges = currentEdges.filter(
                 e => e.source === node.id || e.target === node.id,
               );
 
@@ -597,7 +615,9 @@ export const useEditorHandlers = ({
                 const edge = connectedEdges[0];
                 const isSource = edge.source === node.id;
                 const connectedNodeId = isSource ? edge.target : edge.source;
-                const connectedNode = nodes.find(n => n.id === connectedNodeId);
+                const connectedNode = currentNodes.find(
+                  n => n.id === connectedNodeId,
+                );
 
                 if (connectedNode) {
                   // Handle offset mapping (normalized 0-1)
@@ -674,7 +694,7 @@ export const useEditorHandlers = ({
 
       setNodes(oldNodes => applyNodeChanges(processedChanges, oldNodes));
     },
-    [setNodes, isShiftPressed, nodes, edges],
+    [setNodes, isShiftPressed],
   );
 
   useEffect(() => {
@@ -716,7 +736,7 @@ export const useEditorHandlers = ({
         if (selected) {
           setSelectedEdge(selected);
           setSelectedNode(undefined);
-        } else if (!nodes.some(n => n.selected)) {
+        } else if (!nodesRef.current.some(n => n.selected)) {
           // If no edge and no node is selected, EdgeSideContent will be empty.
           // But our useEffect normally picks a fallback node.
           setSelectedEdge(undefined);
@@ -724,7 +744,7 @@ export const useEditorHandlers = ({
         return updatedEdges;
       });
     },
-    [setEdges, setSelectedEdge, setSelectedNode, nodes],
+    [setEdges, setSelectedEdge, setSelectedNode],
   );
 
   const onConnectStart: OnConnectStart = useCallback(
@@ -805,6 +825,7 @@ export const useEditorHandlers = ({
         const id = e.dataTransfer.getData('application/reactflow/id');
         const version = e.dataTransfer.getData('application/reactflow/version');
         const refType = e.dataTransfer.getData('application/reactflow/refType');
+        const currentNodes = nodesRef.current;
 
         if (id) {
           const position = screenToFlowPosition({
@@ -818,7 +839,7 @@ export const useEditorHandlers = ({
 
           // If it's a property prefab, check if dropped on a parameters node
           if (refType === 'property') {
-            const parentNode = nodes.find(
+            const parentNode = currentNodes.find(
               n =>
                 isParametersNode(n) &&
                 position.x >= n.position.x &&
@@ -855,7 +876,7 @@ export const useEditorHandlers = ({
         }
       }
     },
-    [screenToFlowPosition, setNodes, onChange, nodes],
+    [screenToFlowPosition, setNodes, onChange],
   );
 
   const onDragOver = useCallback((e: React.DragEvent) => {

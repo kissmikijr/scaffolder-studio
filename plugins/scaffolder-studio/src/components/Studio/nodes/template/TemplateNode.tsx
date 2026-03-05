@@ -1,14 +1,14 @@
-import { NodeProps, Position, Node, useEdges, useNodes } from '@xyflow/react';
+import { NodeProps, Position, Node } from '@xyflow/react';
 import { Handle } from '../../components/Handle';
 import { FadableContainer } from '../../components/FadableContainer';
 import { Typography, useTheme, Box, Divider } from '@mui/material';
-import { AllNodeData, TemplateNodeData } from '../../types';
+import { TemplateNodeData } from '../../types';
 import { MarkdownContent } from '@backstage/core-components';
 import { NodeComment } from '../NodeComment';
 import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
 import { SELECTED_BORDER_COLOR } from '../../styles';
-import { getTemplateOutgoingSlots } from '../../utils/connectionLimits';
+import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
 
 const TemplateNode = ({
   id,
@@ -16,9 +16,8 @@ const TemplateNode = ({
   data,
 }: NodeProps<Node<TemplateNodeData>>) => {
   const theme = useTheme();
-  const edges = useEdges();
-  const nodes = useNodes<Node<AllNodeData>>();
-  const templateSlots = getTemplateOutgoingSlots(id, edges, nodes);
+  const { getTemplateOutgoingSlots } = useGraphPerformanceContext();
+  const templateSlots = getTemplateOutgoingSlots(id);
   return (
     <Box
       sx={{

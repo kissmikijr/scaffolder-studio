@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Box, useTheme, Typography } from '@mui/material';
-import { Node, NodeProps, Position, useEdges } from '@xyflow/react';
+import { Node, NodeProps, Position } from '@xyflow/react';
 import { PrefabInstanceNodeData } from '../../types';
 import {
   Prefab,
@@ -18,11 +18,10 @@ import { Handle } from '../../components/Handle';
 import { getBackgroundColor } from '../../utils/colorUtils';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import {
-  countIncomingConnections,
-  countOutgoingConnections,
   hasIncomingCapacity,
   hasOutgoingCapacity,
 } from '../../utils/connectionLimits';
+import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
 
 type LoadingState = 'loading' | 'loaded' | 'error' | 'not-found';
 
@@ -36,16 +35,17 @@ const PrefabInstanceNode = ({
   const theme = useTheme();
   const libraryApi = useApi(prefabLibraryApiRef);
   const personalApi = useApi(prefabsApiRef);
-  const edges = useEdges();
+  const { getIncomingConnectionCount, getOutgoingConnectionCount } =
+    useGraphPerformanceContext();
   const [prefab, setPrefab] = useState<Prefab>();
   const [loadingState, setLoadingState] = useState<LoadingState>('loading');
   const canAcceptIncoming = hasIncomingCapacity(
     'prefab',
-    countIncomingConnections(edges, id),
+    getIncomingConnectionCount(id),
   );
   const canAcceptOutgoing = hasOutgoingCapacity(
     'prefab',
-    countOutgoingConnections(edges, id),
+    getOutgoingConnectionCount(id),
   );
 
   useEffect(() => {

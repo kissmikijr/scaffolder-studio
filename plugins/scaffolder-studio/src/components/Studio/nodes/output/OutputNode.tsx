@@ -1,4 +1,4 @@
-import { NodeProps, Position, Node, useEdges } from '@xyflow/react';
+import { NodeProps, Position, Node } from '@xyflow/react';
 import { Handle } from '../../components/Handle';
 import { Box, Typography, useTheme, Stack } from '@mui/material';
 import LaunchIcon from '@mui/icons-material/Launch';
@@ -7,10 +7,8 @@ import { OutputNodeData } from '../../types';
 import { NodeComment } from '../NodeComment';
 import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { SELECTED_BORDER_COLOR } from '../../styles';
-import {
-  countIncomingConnections,
-  hasIncomingCapacity,
-} from '../../utils/connectionLimits';
+import { hasIncomingCapacity } from '../../utils/connectionLimits';
+import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
 
 const OutputNode = ({
   id,
@@ -19,10 +17,10 @@ const OutputNode = ({
   disabled = false,
 }: NodeProps<Node<OutputNodeData>> & { disabled?: boolean }) => {
   const theme = useTheme();
-  const edges = useEdges();
+  const { getIncomingConnectionCount } = useGraphPerformanceContext();
   const canAcceptIncoming = hasIncomingCapacity(
     'templateOutput',
-    countIncomingConnections(edges, id),
+    getIncomingConnectionCount(id),
   );
   const renderContent = () => {
     const linksCount = data?.links?.length || 0;

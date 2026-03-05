@@ -1,11 +1,5 @@
 import { useMemo } from 'react';
-import {
-  NodeProps,
-  Position,
-  Node,
-  useEdges,
-  Handle as FlowHandle,
-} from '@xyflow/react';
+import { NodeProps, Position, Node, Handle as FlowHandle } from '@xyflow/react';
 import { Handle } from '../../components/Handle';
 import { Box, useTheme, Chip, Typography, Divider, alpha } from '@mui/material';
 import { PropertyNodeData } from '../../types';
@@ -15,11 +9,10 @@ import { RELATIONSHIP_PROPERTY_OUTPUT_HANDLE } from '../../hooks/useDependencyEd
 
 import { SELECTED_BORDER_COLOR } from '../../styles';
 import {
-  countIncomingConnections,
-  countOutgoingConnections,
   hasIncomingCapacity,
   hasOutgoingCapacity,
 } from '../../utils/connectionLimits';
+import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
 
 export const PropertyNodeContent = ({
   id,
@@ -28,14 +21,15 @@ export const PropertyNodeContent = ({
   disabled = false,
 }: NodeProps<Node<PropertyNodeData>> & { disabled?: boolean }) => {
   const theme = useTheme();
-  const edges = useEdges();
+  const { getIncomingConnectionCount, getOutgoingConnectionCount } =
+    useGraphPerformanceContext();
   const canAcceptIncoming = useMemo(
-    () => hasIncomingCapacity('property', countIncomingConnections(edges, id)),
-    [edges, id],
+    () => hasIncomingCapacity('property', getIncomingConnectionCount(id)),
+    [getIncomingConnectionCount, id],
   );
   const canAcceptOutgoing = useMemo(
-    () => hasOutgoingCapacity('property', countOutgoingConnections(edges, id)),
-    [edges, id],
+    () => hasOutgoingCapacity('property', getOutgoingConnectionCount(id)),
+    [getOutgoingConnectionCount, id],
   );
   const relationshipAccent =
     theme.palette.mode === 'light'
@@ -261,7 +255,7 @@ export const PropertyNodeContent = ({
               height: 10,
               borderRadius: '50%',
               border: `1px solid ${alpha(relationshipAccent, 0.95)}`,
-              backgroundColor: alpha(relationshipAccent, 0.78),
+              backgroundColor: relationshipAccent,
               right: 0,
               top: '28%',
               transform: 'translate(50%, -50%)',

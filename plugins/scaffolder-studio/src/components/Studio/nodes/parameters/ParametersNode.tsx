@@ -1,10 +1,4 @@
-import {
-  NodeProps,
-  Position,
-  Node,
-  NodeResizer,
-  useEdges,
-} from '@xyflow/react';
+import { NodeProps, Position, Node, NodeResizer } from '@xyflow/react';
 import { Handle } from '../../components/Handle';
 import { Box, useTheme, alpha } from '@mui/material';
 import { ParametersNodeData } from '../../types';
@@ -12,11 +6,10 @@ import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
 import { SELECTED_BORDER_COLOR } from '../../styles';
 import {
-  countIncomingConnections,
-  countOutgoingConnections,
   hasIncomingCapacity,
   hasOutgoingCapacity,
 } from '../../utils/connectionLimits';
+import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
 
 const ParametersNode = ({
   id,
@@ -24,14 +17,15 @@ const ParametersNode = ({
   data,
 }: NodeProps<Node<ParametersNodeData>>) => {
   const theme = useTheme();
-  const edges = useEdges();
+  const { getIncomingConnectionCount, getOutgoingConnectionCount } =
+    useGraphPerformanceContext();
   const canAcceptIncoming = hasIncomingCapacity(
     'parameters',
-    countIncomingConnections(edges, id),
+    getIncomingConnectionCount(id),
   );
   const canAcceptOutgoing = hasOutgoingCapacity(
     'parameters',
-    countOutgoingConnections(edges, id),
+    getOutgoingConnectionCount(id),
   );
   const isLightTheme = theme.palette.mode === 'light';
   const parametersAccent = isLightTheme ? '#14B8A6' : NodeTypeColors.parameters;

@@ -1,11 +1,9 @@
-import { useMemo } from 'react';
 import { Box, styled, useTheme } from '@mui/material';
 import { getColorForType } from '../../utils/colorUtils';
 import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import {
   findAllTokens,
   parseTokenContent,
-  createParameterTypeMap,
   TokenMatch,
 } from '../../utils/tokenParser';
 
@@ -26,21 +24,15 @@ const Token = styled('span')<{ color: string }>(({ color }) => ({
 
 interface ExpressionViewerProps {
   value: string;
-  parameters?: Array<{ name: string; type: string }>;
-  outputs?: Array<{ id: string; outputs: any }>;
+  getParameterType?: (parameterName: string) => string | undefined;
   displayMode?: 'compact' | 'canonical';
 }
 
 export const ExpressionViewer = ({
   value,
-  parameters = [],
-  outputs: _outputs = [],
+  getParameterType = () => undefined,
   displayMode = 'compact',
 }: ExpressionViewerProps) => {
-  const parameterTypeMap = useMemo(
-    () => createParameterTypeMap(parameters),
-    [parameters],
-  );
   const theme = useTheme();
 
   if (!value) return null;
@@ -72,7 +64,7 @@ export const ExpressionViewer = ({
       if (parsed.type === 'step' && parsed.stepId && parsed.outputName) {
         color = NodeTypeColors.step;
       } else if (parsed.type === 'parameter' && parsed.paramName) {
-        const paramType = parameterTypeMap.get(parsed.paramName);
+        const paramType = getParameterType(parsed.paramName);
         color = getColorForType(paramType);
       }
     }

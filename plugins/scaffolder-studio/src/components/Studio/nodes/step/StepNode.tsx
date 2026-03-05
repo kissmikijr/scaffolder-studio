@@ -1,21 +1,8 @@
 import { useMemo } from 'react';
-import {
-  NodeProps,
-  Position,
-  Node,
-  useNodes,
-  useEdges,
-  Handle as FlowHandle,
-} from '@xyflow/react';
+import { NodeProps, Position, Node, Handle as FlowHandle } from '@xyflow/react';
 import { Box, useTheme, Tooltip, Typography, alpha, Chip } from '@mui/material';
 import { Handle } from '../../components/Handle';
-import {
-  StepNodeData,
-  isPropertyNode,
-  isStepNode,
-  PropertyNodeData,
-  AllNodeData,
-} from '../../types';
+import { StepNodeData } from '../../types';
 import { ExpressionViewer } from './ExpressionViewer';
 import { FadableContainer } from '../../components/FadableContainer';
 import { NodeComment } from '../NodeComment';
@@ -24,8 +11,6 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { SELECTED_BORDER_COLOR } from '../../styles';
 import {
-  countIncomingConnections,
-  countOutgoingConnections,
   hasIncomingCapacity,
   hasOutgoingCapacity,
 } from '../../utils/connectionLimits';
@@ -34,11 +19,10 @@ import {
   toInputHandleId,
   toOutputHandleId,
 } from '../../hooks/useDependencyEdges';
+import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
 
 type StepNodeProps = NodeProps<Node<StepNodeData>> & {
   disabled?: boolean;
-  forceIoExpanded?: boolean;
-  relationshipMode?: boolean;
 };
 
 const relationshipHandleStyle = {
@@ -46,7 +30,7 @@ const relationshipHandleStyle = {
   height: 10,
   borderRadius: '50%',
   border: `1px solid ${alpha(NodeTypeColors.step, 0.8)}`,
-  backgroundColor: alpha(NodeTypeColors.step, 0.72),
+  backgroundColor: NodeTypeColors.step,
   boxShadow: `0 0 0 3px ${alpha(NodeTypeColors.step, 0.18)}`,
   pointerEvents: 'all' as const,
   cursor: 'crosshair',
@@ -64,44 +48,24 @@ const inferTypeFromValue = (value: unknown): string => {
 const sanitizeTestId = (value: string): string =>
   value.replace(/[^a-zA-Z0-9_-]/g, '_');
 
-const StepNode = ({
-  selected,
-  id,
-  data,
-  disabled = false,
-  forceIoExpanded = false,
-  relationshipMode = false,
-}: StepNodeProps) => {
+const StepNode = ({ selected, id, data, disabled = false }: StepNodeProps) => {
   const theme = useTheme();
-  const nodes = useNodes<Node<AllNodeData>>();
-  const edges = useEdges();
+  const {
+    relationshipMode,
+    isStepRelated,
+    getIncomingConnectionCount,
+    getOutgoingConnectionCount,
+    getParameterType,
+  } = useGraphPerformanceContext();
 
   const canAcceptIncoming = hasIncomingCapacity(
     'step',
-    countIncomingConnections(edges, id),
+    getIncomingConnectionCount(id),
   );
   const canAcceptOutgoing = hasOutgoingCapacity(
     'step',
-    countOutgoingConnections(edges, id),
+    getOutgoingConnectionCount(id),
   );
-
-  const parameters = useMemo(() => {
-    return nodes
-      .filter((n): n is Node<PropertyNodeData> => isPropertyNode(n))
-      .map(n => ({
-        name: n.data.name,
-        type: n.data.variableType,
-      }));
-  }, [nodes]);
-
-  const outputs = useMemo(() => {
-    return nodes
-      .filter((n): n is Node<StepNodeData> => isStepNode(n) && n.id !== id)
-      .map(n => ({
-        id: n.data.stepId || '',
-        outputs: (n.data.schema as any)?.output?.properties,
-      }));
-  }, [nodes, id]);
 
   const inputSchemaProperties =
     ((data.schema as any)?.input?.properties as
@@ -139,7 +103,7 @@ const StepNode = ({
   const isLightTheme = theme.palette.mode === 'light';
 
   const persistedExpanded = Boolean(data.uiState?.ioExpanded);
-  const isForceExpanded = Boolean(forceIoExpanded);
+  const isForceExpanded = relationshipMode && isStepRelated(id);
   const isExpanded = hasIoContent && (persistedExpanded || isForceExpanded);
 
   const ioSectionBackgroundColor = isLightTheme
@@ -556,8 +520,7 @@ const StepNode = ({
               <Box sx={{ flex: 1, minWidth: 0, pl: 0.1 }}>
                 <ExpressionViewer
                   value={data.if}
-                  parameters={parameters}
-                  outputs={outputs}
+                  getParameterType={getParameterType}
                 />
               </Box>
             </Tooltip>

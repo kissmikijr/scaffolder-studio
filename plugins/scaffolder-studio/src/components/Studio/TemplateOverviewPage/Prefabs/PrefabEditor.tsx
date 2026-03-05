@@ -215,6 +215,7 @@ export const PrefabEditor = () => {
       },
     ];
   }, [prefab]);
+  const prefabNodeTypes = useMemo(() => ({ prefabQueen: PrefabQueenNode }), []);
 
   const defaultDraftState = useMemo(
     () => ({
@@ -463,7 +464,7 @@ export const PrefabEditor = () => {
               fitView
               maxZoom={1}
               zoomOnScroll={false}
-              nodeTypes={{ prefabQueen: PrefabQueenNode }}
+              nodeTypes={prefabNodeTypes}
             />
           </Box>
           <Box

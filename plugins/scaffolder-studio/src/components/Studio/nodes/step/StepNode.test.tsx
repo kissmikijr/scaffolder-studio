@@ -2,6 +2,11 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ReactFlowProvider } from '@xyflow/react';
 import StepNode from './StepNode';
 import { ThemeProvider, createTheme } from '@mui/material';
+import {
+  GraphPerformanceContext,
+  GraphPerformanceContextValue,
+} from '../../GraphPerformanceContext';
+import { TemplateOutgoingSlots } from '../../utils/connectionLimits';
 
 class ResizeObserver {
   observe() {}
@@ -10,10 +15,35 @@ class ResizeObserver {
 }
 window.ResizeObserver = ResizeObserver;
 
-const renderWithProviders = (ui: React.ReactElement) => {
+const renderWithProviders = (
+  ui: React.ReactElement,
+  contextOverrides: Partial<GraphPerformanceContextValue> = {},
+) => {
+  const defaultSlots: TemplateOutgoingSlots = {
+    hasStep: false,
+    hasParameters: false,
+    hasOutput: false,
+    hasAny: true,
+  };
+
+  const defaultContextValue: GraphPerformanceContextValue = {
+    relationshipMode: false,
+    isStepRelated: () => false,
+    getIncomingConnectionCount: () => 0,
+    getOutgoingConnectionCount: () => 0,
+    getTemplateOutgoingSlots: () => defaultSlots,
+    getParameterType: () => undefined,
+  };
+
   return render(
     <ThemeProvider theme={createTheme()}>
-      <ReactFlowProvider>{ui}</ReactFlowProvider>
+      <ReactFlowProvider>
+        <GraphPerformanceContext.Provider
+          value={{ ...defaultContextValue, ...contextOverrides }}
+        >
+          {ui}
+        </GraphPerformanceContext.Provider>
+      </ReactFlowProvider>
     </ThemeProvider>,
   );
 };
@@ -108,13 +138,15 @@ describe('StepNode', () => {
     renderWithProviders(
       <StepNode
         {...(defaultProps as any)}
-        forceIoExpanded
-        relationshipMode
         data={{
           ...defaultProps.data,
           uiState: { ioExpanded: false },
         }}
       />,
+      {
+        relationshipMode: true,
+        isStepRelated: (stepNodeId: string) => stepNodeId === 'test-node-1',
+      },
     );
 
     expect(screen.getByTestId('step-node-io-section')).toBeInTheDocument();

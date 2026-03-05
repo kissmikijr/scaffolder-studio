@@ -140,6 +140,11 @@ export type RelationshipGraphResult = {
   relatedStepNodeIds: Set<string>;
 };
 
+const EMPTY_RELATIONSHIP_GRAPH: RelationshipGraphResult = {
+  relationshipEdges: [],
+  relatedStepNodeIds: new Set<string>(),
+};
+
 export const computeRelationshipGraph = (
   nodes: Node<AllNodeData>[],
 ): RelationshipGraphResult => {
@@ -292,5 +297,11 @@ export const computeDependencyEdges = (nodes: Node<AllNodeData>[]): Edge[] =>
 
 export const useDependencyEdges = (
   nodes: Node<AllNodeData>[],
+  enabled = true,
 ): RelationshipGraphResult =>
-  useMemo(() => computeRelationshipGraph(nodes), [nodes]);
+  useMemo(() => {
+    if (!enabled) {
+      return EMPTY_RELATIONSHIP_GRAPH;
+    }
+    return computeRelationshipGraph(nodes);
+  }, [enabled, nodes]);

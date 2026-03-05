@@ -26,7 +26,7 @@ import CloudOffOutlinedIcon from '@mui/icons-material/CloudOffOutlined';
 import SyncRoundedIcon from '@mui/icons-material/SyncRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import { useParams, useNavigate } from 'react-router-dom';
-import { createNodeTypes } from './nodes/nodeTypes';
+import { nodeTypes } from './nodes/nodeTypes';
 import { defaultEdgeOptions, edgeTypes } from './edges';
 import { AllNodeData } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { ScaffolderAction } from '@kissmiklosjr/plugin-scaffolder-studio-common';
@@ -58,10 +58,20 @@ import {
   useThumbnail,
   useDependencyEdges,
   useEditorKeyboardShortcuts,
+  useGraphIndexes,
 } from './hooks';
 import { alertApiRef } from '@backstage/core-plugin-api';
 import { PublishDialog } from './TemplateOverviewPage/components/PublishDialog';
 import type { TemplateSyncStatus } from './hooks/useTemplateDraftPersistence';
+import {
+  GraphPerformanceContext,
+  GraphPerformanceContextValue,
+} from './GraphPerformanceContext';
+import {
+  getIncomingConnectionCountFromIndex,
+  getOutgoingConnectionCountFromIndex,
+  getTemplateOutgoingSlotsFromIndex,
+} from './utils/connectionLimits';
 
 const SidePanelToggleIcon = ({ collapsed }: { collapsed: boolean }) => (
   <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
@@ -203,20 +213,39 @@ const ScaffolderStudioEditor = ({
   const isPanning = usePanning();
   const project = useProjectSync({ id, nodes, setViewportState });
 
-  const { relationshipEdges, relatedStepNodeIds } = useDependencyEdges(nodes);
-  const relatedStepNodeIdsRef = useRef<Set<string>>(new Set());
-  relatedStepNodeIdsRef.current = relatedStepNodeIds;
-  const shouldForceExpandStep = useCallback(
-    (stepNodeId: string) => relatedStepNodeIdsRef.current.has(stepNodeId),
-    [],
+  const { relationshipEdges, relatedStepNodeIds } = useDependencyEdges(
+    nodes,
+    showRelationshipEdges,
   );
-  const flowNodeTypes = useMemo(
-    () =>
-      createNodeTypes({
-        relationshipMode: showRelationshipEdges,
-        shouldForceExpandStep,
-      }),
-    [showRelationshipEdges, shouldForceExpandStep],
+  const graphIndexes = useGraphIndexes(nodes, edges);
+  const graphPerformanceContextValue = useMemo<GraphPerformanceContextValue>(
+    () => ({
+      relationshipMode: showRelationshipEdges,
+      isStepRelated: (stepNodeId: string) => relatedStepNodeIds.has(stepNodeId),
+      getIncomingConnectionCount: (nodeId: string) =>
+        getIncomingConnectionCountFromIndex(
+          graphIndexes.connectionIndex,
+          nodeId,
+        ),
+      getOutgoingConnectionCount: (nodeId: string) =>
+        getOutgoingConnectionCountFromIndex(
+          graphIndexes.connectionIndex,
+          nodeId,
+        ),
+      getTemplateOutgoingSlots: (templateId: string) =>
+        getTemplateOutgoingSlotsFromIndex(
+          graphIndexes.connectionIndex,
+          templateId,
+        ),
+      getParameterType: (parameterName: string) =>
+        graphIndexes.parameterTypeByName.get(parameterName),
+    }),
+    [
+      graphIndexes.connectionIndex,
+      graphIndexes.parameterTypeByName,
+      relatedStepNodeIds,
+      showRelationshipEdges,
+    ],
   );
   const displayEdges = showRelationshipEdges
     ? [...edges, ...relationshipEdges]
@@ -736,39 +765,43 @@ const ScaffolderStudioEditor = ({
                 },
               }}
             >
-              <ReactFlow
-                onNodesChange={handleNodesChange}
-                onViewportChange={handleViewportChange}
-                edges={displayEdges}
-                nodes={nodes}
-                connectionRadius={42}
-                viewport={viewport}
-                panOnDrag={isPanning}
-                panOnScroll
-                zoomOnPinch
-                zoomOnScroll={false}
-                nodesDraggable={!isPanning}
-                elementsSelectable={!isPanning}
-                selectionOnDrag={!isPanning}
-                zoomActivationKeyCode={null}
-                maxZoom={1.5}
-                minZoom={0.3}
-                onEdgesChange={handleEdgesChange}
-                nodeTypes={flowNodeTypes}
-                edgeTypes={edgeTypes}
-                defaultEdgeOptions={defaultEdgeOptions}
-                onConnect={onConnect}
-                isValidConnection={isValidConnection}
-                onConnectStart={onConnectStart}
-                onConnectEnd={onConnectEnd}
-                onNodesDelete={handleNodesDelete}
-                onNodeClick={handleOnNodeClick}
-                onPaneClick={onPaneClick}
-                onNodeContextMenu={onNodeContextMenu}
-                onNodeDragStop={onNodeDragStop}
+              <GraphPerformanceContext.Provider
+                value={graphPerformanceContextValue}
               >
-                <Background gap={40} />
-              </ReactFlow>
+                <ReactFlow
+                  onNodesChange={handleNodesChange}
+                  onViewportChange={handleViewportChange}
+                  edges={displayEdges}
+                  nodes={nodes}
+                  connectionRadius={42}
+                  viewport={viewport}
+                  panOnDrag={isPanning}
+                  panOnScroll
+                  zoomOnPinch
+                  zoomOnScroll={false}
+                  nodesDraggable={!isPanning}
+                  elementsSelectable={!isPanning}
+                  selectionOnDrag={!isPanning}
+                  zoomActivationKeyCode={null}
+                  maxZoom={1.5}
+                  minZoom={0.3}
+                  onEdgesChange={handleEdgesChange}
+                  nodeTypes={nodeTypes}
+                  edgeTypes={edgeTypes}
+                  defaultEdgeOptions={defaultEdgeOptions}
+                  onConnect={onConnect}
+                  isValidConnection={isValidConnection}
+                  onConnectStart={onConnectStart}
+                  onConnectEnd={onConnectEnd}
+                  onNodesDelete={handleNodesDelete}
+                  onNodeClick={handleOnNodeClick}
+                  onPaneClick={onPaneClick}
+                  onNodeContextMenu={onNodeContextMenu}
+                  onNodeDragStop={onNodeDragStop}
+                >
+                  <Background gap={40} />
+                </ReactFlow>
+              </GraphPerformanceContext.Provider>
               <Box
                 sx={{
                   position: 'fixed',
