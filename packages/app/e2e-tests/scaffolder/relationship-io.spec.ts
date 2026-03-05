@@ -151,4 +151,37 @@ test.describe('Scaffolder Studio - Relationship I/O', () => {
     expect(yaml).not.toContain('uiState');
     expect(yaml).not.toContain('ioExpanded');
   });
+
+  test('legacy manual parameter tokens are updated when property is renamed', async () => {
+    await listPage.goto();
+    await listPage.createNewTemplate();
+    await editorPage.verifyLoaded();
+    await editorPage.fitView();
+
+    await editorPage.clickAddParametersToolbarButton();
+    await editorPage.configureParametersNode({ title: 'Input Params' });
+    await editorPage.selectNode('Input Params');
+    await editorPage.clickAddPropertyToolbarButton();
+    await editorPage.configureProperty('repoUrl', 'string');
+
+    await editorPage.addStepAndSelectAction('debug:log');
+    await editorPage.configureStep('build', 'Build', {
+      message: '${{ parameters.repoUrl | lower',
+    });
+
+    // Rename on the property node side panel to exercise legacy token rewrite
+    // (no relationship refs were created by drag handles in this flow).
+    await editorPage.fitView();
+    await editorPage.selectNode('repoUrl');
+    await editorPage.configureProperty('repositoryUrl', 'string');
+
+    await editorPage.goToYamlTab();
+    const yaml = await editorPage.getYamlContent();
+
+    expect(yaml).toContain('repositoryUrl:');
+    expect(yaml).toMatch(
+      /message:\s*['"]?\$\{\{\s*parameters\.repositoryUrl\s*\|\s*lower\s*\}\}['"]?/,
+    );
+    expect(yaml).not.toContain('parameters.repoUrl');
+  });
 });

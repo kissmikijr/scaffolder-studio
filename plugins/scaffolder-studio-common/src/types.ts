@@ -44,6 +44,7 @@ export type StepNodeData = {
   schema?: Record<string, unknown>;
   formData: Record<string, unknown>;
   if: string;
+  relationshipRefs?: StepRelationshipRef[];
   description?: string;
   comment?: string;
   uiState?: {
@@ -57,6 +58,7 @@ export type StepNodeData = {
       | 'stepId'
       | 'if'
       | 'formData'
+      | 'relationshipRefs'
       | 'schema'
       | 'description'
       | 'comment'
@@ -64,6 +66,14 @@ export type StepNodeData = {
     >,
   ) => void;
   customYamlData?: Record<string, any>;
+};
+
+export type StepRelationshipRef = {
+  sourceNodeId: string;
+  sourceKind: 'property' | 'stepOutput';
+  targetField: string;
+  outputKey?: string;
+  lastRenderedToken?: string;
 };
 
 // Union type for all node data types

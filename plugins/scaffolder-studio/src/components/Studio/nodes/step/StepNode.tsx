@@ -480,56 +480,52 @@ const StepNode = ({ selected, id, data, disabled = false }: StepNodeProps) => {
           )}
         </Box>
 
-        <Box
-          data-testid="step-node-input-row-if"
-          sx={{
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            gap: 1,
-            minHeight: 24,
-            pl: 1,
-            pr: 0.5,
-            py: 0.55,
-            borderRadius: '8px',
-            backgroundColor: ioRowBackgroundColor,
-            border: ioRowBorder,
-          }}
-        >
-          <FlowHandle
-            id={RELATIONSHIP_IF_INPUT_HANDLE}
-            type="target"
-            position={Position.Left}
-            style={{
-              ...relationshipHandleStyle,
-              left: 0,
-              top: '50%',
-              transform: 'translate(-50%, -50%)',
+        {data.actionId && (
+          <Box
+            data-testid="step-node-input-row-if"
+            sx={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              gap: 1,
+              minHeight: 24,
+              pl: 1,
+              pr: 0.5,
+              py: 0.55,
+              borderRadius: '8px',
+              backgroundColor: ioRowBackgroundColor,
+              border: ioRowBorder,
             }}
-          />
-
-          <Typography
-            sx={{ fontSize: '0.72rem', fontWeight: 600, flexShrink: 0 }}
           >
-            if
-          </Typography>
+            <FlowHandle
+              id={RELATIONSHIP_IF_INPUT_HANDLE}
+              type="target"
+              position={Position.Left}
+              style={{
+                ...relationshipHandleStyle,
+                left: 0,
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+              }}
+            />
 
-          {data.if ? (
-            <Tooltip title={data.if} placement="top" arrow>
+            <Typography
+              sx={{ fontSize: '0.72rem', fontWeight: 600, flexShrink: 0 }}
+            >
+              if
+            </Typography>
+
+            {data.if && (
               <Box sx={{ flex: 1, minWidth: 0, pl: 0.1 }}>
                 <ExpressionViewer
                   value={data.if}
                   getParameterType={getParameterType}
                 />
               </Box>
-            </Tooltip>
-          ) : (
-            <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary' }}>
-              No condition
-            </Typography>
-          )}
-        </Box>
+            )}
+          </Box>
+        )}
 
         {isExpanded && (
           <Box
@@ -688,12 +684,6 @@ const StepNode = ({ selected, id, data, disabled = false }: StepNodeProps) => {
             {outputFieldKeys.length === 0 && (
               <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>
                 No output fields found
-              </Typography>
-            )}
-
-            {relationshipMode && isForceExpanded && (
-              <Typography sx={{ fontSize: '0.65rem', color: 'text.secondary' }}>
-                Expanded by relationship mode
               </Typography>
             )}
           </Box>

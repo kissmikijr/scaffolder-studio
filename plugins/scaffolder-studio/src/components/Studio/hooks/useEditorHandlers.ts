@@ -15,6 +15,7 @@ import {
 } from '@xyflow/react';
 import {
   AllNodeData,
+  StepRelationshipRef,
   StepNodeData,
   isPrefabNode,
   isTemplateNode,
@@ -259,10 +260,41 @@ export const useEditorHandlers = ({
           }
 
           const stepData = node.data as StepNodeData;
+          const existingRefs = Array.isArray(stepData.relationshipRefs)
+            ? stepData.relationshipRefs
+            : [];
+          const outputKey = isStepNode(sourceNode)
+            ? fromOutputHandleId(sourceHandle)
+            : undefined;
+          const nextRef: StepRelationshipRef = {
+            sourceNodeId: sourceNode.id,
+            sourceKind: isPropertyNode(sourceNode) ? 'property' : 'stepOutput',
+            targetField: targetInputKey,
+            outputKey: outputKey || undefined,
+            lastRenderedToken: token,
+          };
+          const refIndex = existingRefs.findIndex(
+            ref =>
+              ref.sourceNodeId === nextRef.sourceNodeId &&
+              ref.sourceKind === nextRef.sourceKind &&
+              ref.targetField === nextRef.targetField &&
+              (ref.outputKey || undefined) === (nextRef.outputKey || undefined),
+          );
+          const nextRefs =
+            refIndex >= 0
+              ? existingRefs.map((ref, idx) =>
+                  idx === refIndex ? nextRef : ref,
+                )
+              : [...existingRefs, nextRef];
+          const refsChanged =
+            refIndex < 0 ||
+            existingRefs[refIndex].lastRenderedToken !==
+              nextRef.lastRenderedToken;
+
           if (targetInputKey === 'if') {
             const currentIf = stepData.if ?? '';
             const nextIf = mergeNunjucksToken(currentIf, token);
-            if (nextIf === currentIf) {
+            if (nextIf === currentIf && !refsChanged) {
               return node;
             }
 
@@ -271,6 +303,7 @@ export const useEditorHandlers = ({
               data: {
                 ...stepData,
                 if: nextIf,
+                relationshipRefs: nextRefs,
               },
             };
           }
@@ -285,7 +318,8 @@ export const useEditorHandlers = ({
           const nextValue = mergeNunjucksToken(currentStringValue, token);
           if (
             typeof currentRawValue === 'string' &&
-            nextValue === currentRawValue
+            nextValue === currentRawValue &&
+            !refsChanged
           ) {
             return node;
           }
@@ -298,6 +332,7 @@ export const useEditorHandlers = ({
                 ...currentFormData,
                 [targetInputKey]: nextValue,
               },
+              relationshipRefs: nextRefs,
             },
           };
         }),

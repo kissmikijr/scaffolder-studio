@@ -465,6 +465,70 @@ describe('useEditorHandlers snapping', () => {
     );
   });
 
+  it('stores a relationship reference when connecting property handle into a step input', () => {
+    const propertyNode: Node<AllNodeData> = {
+      id: 'property',
+      type: 'property',
+      position: { x: 0, y: 0 },
+      data: {
+        name: 'repoUrl',
+        variableType: 'string',
+        onChange: jest.fn(),
+      } as any,
+    };
+    const stepNode: Node<AllNodeData> = {
+      id: 'step',
+      type: 'step',
+      position: { x: 0, y: 0 },
+      selected: true,
+      data: {
+        type: 'step',
+        stepId: 'publish',
+        if: '',
+        formData: { repoUrl: '' },
+        schema: {
+          input: {
+            type: 'object',
+            properties: { repoUrl: { type: 'string' } },
+          },
+          output: {
+            type: 'object',
+            properties: { result: { type: 'string' } },
+          },
+        },
+        onChange: jest.fn(),
+      } as any,
+    };
+
+    const { result } = setup([propertyNode, stepNode], []);
+    mockSetNodes.mockClear();
+
+    act(() => {
+      result.current.onConnect({
+        source: propertyNode.id,
+        sourceHandle: RELATIONSHIP_PROPERTY_OUTPUT_HANDLE,
+        target: stepNode.id,
+        targetHandle: toInputHandleId('repoUrl'),
+      } as any);
+    });
+
+    expect(mockSetNodes).toHaveBeenCalled();
+    const updater = getLatestSetNodesUpdater();
+    const nextNodes = updater([propertyNode, stepNode]);
+    const nextStep = nextNodes.find((n: Node<AllNodeData>) => n.id === 'step');
+
+    expect((nextStep?.data as any).relationshipRefs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          sourceNodeId: 'property',
+          sourceKind: 'property',
+          targetField: 'repoUrl',
+          lastRenderedToken: '${{ parameters.repoUrl }}',
+        }),
+      ]),
+    );
+  });
+
   it('inserts a parameters token when connecting relationship handles into if', () => {
     const propertyNode: Node<AllNodeData> = {
       id: 'property',
