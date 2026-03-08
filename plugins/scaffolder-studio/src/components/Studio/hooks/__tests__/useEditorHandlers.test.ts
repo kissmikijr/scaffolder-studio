@@ -40,6 +40,8 @@ describe('useEditorHandlers snapping', () => {
   let mockHandleAddParametersNode: jest.Mock;
   let mockHandleAddPropertyNode: jest.Mock;
   let mockOnRelationshipConnectionDrawn: jest.Mock;
+  let mockLoadPrefab: jest.Mock;
+  let mockPromptForStepPrefabOverrides: jest.Mock;
   let contextMenuNodeIdRef: { current: string | null };
   let connectSourceNodeIdRef: { current: string | null };
 
@@ -53,6 +55,8 @@ describe('useEditorHandlers snapping', () => {
     mockHandleAddParametersNode = jest.fn();
     mockHandleAddPropertyNode = jest.fn();
     mockOnRelationshipConnectionDrawn = jest.fn();
+    mockLoadPrefab = jest.fn();
+    mockPromptForStepPrefabOverrides = jest.fn();
     contextMenuNodeIdRef = { current: null };
     connectSourceNodeIdRef = { current: null };
   });
@@ -76,6 +80,8 @@ describe('useEditorHandlers snapping', () => {
         onRelationshipConnectionDrawn: mockOnRelationshipConnectionDrawn,
         onChange: jest.fn(),
         setSelectedEdge: jest.fn(),
+        loadPrefab: mockLoadPrefab,
+        promptForStepPrefabOverrides: mockPromptForStepPrefabOverrides,
       }),
     );
   };
@@ -846,5 +852,87 @@ describe('useEditorHandlers snapping', () => {
         targetHandle: 'top',
       },
     ]);
+  });
+
+  it('assigns a unique stepIdOverride when dropping a colliding step prefab', async () => {
+    const existingStepNode: Node<AllNodeData> = {
+      id: 'step-1',
+      type: 'step',
+      position: { x: 0, y: 0 },
+      data: {
+        type: 'step',
+        stepId: 'publish',
+        name: 'publish',
+        if: '',
+        formData: {},
+        onChange: jest.fn(),
+      } as any,
+    };
+
+    mockLoadPrefab.mockResolvedValue({
+      id: 'prefab-1',
+      node: {
+        id: 'prefab-step-node',
+        type: 'step',
+        position: { x: 0, y: 0 },
+        data: {
+          type: 'step',
+          stepId: 'publish',
+          name: 'Publish',
+          if: '',
+          formData: {},
+          onChange: jest.fn(),
+        },
+      },
+    });
+    mockPromptForStepPrefabOverrides.mockResolvedValue({
+      stepId: 'publish-1',
+      name: 'Publish Copy',
+    });
+
+    const { result } = setup([existingStepNode], []);
+
+    const getData = (type: string) => {
+      switch (type) {
+        case 'application/reactflow':
+          return 'prefab';
+        case 'application/reactflow/id':
+          return 'prefab-1';
+        case 'application/reactflow/version':
+          return '';
+        case 'application/reactflow/refType':
+          return 'step';
+        default:
+          return '';
+      }
+    };
+
+    await act(async () => {
+      await result.current.handleDrop({
+        preventDefault: jest.fn(),
+        clientX: 240,
+        clientY: 160,
+        dataTransfer: {
+          getData,
+        },
+      } as any);
+    });
+
+    expect(mockLoadPrefab).toHaveBeenCalledWith('prefab-1', undefined);
+    expect(mockPromptForStepPrefabOverrides).toHaveBeenCalledWith({
+      stepId: 'publish-1',
+      name: 'Publish',
+    });
+    expect(mockSetNodes).toHaveBeenCalled();
+
+    const updater = getLatestSetNodesUpdater();
+    const updatedNodes = updater([existingStepNode]);
+    const newPrefabNode = updatedNodes.find(
+      (n: Node) => n.type === 'prefab' && (n.data as any).id === 'prefab-1',
+    );
+
+    expect(newPrefabNode).toBeDefined();
+    expect(newPrefabNode.data.stepIdOverride).toBe('publish-1');
+    expect(newPrefabNode.data.stepNameOverride).toBe('Publish Copy');
   });
 });

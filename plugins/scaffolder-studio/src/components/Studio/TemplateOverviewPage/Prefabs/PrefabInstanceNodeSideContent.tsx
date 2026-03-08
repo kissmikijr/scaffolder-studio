@@ -1,5 +1,6 @@
 import { Node } from '@xyflow/react';
 import {
+  AllNodeData,
   Prefab,
   ScaffolderAction,
   isStepNode,
@@ -8,6 +9,7 @@ import {
   isOutputNode,
   isPropertyNode,
   PrefabInstanceNodeData,
+  applyPrefabInstanceOverridesToNode,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { StepNodeSideContent } from '../../nodes/step/StepNodeSideContent';
 import { TemplateNodeSideContent } from '../../nodes/template/TemplateNodeSideContent';
@@ -61,7 +63,10 @@ export const PrefabInstanceNodeSideContent = ({
 
   if (!prefab) return null;
 
-  const prefabNode = prefab.node;
+  const prefabNode = applyPrefabInstanceOverridesToNode(
+    prefab.node as Node<AllNodeData>,
+    node.data,
+  );
 
   const nodeWithHandlers = {
     ...prefabNode,

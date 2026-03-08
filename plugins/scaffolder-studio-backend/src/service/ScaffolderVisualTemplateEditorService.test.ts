@@ -1,6 +1,7 @@
 import { ScaffolderStudioService } from './ScaffolderVisualTemplateEditorService';
 import { PublisherExtension } from '../extensions/types';
 import { EventsService } from '@backstage/plugin-events-node';
+import yaml from 'js-yaml';
 
 const mockEventService = {
   publish: jest.fn(),
@@ -128,6 +129,127 @@ describe('ScaffolderVisualTemplateEditorService', () => {
 
       expect(mockStore.unpublish).toHaveBeenCalledWith('id-1');
       expect(mockPublisher1.unpublish).toHaveBeenCalled();
+    });
+  });
+
+  describe('prefab step id overrides', () => {
+    it('applies stepIdOverride when resolving a prefab step instance', async () => {
+      mockPrefabLibraryStore.get.mockResolvedValue({
+        id: 'prefab-1',
+        node: {
+          id: 'stored-prefab-step',
+          type: 'step',
+          position: { x: 0, y: 0 },
+          data: {
+            type: 'step',
+            stepId: 'publish',
+            name: 'Publish',
+            if: '',
+            actionId: 'debug:log',
+            formData: {},
+          },
+        },
+      });
+
+      const resolved = await service.resolve({
+        nodes: [
+          {
+            id: 'prefab-instance-node',
+            type: 'prefab',
+            position: { x: 100, y: 120 },
+            data: {
+              type: 'prefab',
+              id: 'prefab-1',
+              stepIdOverride: 'publish-1',
+              stepNameOverride: 'Publish Copy',
+            },
+          } as any,
+        ],
+      });
+
+      expect(resolved).toEqual([
+        expect.objectContaining({
+          id: 'prefab-instance-node',
+          type: 'step',
+          position: { x: 100, y: 120 },
+          data: expect.objectContaining({
+            stepId: 'publish-1',
+            name: 'Publish Copy',
+          }),
+        }),
+      ]);
+    });
+
+    it('serializes distinct step ids for a normal step and a colliding prefab step instance', async () => {
+      mockPrefabLibraryStore.get.mockResolvedValue({
+        id: 'prefab-1',
+        node: {
+          id: 'stored-prefab-step',
+          type: 'step',
+          position: { x: 0, y: 0 },
+          data: {
+            type: 'step',
+            stepId: 'publish',
+            name: 'Publish',
+            if: '',
+            actionId: 'debug:log',
+            formData: {},
+          },
+        },
+      });
+
+      const yamlOutput = await service.nodesToYaml({
+        nodes: [
+          {
+            id: 'template-node',
+            type: 'template',
+            position: { x: 0, y: 0 },
+            data: {
+              nodeType: 'template',
+              name: 'Example Template',
+              owner: 'guest',
+              description: 'desc',
+              annotations: {},
+              spec: { type: 'service' },
+            },
+          },
+          {
+            id: 'step-1',
+            type: 'step',
+            position: { x: 200, y: 0 },
+            data: {
+              type: 'step',
+              stepId: 'publish',
+              name: 'publish',
+              if: '',
+              actionId: 'debug:log',
+              formData: {},
+            },
+          },
+          {
+            id: 'prefab-instance-node',
+            type: 'prefab',
+            position: { x: 400, y: 0 },
+            data: {
+              type: 'prefab',
+              id: 'prefab-1',
+              stepIdOverride: 'publish-1',
+            },
+          } as any,
+        ] as any,
+        edges: [
+          { id: 'e-1', source: 'template-node', target: 'step-1' },
+          { id: 'e-2', source: 'step-1', target: 'prefab-instance-node' },
+        ] as any,
+        sourceNodeId: 'template-node',
+      });
+
+      const parsed = yaml.load(yamlOutput) as any;
+
+      expect(parsed.spec.steps.map((step: any) => step.id)).toEqual([
+        'publish',
+        'publish-1',
+      ]);
     });
   });
 });

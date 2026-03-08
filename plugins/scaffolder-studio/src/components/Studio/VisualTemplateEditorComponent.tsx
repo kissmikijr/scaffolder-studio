@@ -24,16 +24,24 @@ import {
   useUnsavedChangesGuard,
 } from './hooks';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { prefabsApiRef } from '../../api/PrefabsClient';
+import { prefabLibraryApiRef } from '../../api/PrefabLibraryClient';
 import {
   calculateParentParamsSize,
   createPropertyNode,
   getNextGlobalPropertyName,
 } from './utils/nodeFunctions';
+import {
+  getPrefabCacheKey,
+  normalizePrefabStepIdOverrides,
+} from './utils/prefabStepIds';
 
 const queryClient = new QueryClient();
 
 export const VisualTemplateEditorComponent = () => {
   const api = useApi(scaffolderVisualApiRef);
+  const prefabsApi = useApi(prefabsApiRef);
+  const prefabLibraryApi = useApi(prefabLibraryApiRef);
   const alertApi = useApi(alertApiRef);
   const { id } = useParams();
   const navigate = useNavigate();
@@ -165,6 +173,54 @@ export const VisualTemplateEditorComponent = () => {
       }
     },
     [setNodesWithHistory, setEdgesWithHistory],
+  );
+
+  const loadPrefab = useCallback(
+    async (prefabId: string, version?: string) => {
+      if (!version) {
+        try {
+          return await prefabsApi.get({ id: prefabId });
+        } catch {
+          // Fall through to library lookup.
+        }
+      }
+
+      return await prefabLibraryApi.get(prefabId, version);
+    },
+    [prefabLibraryApi, prefabsApi],
+  );
+
+  const loadPrefabsForNodes = useCallback(
+    async (projectNodes: Node<AllNodeData>[]) => {
+      const prefabNodes = projectNodes.filter(
+        node => node.type === 'prefab',
+      ) as Node<AllNodeData>[];
+      const prefabKeys = Array.from(
+        new Set(
+          prefabNodes.map(node =>
+            getPrefabCacheKey(
+              (node.data as any).id as string,
+              (node.data as any).version as string | undefined,
+            ),
+          ),
+        ),
+      );
+
+      const prefabs = await Promise.all(
+        prefabKeys.map(async key => {
+          const [prefabId, rawVersion] = key.split('::');
+          try {
+            const prefab = await loadPrefab(prefabId, rawVersion || undefined);
+            return [key, prefab] as const;
+          } catch {
+            return null;
+          }
+        }),
+      );
+
+      return new Map(prefabs.filter(Boolean) as Array<[string, any]>);
+    },
+    [loadPrefab],
   );
 
   // Undo/Redo system
@@ -317,7 +373,14 @@ export const VisualTemplateEditorComponent = () => {
             onAddProperty: handleAddPropertyToGroup,
           });
 
-          const nodesWithLayout = ensureParametersNodeSizes(rehydratedNodes);
+          const prefabsByKey = await loadPrefabsForNodes(
+            rehydratedNodes as Node<AllNodeData>[],
+          );
+          const normalizedNodes = normalizePrefabStepIdOverrides(
+            rehydratedNodes as Node<AllNodeData>[],
+            prefabsByKey,
+          );
+          const nodesWithLayout = ensureParametersNodeSizes(normalizedNodes);
 
           setNodes(nodesWithLayout);
           setEdges(initialState.edges);
@@ -356,7 +419,7 @@ export const VisualTemplateEditorComponent = () => {
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, api, setPersistedState]);
+  }, [id, api, loadPrefabsForNodes, setPersistedState]);
 
   // Cleanup timeout on unmount
   useEffect(() => {

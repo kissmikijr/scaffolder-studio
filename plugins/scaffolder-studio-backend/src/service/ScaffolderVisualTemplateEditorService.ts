@@ -5,6 +5,7 @@ import {
   VisualTemplateProject,
   ScaffolderAction,
   isPrefabNode,
+  applyPrefabInstanceOverridesToNode,
   serializeToYaml,
   AllNodeData,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
@@ -92,8 +93,7 @@ export class ScaffolderStudioService {
     const resolvedNodes = await this.resolveNodes(nodes);
     const hasEntityProviderPublisher = this.publishers.some(
       publisher =>
-        publisher.id ===
-        ScaffolderStudioService.ENTITY_PROVIDER_PUBLISHER_ID,
+        publisher.id === ScaffolderStudioService.ENTITY_PROVIDER_PUBLISHER_ID,
     );
 
     return serializeToYaml({
@@ -128,8 +128,13 @@ export class ScaffolderStudioService {
           }
         }
 
+        const resolvedPrefabNode = applyPrefabInstanceOverridesToNode(
+          prefab.node,
+          node.data,
+        );
+
         actualNodes.push({
-          ...prefab.node,
+          ...resolvedPrefabNode,
           id: node.id as string,
           parentId: node.parentId,
           position: node.position,

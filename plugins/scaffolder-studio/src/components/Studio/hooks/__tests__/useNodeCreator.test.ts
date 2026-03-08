@@ -37,6 +37,8 @@ describe('useNodeCreator', () => {
   let mockSetSelectedNode: jest.Mock;
   let mockHandleTabChange: jest.Mock;
   let connectSourceNodeIdRef: { current: string | null };
+  let mockLoadPrefab: jest.Mock;
+  let mockPromptForStepPrefabOverrides: jest.Mock;
 
   beforeEach(() => {
     mockSetNodes = jest.fn();
@@ -44,6 +46,8 @@ describe('useNodeCreator', () => {
     mockSetSelectedNode = jest.fn();
     mockHandleTabChange = jest.fn();
     connectSourceNodeIdRef = { current: null };
+    mockLoadPrefab = jest.fn();
+    mockPromptForStepPrefabOverrides = jest.fn();
   });
 
   it('should resize parent ParametersNode when adding a PropertyNode outside bounds', () => {
@@ -75,6 +79,8 @@ describe('useNodeCreator', () => {
         setSelectedNode: mockSetSelectedNode,
         handleTabChange: mockHandleTabChange,
         onAddProperty: jest.fn(),
+        loadPrefab: mockLoadPrefab,
+        promptForStepPrefabOverrides: mockPromptForStepPrefabOverrides,
       }),
     );
 
@@ -185,6 +191,8 @@ describe('useNodeCreator', () => {
         setSelectedNode: mockSetSelectedNode,
         handleTabChange: mockHandleTabChange,
         onAddProperty: jest.fn(),
+        loadPrefab: mockLoadPrefab,
+        promptForStepPrefabOverrides: mockPromptForStepPrefabOverrides,
       }),
     );
 
@@ -235,6 +243,8 @@ describe('useNodeCreator', () => {
         setSelectedNode: mockSetSelectedNode,
         handleTabChange: mockHandleTabChange,
         onAddProperty: jest.fn(),
+        loadPrefab: mockLoadPrefab,
+        promptForStepPrefabOverrides: mockPromptForStepPrefabOverrides,
       }),
     );
 
@@ -271,6 +281,8 @@ describe('useNodeCreator', () => {
         setSelectedNode: mockSetSelectedNode,
         handleTabChange: mockHandleTabChange,
         onAddProperty: jest.fn(),
+        loadPrefab: mockLoadPrefab,
+        promptForStepPrefabOverrides: mockPromptForStepPrefabOverrides,
       }),
     );
 
@@ -288,5 +300,115 @@ describe('useNodeCreator', () => {
     const createdEdges = setEdgesCallback([]);
     expect(createdEdges[0].sourceHandle).toBe('top');
     expect(createdEdges[0].targetHandle).toBe('top');
+  });
+
+  it('assigns a unique stepIdOverride when adding a step prefab by click', async () => {
+    const existingStepNode: Node<AllNodeData> = {
+      id: 'step-1',
+      type: 'step',
+      position: { x: 0, y: 0 },
+      data: {
+        type: 'step',
+        stepId: 'publish',
+        name: 'publish',
+        if: '',
+        formData: {},
+        onChange: jest.fn(),
+      } as any,
+    };
+
+    mockLoadPrefab.mockResolvedValue({
+      id: 'prefab-1',
+      node: {
+        id: 'prefab-step-node',
+        type: 'step',
+        position: { x: 0, y: 0 },
+        data: {
+          type: 'step',
+          stepId: 'publish',
+          name: 'Publish',
+          if: '',
+          formData: {},
+          onChange: jest.fn(),
+        },
+      },
+    });
+    mockPromptForStepPrefabOverrides.mockResolvedValue({
+      stepId: 'publish-1',
+      name: 'Publish Copy',
+    });
+
+    const { result } = renderHook(() =>
+      useNodeCreator({
+        nodes: [existingStepNode],
+        setNodes: mockSetNodes,
+        setEdges: mockSetEdges,
+        connectSourceNodeIdRef: connectSourceNodeIdRef as any,
+        setSelectedNode: mockSetSelectedNode,
+        handleTabChange: mockHandleTabChange,
+        onAddProperty: jest.fn(),
+        loadPrefab: mockLoadPrefab,
+        promptForStepPrefabOverrides: mockPromptForStepPrefabOverrides,
+      } as any),
+    );
+
+    await act(async () => {
+      await result.current.addPrefabNode('prefab-1');
+    });
+
+    expect(mockLoadPrefab).toHaveBeenCalledWith('prefab-1', undefined);
+    expect(mockPromptForStepPrefabOverrides).toHaveBeenCalledWith({
+      stepId: 'publish-1',
+      name: 'Publish',
+    });
+    expect(mockSetNodes).toHaveBeenCalled();
+
+    const setNodesCallback = mockSetNodes.mock.calls[0][0];
+    const updatedNodes = setNodesCallback([existingStepNode]);
+    const newPrefabNode = updatedNodes.find((n: Node) => n.id === 'mock-uuid');
+
+    expect(newPrefabNode).toBeDefined();
+    expect(newPrefabNode.data.stepIdOverride).toBe('publish-1');
+    expect(newPrefabNode.data.stepNameOverride).toBe('Publish Copy');
+  });
+
+  it('does not insert a step prefab when the prompt is cancelled', async () => {
+    mockLoadPrefab.mockResolvedValue({
+      id: 'prefab-1',
+      node: {
+        id: 'prefab-step-node',
+        type: 'step',
+        position: { x: 0, y: 0 },
+        data: {
+          type: 'step',
+          stepId: 'publish',
+          name: 'Publish',
+          if: '',
+          formData: {},
+          onChange: jest.fn(),
+        },
+      },
+    });
+    mockPromptForStepPrefabOverrides.mockResolvedValue(null);
+
+    const { result } = renderHook(() =>
+      useNodeCreator({
+        nodes: [],
+        setNodes: mockSetNodes,
+        setEdges: mockSetEdges,
+        connectSourceNodeIdRef: connectSourceNodeIdRef as any,
+        setSelectedNode: mockSetSelectedNode,
+        handleTabChange: mockHandleTabChange,
+        onAddProperty: jest.fn(),
+        loadPrefab: mockLoadPrefab,
+        promptForStepPrefabOverrides: mockPromptForStepPrefabOverrides,
+      } as any),
+    );
+
+    await act(async () => {
+      await result.current.addPrefabNode('prefab-1');
+    });
+
+    expect(mockSetNodes).not.toHaveBeenCalled();
   });
 });

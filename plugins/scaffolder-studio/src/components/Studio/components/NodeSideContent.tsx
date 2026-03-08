@@ -9,19 +9,20 @@ import { EdgeSideContent } from './EdgeSideContent';
 import { PrefabInstanceNodeSideContent } from '../TemplateOverviewPage/Prefabs/PrefabInstanceNodeSideContent';
 import { usePrefabData } from '../hooks/usePrefabData';
 import {
+  AllNodeData,
+  ScaffolderAction,
+  NodeTypeColors,
+  getPropertyBackgroundColor,
+  applyPrefabInstanceOverridesToNode,
+} from '@kissmiklosjr/plugin-scaffolder-studio-common';
+import {
   isStepNode,
   isTemplateNode,
   isParametersNode,
   isOutputNode,
   isPropertyNode,
   isPrefabNode,
-  AllNodeData,
 } from '../types';
-import {
-  ScaffolderAction,
-  NodeTypeColors,
-  getPropertyBackgroundColor,
-} from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { IconButton, Tooltip, Typography, Box } from '@mui/material';
 import CodeIcon from '@mui/icons-material/Code';
 import ListIcon from '@mui/icons-material/List';
@@ -161,7 +162,10 @@ export const NodeSideContent = ({
     if (prefab?.node) {
       return (
         <YamlNodeEditor
-          node={prefab.node}
+          node={applyPrefabInstanceOverridesToNode(
+            prefab.node as Node<AllNodeData>,
+            node.data as any,
+          )}
           readOnly
           onChange={(id, data) => (node.data as any).onChange(id, data)}
         />

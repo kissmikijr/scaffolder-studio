@@ -40,6 +40,8 @@ import {
 import { useApi } from '@backstage/core-plugin-api';
 import { ScaffolderStudioApi } from '../../api/ScaffolderVisualClient';
 import { scaffolderVisualApiRef } from '../../api/ScaffolderVisualClient';
+import { prefabsApiRef } from '../../api/PrefabsClient';
+import { prefabLibraryApiRef } from '../../api/PrefabLibraryClient';
 import Header from './components/Header';
 import { PrefabTreeView } from './TemplateOverviewPage/Prefabs/PrefabTreeView';
 import { PrefabInstanceContextMenu } from './nodes/prefab/PrefabInstanceContextMenu';
@@ -61,6 +63,7 @@ import {
   useGraphIndexes,
 } from './hooks';
 import { alertApiRef } from '@backstage/core-plugin-api';
+import { PrefabStepOverrideDialog } from './components/PrefabStepOverrideDialog';
 import { PublishDialog } from './TemplateOverviewPage/components/PublishDialog';
 import type { TemplateSyncStatus } from './hooks/useTemplateDraftPersistence';
 import {
@@ -72,6 +75,7 @@ import {
   getOutgoingConnectionCountFromIndex,
   getTemplateOutgoingSlotsFromIndex,
 } from './utils/connectionLimits';
+import { collectAssignedStepIds } from './utils/prefabStepIds';
 
 const SidePanelToggleIcon = ({ collapsed }: { collapsed: boolean }) => (
   <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
@@ -146,8 +150,16 @@ const ScaffolderStudioEditor = ({
   const connectSourceNodeIdRef = useRef<string | null>(null);
   const contextMenuNodeIdRef = useRef<string | null>(null);
   const api = useApi<ScaffolderStudioApi>(scaffolderVisualApiRef);
+  const prefabsApi = useApi(prefabsApiRef);
+  const prefabLibraryApi = useApi(prefabLibraryApiRef);
   const alertApi = useApi(alertApiRef);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  const [stepPrefabPromptState, setStepPrefabPromptState] = useState<{
+    initialStepId: string;
+    initialName: string;
+    existingStepIds: string[];
+    resolve: (value: { stepId: string; name: string } | null) => void;
+  } | null>(null);
   const [isSideContentCollapsed, setIsSideContentCollapsed] = useState(false);
   const [showRelationshipEdges, setShowRelationshipEdges] = useState(false);
   const ensureRelationshipEdgesShown = useCallback(() => {
@@ -259,6 +271,69 @@ const ScaffolderStudioEditor = ({
     enabled: activeTab === 'form',
   });
 
+  const loadPrefab = useCallback(
+    async (prefabId: string, version?: string) => {
+      if (!version) {
+        try {
+          return await prefabsApi.get({ id: prefabId });
+        } catch {
+          // Fall through to library lookup.
+        }
+      }
+
+      return await prefabLibraryApi.get(prefabId, version);
+    },
+    [prefabLibraryApi, prefabsApi],
+  );
+
+  const promptForStepPrefabOverrides = useCallback(
+    (defaults: { stepId: string; name: string }) =>
+      new Promise<{ stepId: string; name: string } | null>(resolve => {
+        setStepPrefabPromptState(current => {
+          current?.resolve(null);
+
+          return {
+            initialStepId: defaults.stepId,
+            initialName: defaults.name,
+            existingStepIds: Array.from(collectAssignedStepIds(nodes)),
+            resolve,
+          };
+        });
+      }),
+    [nodes],
+  );
+
+  const handleStepPrefabPromptCancel = useCallback(() => {
+    setStepPrefabPromptState(current => {
+      current?.resolve(null);
+      return null;
+    });
+  }, []);
+
+  const handleStepPrefabPromptSubmit = useCallback(
+    (values: { stepId: string; name: string }) => {
+      setStepPrefabPromptState(current => {
+        if (!current) {
+          return null;
+        }
+
+        const nextStepId = values.stepId.trim();
+        const nextName = values.name.trim();
+        const isDuplicate = current.existingStepIds.some(
+          existingStepId => existingStepId.trim() === nextStepId,
+        );
+
+        if (!nextStepId || !nextName || isDuplicate) {
+          return current;
+        }
+
+        current.resolve({ stepId: nextStepId, name: nextName });
+        return null;
+      });
+    },
+    [],
+  );
+
   const {
     handleAddParametersNode,
     handleAddStepNode,
@@ -276,6 +351,8 @@ const ScaffolderStudioEditor = ({
     setSelectedNode,
     handleTabChange,
     onAddProperty,
+    loadPrefab,
+    promptForStepPrefabOverrides,
   });
 
   const {
@@ -307,6 +384,8 @@ const ScaffolderStudioEditor = ({
     onRelationshipConnectionDrawn: ensureRelationshipEdgesShown,
     onChange,
     setSelectedEdge,
+    loadPrefab,
+    promptForStepPrefabOverrides,
   });
 
   const { onNodeDragStop } = useGroupDragDrop({ nodes, setNodes });
@@ -1038,6 +1117,14 @@ const ScaffolderStudioEditor = ({
           left={prefabMenu?.left}
         />
       )}
+      <PrefabStepOverrideDialog
+        open={Boolean(stepPrefabPromptState)}
+        initialStepId={stepPrefabPromptState?.initialStepId ?? ''}
+        initialName={stepPrefabPromptState?.initialName ?? ''}
+        existingStepIds={stepPrefabPromptState?.existingStepIds ?? []}
+        onCancel={handleStepPrefabPromptCancel}
+        onSubmit={handleStepPrefabPromptSubmit}
+      />
       <PublishDialog
         open={publishDialogOpen}
         onClose={() => setPublishDialogOpen(false)}

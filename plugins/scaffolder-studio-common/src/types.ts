@@ -261,6 +261,8 @@ export type PrefabInstanceNodeData = {
   id: string;
   version?: string;
   refType?: string;
+  stepIdOverride?: string;
+  stepNameOverride?: string;
   comment?: string;
 };
 

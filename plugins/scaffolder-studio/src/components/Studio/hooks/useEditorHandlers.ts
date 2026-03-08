@@ -15,6 +15,7 @@ import {
 } from '@xyflow/react';
 import {
   AllNodeData,
+  Prefab,
   StepRelationshipRef,
   StepNodeData,
   isPrefabNode,
@@ -38,6 +39,7 @@ import {
   isRelationshipSourceHandleId,
   isRelationshipTargetHandleId,
 } from './useDependencyEdges';
+import { getStepIdOverrideForPrefabInstance } from '../utils/prefabStepIds';
 
 interface UseEditorHandlersProps {
   nodes: Node<AllNodeData>[];
@@ -75,6 +77,11 @@ interface UseEditorHandlersProps {
   onRelationshipConnectionDrawn?: () => void;
   onChange: (id: string, data: any) => void;
   setSelectedEdge: (edge: Edge | undefined) => void;
+  loadPrefab: (id: string, version?: string) => Promise<Prefab>;
+  promptForStepPrefabOverrides: (defaults: {
+    stepId: string;
+    name: string;
+  }) => Promise<{ stepId: string; name: string } | null>;
 }
 
 export const useEditorHandlers = ({
@@ -94,6 +101,8 @@ export const useEditorHandlers = ({
   onRelationshipConnectionDrawn,
   onChange,
   setSelectedEdge,
+  loadPrefab,
+  promptForStepPrefabOverrides,
 }: UseEditorHandlersProps) => {
   const { screenToFlowPosition, getEdges } = useReactFlow();
   const [isShiftPressed, setIsShiftPressed] = useState(false);
@@ -852,13 +861,14 @@ export const useEditorHandlers = ({
   );
 
   const handleDrop = useCallback(
-    (e: React.DragEvent) => {
+    async (e: React.DragEvent) => {
       e.preventDefault();
       const type = e.dataTransfer.getData('application/reactflow');
 
       if (type === 'prefab') {
         const id = e.dataTransfer.getData('application/reactflow/id');
-        const version = e.dataTransfer.getData('application/reactflow/version');
+        const version =
+          e.dataTransfer.getData('application/reactflow/version') || undefined;
         const refType = e.dataTransfer.getData('application/reactflow/refType');
         const currentNodes = nodesRef.current;
 
@@ -871,9 +881,39 @@ export const useEditorHandlers = ({
           let parentId: string | undefined;
           let relativePosition = position;
           let extent: 'parent' | undefined;
+          let resolvedRefType: string | undefined = refType || undefined;
+          let stepIdOverride: string | undefined;
+          let stepNameOverride: string | undefined;
+
+          try {
+            const prefab = await loadPrefab(id, version);
+            resolvedRefType = resolvedRefType || prefab.node.type;
+            if (prefab.node.type === 'step') {
+              stepIdOverride = getStepIdOverrideForPrefabInstance({
+                baseStepId: (prefab.node.data as StepNodeData).stepId,
+                nodes: currentNodes,
+              });
+              const stepOverrides = await promptForStepPrefabOverrides({
+                stepId: stepIdOverride,
+                name:
+                  (prefab.node.data as StepNodeData).name?.trim() ||
+                  (prefab.node.data as StepNodeData).stepId?.trim() ||
+                  stepIdOverride,
+              });
+
+              if (!stepOverrides) {
+                return;
+              }
+
+              stepIdOverride = stepOverrides.stepId;
+              stepNameOverride = stepOverrides.name;
+            }
+          } catch {
+            // Fall back to inserting the prefab instance without overrides.
+          }
 
           // If it's a property prefab, check if dropped on a parameters node
-          if (refType === 'property') {
+          if (resolvedRefType === 'property') {
             const parentNode = currentNodes.find(
               n =>
                 isParametersNode(n) &&
@@ -905,13 +945,27 @@ export const useEditorHandlers = ({
               position: relativePosition,
               parentId,
               extent,
-              data: { id, type: 'prefab', version, refType, onChange },
+              data: {
+                id,
+                type: 'prefab',
+                version,
+                refType: resolvedRefType,
+                onChange,
+                ...(stepIdOverride ? { stepIdOverride } : {}),
+                ...(stepNameOverride ? { stepNameOverride } : {}),
+              },
             },
           ]);
         }
       }
     },
-    [screenToFlowPosition, setNodes, onChange],
+    [
+      loadPrefab,
+      onChange,
+      promptForStepPrefabOverrides,
+      screenToFlowPosition,
+      setNodes,
+    ],
   );
 
   const onDragOver = useCallback((e: React.DragEvent) => {

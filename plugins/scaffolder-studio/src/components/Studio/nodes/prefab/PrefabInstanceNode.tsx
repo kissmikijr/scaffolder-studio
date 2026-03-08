@@ -3,8 +3,10 @@ import { Box, useTheme, Typography } from '@mui/material';
 import { Node, NodeProps, Position } from '@xyflow/react';
 import { PrefabInstanceNodeData } from '../../types';
 import {
+  AllNodeData,
   Prefab,
   NodeTypeColors,
+  applyPrefabInstanceOverridesToNode,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 
 import { prefabsApiRef } from '../../../../api/PrefabsClient';
@@ -102,6 +104,10 @@ const PrefabInstanceNode = ({
     }
   };
 
+  const effectivePrefabNode = prefab?.node
+    ? applyPrefabInstanceOverridesToNode(prefab.node as Node<AllNodeData>, data)
+    : undefined;
+
   const renderNode = () => {
     if (loadingState === 'loading') {
       return (
@@ -145,7 +151,7 @@ const PrefabInstanceNode = ({
       );
     }
 
-    if (!prefab?.node) {
+    if (!effectivePrefabNode) {
       return (
         <Box sx={{ padding: 2, minWidth: 150, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary">
@@ -156,14 +162,14 @@ const PrefabInstanceNode = ({
     }
 
     const nodeWithHandlers = {
-      ...prefab.node,
+      ...effectivePrefabNode,
       data: {
-        ...prefab.node.data,
+        ...effectivePrefabNode.data,
         onChange: () => {},
       },
     };
 
-    switch (prefab.node.type) {
+    switch (effectivePrefabNode.type) {
       case 'step':
         return (
           <StepNode {...(nodeWithHandlers as any)} disabled selected={false} />
@@ -232,7 +238,7 @@ const PrefabInstanceNode = ({
         >
           {prefab?.node?.type === 'templateOutput'
             ? 'Output'
-            : prefab?.node?.type}
+            : effectivePrefabNode?.type}
         </Box>
       )}
       <Box
@@ -245,7 +251,9 @@ const PrefabInstanceNode = ({
           border: `4px ${isError ? 'dashed' : 'solid'} ${(() => {
             if (selected) return SELECTED_BORDER_COLOR;
             if (isError) return theme.palette.warning.main;
-            if (prefab?.node?.type) return getBorderColor(prefab.node.type);
+            if (effectivePrefabNode?.type) {
+              return getBorderColor(effectivePrefabNode.type);
+            }
             return NodeTypeColors.unknown;
           })()}`,
 

@@ -3,6 +3,7 @@ import { Node, useReactFlow } from '@xyflow/react';
 import { v4 as uuidv4 } from 'uuid';
 import {
   AllNodeData,
+  Prefab,
   TemplateNodeData,
   ParametersNodeData,
   StepNodeData,
@@ -17,6 +18,7 @@ import {
   createPropertyNode,
   getNextGlobalPropertyName,
 } from '../utils/nodeFunctions';
+import { getStepIdOverrideForPrefabInstance } from '../utils/prefabStepIds';
 
 interface UseNodeCreatorProps {
   nodes: Node<AllNodeData>[];
@@ -26,6 +28,11 @@ interface UseNodeCreatorProps {
   setSelectedNode: (node: Node<AllNodeData> | undefined) => void;
   handleTabChange: (tab: string) => void;
   onAddProperty: (parentId: string) => void;
+  loadPrefab: (id: string, version?: string) => Promise<Prefab>;
+  promptForStepPrefabOverrides: (defaults: {
+    stepId: string;
+    name: string;
+  }) => Promise<{ stepId: string; name: string } | null>;
 }
 
 export const useNodeCreator = ({
@@ -36,6 +43,8 @@ export const useNodeCreator = ({
   setSelectedNode,
   handleTabChange,
   onAddProperty,
+  loadPrefab,
+  promptForStepPrefabOverrides,
 }: UseNodeCreatorProps) => {
   const { screenToFlowPosition } = useReactFlow();
 
@@ -483,20 +492,75 @@ export const useNodeCreator = ({
   );
 
   const addPrefabNode = useCallback(
-    (id: string, version?: string) => {
+    async (id: string, version?: string) => {
       const nodeId = uuidv4();
-      setNodes(nds => [
-        ...nds,
-        {
-          id: nodeId,
-          type: 'prefab',
-          name: '',
-          position: { x: 100, y: 100 },
-          data: { id, type: 'prefab', version },
-        },
-      ]);
+      const normalizedVersion = version || undefined;
+
+      try {
+        const prefab = await loadPrefab(id, normalizedVersion);
+        const refType = prefab.node.type;
+        const stepIdOverride =
+          prefab.node.type === 'step'
+            ? getStepIdOverrideForPrefabInstance({
+                baseStepId: (prefab.node.data as StepNodeData).stepId,
+                nodes,
+              })
+            : undefined;
+        const stepName =
+          prefab.node.type === 'step'
+            ? (prefab.node.data as StepNodeData).name?.trim() ||
+              (prefab.node.data as StepNodeData).stepId?.trim() ||
+              stepIdOverride ||
+              'Step'
+            : undefined;
+        const stepOverrides =
+          prefab.node.type === 'step'
+            ? await promptForStepPrefabOverrides({
+                stepId: stepIdOverride || 'step',
+                name: stepName || 'Step',
+              })
+            : null;
+
+        if (prefab.node.type === 'step' && !stepOverrides) {
+          return;
+        }
+
+        setNodes(nds => [
+          ...nds,
+          {
+            id: nodeId,
+            type: 'prefab',
+            name: '',
+            position: { x: 100, y: 100 },
+            data: {
+              id,
+              type: 'prefab',
+              version: normalizedVersion,
+              refType,
+              ...(stepOverrides
+                ? {
+                    stepIdOverride: stepOverrides.stepId,
+                    stepNameOverride: stepOverrides.name,
+                  }
+                : {}),
+            },
+          },
+        ]);
+        return;
+      } catch {
+        setNodes(nds => [
+          ...nds,
+          {
+            id: nodeId,
+            type: 'prefab',
+            name: '',
+            position: { x: 100, y: 100 },
+            data: { id, type: 'prefab', version: normalizedVersion },
+          },
+        ]);
+      }
     },
-    [setNodes],
+    [loadPrefab, nodes, promptForStepPrefabOverrides, setNodes],
   );
 
   return {
