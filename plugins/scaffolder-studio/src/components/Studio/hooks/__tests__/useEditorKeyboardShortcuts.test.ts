@@ -87,6 +87,18 @@ describe('useEditorKeyboardShortcuts', () => {
     expect(onToggleSideContent).toHaveBeenCalledTimes(1);
   });
 
+  it('triggers fit view on 0 without a modifier', () => {
+    const { onFitView } = setup();
+
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: '0',
+      }),
+    );
+
+    expect(onFitView).toHaveBeenCalledTimes(1);
+  });
+
   it('triggers fit view on Cmd/Ctrl+0', () => {
     const { onFitView } = setup();
 

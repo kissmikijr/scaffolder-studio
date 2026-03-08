@@ -86,6 +86,9 @@ export const useEditorKeyboardShortcuts = ({
       } else if (isDigitShortcutKey(event, 4)) {
         event.preventDefault();
         onAddOutput();
+      } else if (isDigitShortcutKey(event, 0)) {
+        event.preventDefault();
+        onFitView();
       }
     };
 
