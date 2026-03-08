@@ -1,5 +1,14 @@
 # @kissmiklosjr/plugin-scaffolder-studio-backend
 
+## 1.1.1-alpha.0
+
+### Patch Changes
+
+- Updated dependencies [1e7ec32]
+- Updated dependencies [f234e7d]
+  - @kissmiklosjr/plugin-scaffolder-studio-common@1.2.0-alpha.0
+  - @kissmiklosjr/plugin-catalog-backend-module-scaffolder-studio-provider@1.0.1-alpha.0
+
 ## 1.1.0
 
 ### Minor Changes

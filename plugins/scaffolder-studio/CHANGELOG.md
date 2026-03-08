@@ -1,5 +1,19 @@
 # @kissmiklosjr/plugin-scaffolder-studio
 
+## 1.3.0-alpha.0
+
+### Minor Changes
+
+- 1e7ec32: Add reference handling for properties in steps
+- f234e7d: Intorduce relationships input/out edges
+
+### Patch Changes
+
+- 650c58a: First pass to improve rendering performance
+- Updated dependencies [1e7ec32]
+- Updated dependencies [f234e7d]
+  - @kissmiklosjr/plugin-scaffolder-studio-common@1.2.0-alpha.0
+
 ## 1.2.0
 
 ### Minor Changes
