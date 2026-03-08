@@ -15,6 +15,7 @@ import { onChange } from '../handlers';
 import {
   calculateParentParamsSize,
   createPropertyNode,
+  getNextGlobalPropertyName,
 } from '../utils/nodeFunctions';
 
 interface UseNodeCreatorProps {
@@ -433,18 +434,9 @@ export const useNodeCreator = ({
       const newNode = createPropertyNode({
         parentId: targetParentId || '',
         position: relativePosition,
-        childCount: 0, // Not used for name generation in this context, or we can calculate it
+        name: getNextGlobalPropertyName(nodes),
         onChange: onChange(setNodes),
       });
-      // Override name/properties as needed or update createPropertyNode to accept more overrides.
-      // Actually createPropertyNode uses childCount for name.
-      // Let's pass a dummy or calculate it properly if we want 'propertyN'.
-      // In this context (adding via handle), we might not care about 'propertyN' naming as much or we can calculate it.
-      // Let's calculate it to be safe.
-      const childCount = nodes.filter(
-        n => n.parentId === targetParentId,
-      ).length;
-      newNode.data.name = `property${childCount + 1}`; // Ensure naming consistency if needed, though createPropertyNode does this.
       newNode.parentId = targetParentId;
       newNode.extent = targetParentId ? 'parent' : undefined;
 

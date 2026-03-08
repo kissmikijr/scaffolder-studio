@@ -27,6 +27,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   calculateParentParamsSize,
   createPropertyNode,
+  getNextGlobalPropertyName,
 } from './utils/nodeFunctions';
 
 const queryClient = new QueryClient();
@@ -126,7 +127,7 @@ export const VisualTemplateEditorComponent = () => {
       const newNode = createPropertyNode({
         parentId,
         position: relativePosition,
-        childCount,
+        name: getNextGlobalPropertyName(currentNodes),
         onChange: onChange(setNodesWithHistory),
       });
 

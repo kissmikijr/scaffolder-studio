@@ -124,6 +124,82 @@ describe('useNodeCreator', () => {
     expect(newChild.position).toEqual({ x: 50, y: 300 });
   });
 
+  it('should generate globally unique property names across parameters groups', () => {
+    const firstParametersNode: Node<ParametersNodeData> = {
+      id: 'parameters-group-1',
+      type: 'parameters',
+      position: { x: 100, y: 100 },
+      data: {
+        type: 'parameters',
+        title: 'Group 1',
+        parameters: [],
+        onChange: jest.fn(),
+      },
+      width: 300,
+      height: 200,
+      style: { width: 300, height: 200 },
+    };
+
+    const secondParametersNode: Node<ParametersNodeData> = {
+      id: 'parameters-group-2',
+      type: 'parameters',
+      position: { x: 500, y: 100 },
+      data: {
+        type: 'parameters',
+        title: 'Group 2',
+        parameters: [],
+        onChange: jest.fn(),
+      },
+      width: 300,
+      height: 200,
+      style: { width: 300, height: 200 },
+    };
+
+    const existingPropertyNode: Node<AllNodeData> = {
+      id: 'property-1',
+      type: 'property',
+      parentId: 'parameters-group-1',
+      position: { x: 20, y: 60 },
+      data: {
+        name: 'property1',
+        variableType: 'string',
+        onChange: jest.fn(),
+        'ui:field': '',
+        'ui:options': '',
+      },
+    };
+
+    const initialNodes: Node<AllNodeData>[] = [
+      firstParametersNode,
+      secondParametersNode,
+      existingPropertyNode,
+    ];
+    connectSourceNodeIdRef.current = 'parameters-group-2';
+
+    const { result } = renderHook(() =>
+      useNodeCreator({
+        nodes: initialNodes,
+        setNodes: mockSetNodes,
+        setEdges: mockSetEdges,
+        connectSourceNodeIdRef: connectSourceNodeIdRef as any,
+        setSelectedNode: mockSetSelectedNode,
+        handleTabChange: mockHandleTabChange,
+        onAddProperty: jest.fn(),
+      }),
+    );
+
+    act(() => {
+      result.current.handleAddPropertyNode({ x: 540, y: 220 });
+    });
+
+    const setNodesCallback = mockSetNodes.mock.calls[0][0];
+    const updatedNodes = setNodesCallback(initialNodes);
+    const newChild = updatedNodes.find((n: Node) => n.id === 'mock-uuid');
+
+    expect(newChild).toBeDefined();
+    expect(newChild.data.name).toBe('property2');
+  });
+
   it('should choose closest target handle using absolute position for parented source nodes', () => {
     const parentParametersNode: Node<AllNodeData> = {
       id: 'params-parent',
