@@ -1,5 +1,13 @@
 # @kissmiklosjr/plugin-scaffolder-studio-backend
 
+## 1.1.2
+
+### Patch Changes
+
+- e7d5e2b: Add option to change prefab step id and name on insertion
+- Updated dependencies [e7d5e2b]
+  - @kissmiklosjr/plugin-scaffolder-studio-common@1.2.1
+
 ## 1.1.1
 
 ### Patch Changes
