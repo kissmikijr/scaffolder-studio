@@ -1,5 +1,15 @@
 # @kissmiklosjr/plugin-permission-backend-module-scaffolder-studio
 
+## 1.0.1
+
+### Patch Changes
+
+- 03950cf: Fix release latest tags
+- Updated dependencies [1e7ec32]
+- Updated dependencies [f234e7d]
+- Updated dependencies [03950cf]
+  - @kissmiklosjr/plugin-scaffolder-studio-common@1.2.0
+
 ## 1.0.1-alpha.0
 
 ### Patch Changes

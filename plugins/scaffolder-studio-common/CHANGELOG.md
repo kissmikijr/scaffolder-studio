@@ -1,5 +1,16 @@
 # @kissmiklosjr/plugin-scaffolder-studio-common
 
+## 1.2.0
+
+### Minor Changes
+
+- 1e7ec32: Add reference handling for properties in steps
+- f234e7d: Intorduce relationships input/out edges
+
+### Patch Changes
+
+- 03950cf: Fix release latest tags
+
 ## 1.2.0-alpha.0
 
 ### Minor Changes
