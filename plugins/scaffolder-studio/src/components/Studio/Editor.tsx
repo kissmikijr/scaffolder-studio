@@ -835,6 +835,16 @@ const ScaffolderStudioEditor = ({
                 '& .react-flow__edge-path': {
                   strokeWidth: 2,
                 },
+                // Keep edges under nodes so dense relationship overlays do not obscure node content.
+                '& .react-flow__edges': {
+                  zIndex: 0,
+                },
+                '& .react-flow__nodes': {
+                  zIndex: 1,
+                },
+                '& .react-flow__edge.relationship-edge': {
+                  zIndex: -1,
+                },
                 '& .react-flow__pane.selection': {
                   cursor: isPanning ? 'grab' : 'default',
                   transition: 'cursor 0.2s',

@@ -571,77 +571,74 @@ const StepNode = ({ selected, id, data, disabled = false }: StepNodeProps) => {
               </Typography>
             )}
 
-            <Typography
-              variant="caption"
-              sx={{
-                mt: 0.5,
-                fontSize: '0.62rem',
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase',
-                color: ioHeadingColor,
-                fontWeight: 700,
-              }}
-            >
-              Outputs
-            </Typography>
+            {outputFieldKeys.length > 0 &&
+              outputFieldKeys.map((outputKey, index) => {
+                const displayType =
+                  outputSchemaProperties?.[outputKey]?.type ?? 'unknown';
 
-            {outputFieldKeys.map(outputKey => {
-              const displayType =
-                outputSchemaProperties?.[outputKey]?.type ?? 'unknown';
-
-              return (
-                <Box
-                  key={outputKey}
-                  data-testid={`step-node-output-row-${sanitizeTestId(
-                    outputKey,
-                  )}`}
-                  sx={{
-                    position: 'relative',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 1,
-                    minHeight: 22,
-                    pl: 1,
-                    pr: 0.5,
-                    borderRadius: '8px',
-                    backgroundColor: ioRowBackgroundColor,
-                    border: ioRowBorder,
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontSize: '0.72rem',
-                      fontWeight: 600,
-                      maxWidth: 180,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {outputKey}
-                  </Typography>
-                  {renderTypeChip(displayType)}
-                  <FlowHandle
-                    id={toOutputHandleId(outputKey)}
-                    type="source"
-                    position={Position.Right}
-                    style={{
-                      ...relationshipHandleStyle,
-                      right: 0,
-                      top: '50%',
-                      transform: 'translate(50%, -50%)',
-                    }}
-                  />
-                </Box>
-              );
-            })}
-
-            {outputFieldKeys.length === 0 && (
-              <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>
-                No output fields found
-              </Typography>
-            )}
+                return (
+                  <Box key={outputKey}>
+                    {index === 0 && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          mt: 0.5,
+                          fontSize: '0.62rem',
+                          letterSpacing: '0.05em',
+                          textTransform: 'uppercase',
+                          color: ioHeadingColor,
+                          fontWeight: 700,
+                        }}
+                      >
+                        Outputs
+                      </Typography>
+                    )}
+                    <Box
+                      data-testid={`step-node-output-row-${sanitizeTestId(
+                        outputKey,
+                      )}`}
+                      sx={{
+                        position: 'relative',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 1,
+                        minHeight: 22,
+                        pl: 1,
+                        pr: 0.5,
+                        borderRadius: '8px',
+                        backgroundColor: ioRowBackgroundColor,
+                        border: ioRowBorder,
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          maxWidth: 180,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {outputKey}
+                      </Typography>
+                      {renderTypeChip(displayType)}
+                      <FlowHandle
+                        id={toOutputHandleId(outputKey)}
+                        type="source"
+                        position={Position.Right}
+                        style={{
+                          ...relationshipHandleStyle,
+                          right: 0,
+                          top: '50%',
+                          transform: 'translate(50%, -50%)',
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                );
+              })}
           </Box>
         )}
       </Box>

@@ -193,11 +193,12 @@ export const computeRelationshipGraph = (
       sourceHandle,
       targetHandle,
       type: 'relationship',
+      className: 'relationship-edge',
       data: { kind: 'relationship', isRelationship: true },
       selectable: false,
       deletable: false,
       focusable: false,
-      zIndex: 500,
+      zIndex: -1,
     });
   };
 
