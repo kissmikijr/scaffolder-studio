@@ -233,7 +233,6 @@ Scaffolder Studio supports the following shortcuts:
 | `Cmd/Ctrl + V`                                                | Paste copied node                                                  |
 | `Cmd/Ctrl + Z`                                                | Undo                                                               |
 | `Cmd/Ctrl + Shift + Z` or `Cmd/Ctrl + Y`                      | Redo                                                               |
-| `Cmd/Ctrl + S`                                                | Save/sync draft immediately                                        |
 | `j`                                                           | Select next node (sorted top-to-bottom, then left-to-right)        |
 | `k`                                                           | Select previous node (sorted top-to-bottom, then left-to-right)    |
 | Hold `Shift` while dragging a node                            | Snap alignment against connected nodes                             |
