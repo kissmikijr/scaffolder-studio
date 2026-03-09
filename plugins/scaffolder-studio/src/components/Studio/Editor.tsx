@@ -80,6 +80,7 @@ import {
   getTemplateOutgoingSlotsFromIndex,
 } from './utils/connectionLimits';
 import { collectAssignedStepIds } from './utils/prefabStepIds';
+import { buildZenFocusSets } from './utils/zenMode';
 
 const SidePanelToggleIcon = ({ collapsed }: { collapsed: boolean }) => (
   <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
@@ -244,34 +245,16 @@ const ScaffolderStudioEditor = ({
       relationshipVisibilityEnabled ? allRelatedStepNodeIds : new Set<string>(),
     [allRelatedStepNodeIds, relationshipVisibilityEnabled],
   );
-  const zenFocusEdgeIds = useMemo(() => {
-    if (!isZenMode || !selectedNode?.id) {
-      return new Set<string>();
-    }
-
-    return new Set(
-      allRelationshipEdges
-        .filter(
-          edge =>
-            edge.source === selectedNode.id || edge.target === selectedNode.id,
-        )
-        .map(edge => edge.id),
-    );
-  }, [allRelationshipEdges, isZenMode, selectedNode?.id]);
-  const zenFocusNodeIds = useMemo(() => {
-    if (!isZenMode || !selectedNode?.id) {
-      return new Set<string>();
-    }
-
-    const nodeIds = new Set<string>([selectedNode.id]);
-    for (const edge of allRelationshipEdges) {
-      if (edge.source === selectedNode.id || edge.target === selectedNode.id) {
-        nodeIds.add(edge.source);
-        nodeIds.add(edge.target);
-      }
-    }
-    return nodeIds;
-  }, [allRelationshipEdges, isZenMode, selectedNode?.id]);
+  const zenFocusSets = useMemo(
+    () =>
+      isZenMode
+        ? buildZenFocusSets(selectedNode?.id, allRelationshipEdges)
+        : {
+            nodeIds: new Set<string>(),
+            edgeIds: new Set<string>(),
+          },
+    [allRelationshipEdges, isZenMode, selectedNode?.id],
+  );
   const relationshipHandleColorIndex = useMemo(() => {
     const sourceColors = new Map<string, string>();
     const targetColors = new Map<string, string>();
@@ -358,7 +341,7 @@ const ScaffolderStudioEditor = ({
     const selectedNodeId = selectedNode?.id;
     const styledBaseEdges = isZenMode ? [] : edges;
     const elevatedRelationshipEdges = relationshipEdges.map(edge => {
-      if (isZenMode && !zenFocusEdgeIds.has(edge.id)) {
+      if (isZenMode && !zenFocusSets.edgeIds.has(edge.id)) {
         return {
           ...edge,
           className: 'relationship-edge relationship-edge--background',
@@ -386,7 +369,7 @@ const ScaffolderStudioEditor = ({
     relationshipEdges,
     relationshipVisibilityEnabled,
     selectedNode?.id,
-    zenFocusEdgeIds,
+    zenFocusSets.edgeIds,
   ]);
   const displayNodes = useMemo(() => {
     if (!relationshipVisibilityEnabled) {
@@ -401,7 +384,7 @@ const ScaffolderStudioEditor = ({
     return nodes.map(node => {
       const baseZIndex = typeof node.zIndex === 'number' ? node.zIndex : 0;
       const isSelected = node.id === selectedNodeId;
-      const isZenFocusedNode = !isZenMode || zenFocusNodeIds.has(node.id);
+      const isZenFocusedNode = !isZenMode || zenFocusSets.nodeIds.has(node.id);
 
       return {
         ...node,
@@ -421,7 +404,7 @@ const ScaffolderStudioEditor = ({
     nodes,
     relationshipVisibilityEnabled,
     selectedNode?.id,
-    zenFocusNodeIds,
+    zenFocusSets.nodeIds,
   ]);
 
   useThumbnail({

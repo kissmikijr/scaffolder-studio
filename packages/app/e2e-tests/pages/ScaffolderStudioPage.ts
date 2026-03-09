@@ -63,6 +63,14 @@ export class ScaffolderStudioPage {
     await this.page.keyboard.press('ControlOrMeta+4');
   }
 
+  async pressZenShortcut() {
+    await this.page.keyboard.press('f');
+  }
+
+  async toggleZenMode() {
+    await this.page.getByTestId('zen-mode-toggle-button').click();
+  }
+
   async fitView() {
     await this.page.getByTestId('toolbar-fit-view-button').click();
     await this.page.waitForTimeout(500); // Wait for animation
@@ -74,6 +82,12 @@ export class ScaffolderStudioPage {
 
   async countRelationshipEdges() {
     return this.page.locator('.react-flow__edge[data-id*="rel-"]').count();
+  }
+
+  async countNonRelationshipEdges() {
+    return this.page
+      .locator('.react-flow__edge:not([data-id*="rel-"])')
+      .count();
   }
 
   async waitForRelationshipEdges(
