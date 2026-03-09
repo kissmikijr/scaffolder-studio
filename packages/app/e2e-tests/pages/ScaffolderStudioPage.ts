@@ -803,46 +803,12 @@ export class ScaffolderStudioPage {
 
   // --- Node Comment Helpers ---
 
-  async hoverNodeCommentHotspot(nodeText: string) {
-    const node = this.page
-      .locator('.react-flow__node')
-      .filter({ hasText: nodeText })
-      .first();
-    await expect(node).toBeVisible();
-
-    // Select the node to make the comment affordance eligible for hover.
-    const nodeBox = await node.boundingBox();
-    if (nodeBox) {
-      await this.page.mouse.click(
-        nodeBox.x + nodeBox.width / 2,
-        nodeBox.y + nodeBox.height / 2,
-      );
-      // Move mouse to top-right corner to trigger the hotspot hover
-      await this.page.mouse.move(nodeBox.x + nodeBox.width - 5, nodeBox.y + 5, {
-        steps: 10,
-      });
-    } else {
-      await node.click({ force: true });
-      await node.locator('.node-controls-hotspot').hover({ force: true });
-    }
-  }
-
   async openCommentEditor(nodeText: string) {
-    await this.collapseSideContent();
-
-    const node = this.page
-      .locator('.react-flow__node')
-      .filter({ hasText: nodeText })
-      .first();
-    await expect(node).toBeVisible();
-
-    await this.hoverNodeCommentHotspot(nodeText);
-    const badge = node.getByTestId('node-comment-badge');
-
-    const commentBtn = badge.getByTestId('node-comment-button');
-    await expect(commentBtn).toBeAttached();
-
-    await commentBtn.dispatchEvent('click');
+    await this.selectNode(nodeText);
+    await this.expandSideContent();
+    const commentBtn = this.page.getByTestId('sidebar-comment-button');
+    await expect(commentBtn).toBeVisible();
+    await commentBtn.click();
 
     const popover = this.page.getByTestId('comment-input-popover').first();
     await expect(popover).toBeVisible({ timeout: 10000 });
@@ -905,45 +871,16 @@ export class ScaffolderStudioPage {
     await this.collapseSideContent();
   }
 
-  async expectNodeCommentBadgeVisible(text: string) {
-    const node = this.page
-      .locator('.react-flow__node')
-      .filter({ hasText: text })
-      .first();
-    await expect(node).toBeVisible();
-    await this.hoverNodeCommentHotspot(text);
-
-    // The badge becomes visible only when hovering the top-right hotspot.
-    const badge = node.getByTestId('node-comment-badge');
-    await expect(badge).toHaveCSS('opacity', '1');
+  async expectSidebarCommentValue(comment: string) {
+    await expect(this.page.getByTestId('sidebar-node-comment')).toHaveText(
+      comment,
+    );
   }
 
-  async expectNodeCommentBadgeHiddenUntilTopRightHover(text: string) {
-    const node = this.page
-      .locator('.react-flow__node')
-      .filter({ hasText: text })
-      .first();
-    await expect(node).toBeVisible();
-
-    const nodeBox = await node.boundingBox();
-    if (nodeBox) {
-      await this.page.mouse.click(
-        nodeBox.x + nodeBox.width / 2,
-        nodeBox.y + nodeBox.height / 2,
-      );
-      await this.page.mouse.move(
-        nodeBox.x + nodeBox.width / 2,
-        nodeBox.y + nodeBox.height / 2,
-      );
-    } else {
-      await node.click({ force: true });
-    }
-
-    const badge = node.getByTestId('node-comment-badge');
-    await expect(badge).toHaveCSS('opacity', '0');
-
-    await this.hoverNodeCommentHotspot(text);
-    await expect(badge).toHaveCSS('opacity', '1');
+  async expectSidebarCommentAbsent() {
+    await expect(this.page.getByTestId('sidebar-node-comment')).toContainText(
+      'No comment',
+    );
   }
 
   // --- Side Drawer YAML Editor Helpers ---

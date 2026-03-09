@@ -5,7 +5,6 @@ import { Handle } from '../../components/Handle';
 import { StepNodeData } from '../../types';
 import { ExpressionViewer } from './ExpressionViewer';
 import { FadableContainer } from '../../components/FadableContainer';
-import { NodeComment } from '../NodeComment';
 import { StyledIconButton } from '../../components/StyledIconButton';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
@@ -178,11 +177,6 @@ const StepNode = ({ selected, id, data, disabled = false }: StepNodeProps) => {
     toggleHoverBackgroundColor = theme.palette.grey[700];
   }
 
-  let commentHoverBackgroundColor = theme.palette.grey[200];
-  if (theme.palette.mode === 'dark') {
-    commentHoverBackgroundColor = theme.palette.grey[700];
-  }
-
   return (
     <Box
       sx={{
@@ -202,7 +196,7 @@ const StepNode = ({ selected, id, data, disabled = false }: StepNodeProps) => {
           cursor: 'pointer',
           boxShadow: 4,
         },
-        '& .node-controls-hotspot:hover + .node-comment-badge, & .node-comment-badge:hover, & .node-comment-badge:focus-within, &:focus-within .node-comment-badge':
+        '&:hover .node-output-toggle-badge, .node-output-toggle-badge:hover, &:focus-within .node-output-toggle-badge':
           {
             opacity: 1,
             pointerEvents: 'auto',
@@ -233,111 +227,67 @@ const StepNode = ({ selected, id, data, disabled = false }: StepNodeProps) => {
         {!disabled && <Box>Step</Box>}
       </Box>
 
-      <Box
-        className="node-controls-hotspot"
-        sx={{
-          position: 'absolute',
-          top: -22,
-          right: -22,
-          width: 58,
-          height: 58,
-          borderTopRightRadius: '20px',
-          pointerEvents: 'auto',
-          zIndex: 4500,
-        }}
-      />
-
-      <NodeComment
-        comment={data.comment}
-        onChange={val => data.onChange(id, { ...data, comment: val })}
-        disabled={disabled}
-        color={NodeTypeColors.step}
-        selected
-        containerSx={{
-          top: -18,
-          right: -10,
-          left: 'auto',
-          zIndex: 5000,
-          opacity: 0,
-          pointerEvents: 'none',
-          transition: 'opacity 0.16s ease',
-          px: 0.35,
-          py: 0.35,
-          borderRadius: '999px',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 0.25,
-          backgroundColor:
-            theme.palette.mode === 'dark'
-              ? theme.palette.grey[900]
-              : theme.palette.grey[50],
-          border: `1px solid ${theme.palette.divider}`,
-        }}
-        buttonSx={{
-          width: 24,
-          height: 24,
-          minWidth: 24,
-          padding: 0,
-          border: 'none',
-          boxShadow: 'none',
-          backgroundColor: data.comment ? NodeTypeColors.step : 'transparent',
-          color: data.comment
-            ? theme.palette.getContrastText(NodeTypeColors.step)
-            : theme.palette.text.primary,
-          '&:hover': {
-            backgroundColor: data.comment
-              ? NodeTypeColors.step
-              : commentHoverBackgroundColor,
-            border: 'none',
-            boxShadow: 'none',
-          },
-        }}
-        slotAfterSeparator="horizontal"
-        slotAfter={
-          hasIoContent ? (
-            <Box
-              className="node-output-toggle-badge"
-              data-testid="node-output-toggle-badge"
-            >
-              <Tooltip
-                title={toggleTooltipTitle}
-                enterDelay={900}
-                enterNextDelay={700}
+      {hasIoContent ? (
+        <Box
+          className="node-output-toggle-badge"
+          data-testid="node-output-toggle-badge"
+          sx={{
+            position: 'absolute',
+            top: -18,
+            right: -10,
+            zIndex: 5000,
+            opacity: 0,
+            pointerEvents: 'none',
+            transition: 'opacity 0.16s ease',
+            px: 0.35,
+            py: 0.35,
+            borderRadius: '999px',
+            display: 'flex',
+            alignItems: 'center',
+            backgroundColor:
+              theme.palette.mode === 'dark'
+                ? theme.palette.grey[900]
+                : theme.palette.grey[50],
+            border: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <Tooltip
+            title={toggleTooltipTitle}
+            enterDelay={900}
+            enterNextDelay={700}
+          >
+            <span>
+              <StyledIconButton
+                data-testid="node-output-toggle-button"
+                size="small"
+                onClick={toggleIoExpanded}
+                disabled={isForceExpanded}
+                sx={{
+                  width: 24,
+                  height: 24,
+                  minWidth: 24,
+                  padding: 0,
+                  border: 'none',
+                  boxShadow: 'none',
+                  backgroundColor: isExpanded
+                    ? NodeTypeColors.step
+                    : 'transparent',
+                  color: isExpanded
+                    ? theme.palette.getContrastText(NodeTypeColors.step)
+                    : theme.palette.text.primary,
+                  '&:hover': {
+                    backgroundColor: toggleHoverBackgroundColor,
+                    border: 'none',
+                    boxShadow: 'none',
+                  },
+                }}
               >
-                <span>
-                  <StyledIconButton
-                    data-testid="node-output-toggle-button"
-                    size="small"
-                    onClick={toggleIoExpanded}
-                    disabled={isForceExpanded}
-                    sx={{
-                      width: 24,
-                      height: 24,
-                      minWidth: 24,
-                      padding: 0,
-                      border: 'none',
-                      boxShadow: 'none',
-                      backgroundColor: isExpanded
-                        ? NodeTypeColors.step
-                        : 'transparent',
-                      color: isExpanded
-                        ? theme.palette.getContrastText(NodeTypeColors.step)
-                        : theme.palette.text.primary,
-                      '&:hover': {
-                        backgroundColor: toggleHoverBackgroundColor,
-                        border: 'none',
-                        boxShadow: 'none',
-                      },
-                    }}
-                  >
-                    <SettingsIcon sx={{ fontSize: '0.9rem' }} />
-                  </StyledIconButton>
-                </span>
-              </Tooltip>
-            </Box>
-          ) : undefined
-        }
-      />
+                <SettingsIcon sx={{ fontSize: '0.9rem' }} />
+              </StyledIconButton>
+            </span>
+          </Tooltip>
+        </Box>
+      ) : null}
 
       <Box>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>

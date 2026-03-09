@@ -26,7 +26,10 @@ import {
 import { IconButton, Tooltip, Typography, Box } from '@mui/material';
 import CodeIcon from '@mui/icons-material/Code';
 import ListIcon from '@mui/icons-material/List';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 import { YamlNodeEditor } from './YamlNodeEditor';
+import { CommentInputPopover } from './CommentInputPopover';
 
 export interface NodeSideContentProps {
   node: Node<AllNodeData> | undefined;
@@ -61,6 +64,9 @@ export const NodeSideContent = ({
 }: NodeSideContentProps) => {
   const [isYamlMode, setIsYamlMode] = useState(false);
   const [formRenderVersion, setFormRenderVersion] = useState(0);
+  const [commentAnchorEl, setCommentAnchorEl] = useState<HTMLElement | null>(
+    null,
+  );
   const prevYamlModeRef = useRef(isYamlMode);
   const selectedPrefabNode = node && isPrefabNode(node) ? node : undefined;
   const isSelectedPrefabNode = Boolean(selectedPrefabNode);
@@ -125,8 +131,37 @@ export const NodeSideContent = ({
   const { title, color } = edge
     ? { title: 'Edge Connection', color: '#888' }
     : getHeaderInfo();
+  const comment = (node?.data as any)?.comment ?? '';
+  const hasComment = Boolean(comment?.trim());
+  const isCommentSupported =
+    !edge && !!node && typeof (node.data as any)?.onChange === 'function';
+
+  const handleCommentOpen = (event: React.MouseEvent<HTMLElement>) => {
+    if (!isCommentSupported) {
+      return;
+    }
+    setCommentAnchorEl(event.currentTarget);
+  };
+
+  const handleCommentClose = () => {
+    setCommentAnchorEl(null);
+  };
+
+  const handleCommentChange = (value: string) => {
+    if (!node || !isCommentSupported) {
+      return;
+    }
+    const data = node.data as any;
+    data.onChange(node.id, { ...data, comment: value });
+  };
+
   const isTypeSupported = (type: string) =>
     supportedTypes?.includes(type as any);
+
+  useEffect(() => {
+    setCommentAnchorEl(null);
+  }, [node?.id, edge?.id]);
+
   useEffect(() => {
     const wasYamlMode = prevYamlModeRef.current;
     if (wasYamlMode && !isYamlMode) {
@@ -204,43 +239,77 @@ export const NodeSideContent = ({
       <Box
         sx={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          flexDirection: 'column',
+          gap: 1,
           mb: 2,
           mt: 1,
           flexShrink: 0,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Box
-            sx={{
-              width: 16,
-              height: 16,
-              borderRadius: '4px',
-              backgroundColor: color,
-              flexShrink: 0,
-            }}
-          />
-          <Typography variant="h6" sx={{ m: 0 }}>
-            {title}
-          </Typography>
-        </Box>
-        <Tooltip
-          title={isYamlMode ? 'Switch to Form View' : 'Switch to YAML View'}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
         >
-          <IconButton
-            data-testid="yaml-toggle-switch"
-            size="small"
-            onClick={() => setIsYamlMode(!isYamlMode)}
-            color={isYamlMode ? 'primary' : 'default'}
-          >
-            {isYamlMode ? (
-              <ListIcon fontSize="small" />
-            ) : (
-              <CodeIcon fontSize="small" />
-            )}
-          </IconButton>
-        </Tooltip>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 16,
+                height: 16,
+                borderRadius: '4px',
+                backgroundColor: color,
+                flexShrink: 0,
+              }}
+            />
+            <Typography variant="h6" sx={{ m: 0 }}>
+              {title}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Tooltip title={hasComment ? 'View/Edit Comment' : 'Add Comment'}>
+              <span>
+                <IconButton
+                  data-testid="sidebar-comment-button"
+                  size="small"
+                  onClick={handleCommentOpen}
+                  disabled={!isCommentSupported}
+                >
+                  {hasComment ? (
+                    <ChatBubbleIcon fontSize="small" />
+                  ) : (
+                    <ChatBubbleOutlineIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip
+              title={isYamlMode ? 'Switch to Form View' : 'Switch to YAML View'}
+            >
+              <IconButton
+                data-testid="yaml-toggle-switch"
+                size="small"
+                onClick={() => setIsYamlMode(!isYamlMode)}
+                color={isYamlMode ? 'primary' : 'default'}
+              >
+                {isYamlMode ? (
+                  <ListIcon fontSize="small" />
+                ) : (
+                  <CodeIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </Box>
+        <CommentInputPopover
+          open={Boolean(commentAnchorEl)}
+          anchorEl={commentAnchorEl}
+          value={comment}
+          onChange={handleCommentChange}
+          onClose={handleCommentClose}
+          disabled={!isCommentSupported}
+        />
       </Box>
 
       {children}

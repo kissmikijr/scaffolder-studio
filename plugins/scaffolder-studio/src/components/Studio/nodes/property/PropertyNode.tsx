@@ -3,7 +3,6 @@ import { NodeProps, Position, Node, Handle as FlowHandle } from '@xyflow/react';
 import { Handle } from '../../components/Handle';
 import { Box, useTheme, Chip, Typography, Divider, alpha } from '@mui/material';
 import { PropertyNodeData } from '../../types';
-import { NodeComment } from '../NodeComment';
 import { getBackgroundColor } from '../../utils/colorUtils';
 import { RELATIONSHIP_PROPERTY_OUTPUT_HANDLE } from '../../hooks/useDependencyEdges';
 
@@ -53,11 +52,6 @@ export const PropertyNodeContent = ({
           boxShadow: 3,
           cursor: 'pointer',
         },
-        '& .node-controls-hotspot:hover + .node-comment-badge, & .node-comment-badge:hover, & .node-comment-badge:focus-within, &:focus-within .node-comment-badge':
-          {
-            opacity: 1,
-            pointerEvents: 'auto',
-          },
         outline: 'none',
       }}
       data-interactive="true"
@@ -88,36 +82,6 @@ export const PropertyNodeContent = ({
           )}
         </Box>
       )}
-      <Box
-        className="node-controls-hotspot"
-        sx={{
-          position: 'absolute',
-          top: -22,
-          right: -22,
-          width: 58,
-          height: 58,
-          borderTopRightRadius: '20px',
-          pointerEvents: 'auto',
-          zIndex: 4500,
-        }}
-      />
-      <NodeComment
-        comment={data.comment}
-        onChange={val => data.onChange(id, { ...data, comment: val } as any)}
-        disabled={disabled}
-        color={getBackgroundColor(data.variableType)}
-        selected
-        containerSx={{
-          top: -10,
-          right: -10,
-          left: 'auto',
-          zIndex: 5000,
-          opacity: 0,
-          pointerEvents: 'none',
-          transition: 'opacity 0.16s ease',
-        }}
-      />
-
       <Box
         sx={{
           display: 'flex',

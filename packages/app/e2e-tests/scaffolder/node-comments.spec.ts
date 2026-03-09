@@ -15,7 +15,7 @@ test.describe('Scaffolder Studio - Node Comments', () => {
     await listPage?.cleanupCreatedTemplates();
   });
 
-  test('should display a badge when a comment is added to a step', async () => {
+  test('should persist a comment in the popover for a step', async () => {
     await listPage.goto();
     await listPage.createNewTemplate();
     await editorPage.verifyLoaded();
@@ -27,11 +27,6 @@ test.describe('Scaffolder Studio - Node Comments', () => {
     // open the editor and add a comment via UI
     await editorPage.openCommentEditor('Comment Test Step');
     await editorPage.addComment('This is a test comment');
-
-    // badge should only show when hovering the top-right hotspot
-    await editorPage.expectNodeCommentBadgeHiddenUntilTopRightHover(
-      'Comment Test Step',
-    );
 
     // comment should be persisted in the popover field
     await editorPage.openCommentEditor('Comment Test Step');
@@ -47,9 +42,6 @@ test.describe('Scaffolder Studio - Node Comments', () => {
     await editorPage.configureStep('comment-step', 'Comment Hide Step', {});
     await editorPage.openCommentEditor('Comment Hide Step');
     await editorPage.addComment('To be deleted');
-    await editorPage.expectNodeCommentBadgeHiddenUntilTopRightHover(
-      'Comment Hide Step',
-    );
 
     // remove the comment via UI
     await editorPage.openCommentEditor('Comment Hide Step');
