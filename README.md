@@ -33,6 +33,7 @@ With Scaffolder Studio, you can:
   - [Templates](#templates)
   - [Prefabs](#prefabs)
   - [Comments](#comments)
+- [Shortcuts](#shortcuts)
 - [Permissions](#permissions)
 - [Publishers](#publishers)
   - [Event based entity provider](#event-based-entity-provider)
@@ -213,6 +214,32 @@ These permissions control the prefabs:
 The comment feature allows you to add persist comments to your Step, property, output and template nodes. You can add or edit a comment by hovering over the node's top-right corner and clicking the comment icon. The comment will be saved to the node's data.
 
 The intended use of comments is to provide additional context or notes about the configuration of that element. It can be especially usful to document a complex scm action configuration.
+
+## Shortcuts
+
+Scaffolder Studio supports the following shortcuts:
+
+| Shortcut                                                      | Action                                                             |
+| ------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `1`                                                           | Add Step node                                                      |
+| `2`                                                           | Add Parameters node                                                |
+| `3`                                                           | Add Property node (when a Parameters/Property context is selected) |
+| `4`                                                           | Add Output node                                                    |
+| `0`                                                           | Fit view                                                           |
+| `Cmd/Ctrl + 0`                                                | Fit view                                                           |
+| `Cmd/Ctrl + 4`                                                | Toggle relationship edges                                          |
+| `Option + Cmd + B` (macOS) / `Alt + Ctrl + B` (Windows/Linux) | Toggle right side panel                                            |
+| `Cmd/Ctrl + C`                                                | Copy selected node (non-template nodes)                            |
+| `Cmd/Ctrl + V`                                                | Paste copied node                                                  |
+| `Cmd/Ctrl + Z`                                                | Undo                                                               |
+| `Cmd/Ctrl + Shift + Z` or `Cmd/Ctrl + Y`                      | Redo                                                               |
+| `Cmd/Ctrl + S`                                                | Save/sync draft immediately                                        |
+| `j`                                                           | Select next node (sorted top-to-bottom, then left-to-right)        |
+| `k`                                                           | Select previous node (sorted top-to-bottom, then left-to-right)    |
+| Hold `Shift` while dragging a node                            | Snap alignment against connected nodes                             |
+| Hold `Space` while dragging                                   | Pan the canvas                                                     |
+
+Shortcuts are ignored while typing in input, textarea, select, or other editable fields.
 
 ## Permissions
 
