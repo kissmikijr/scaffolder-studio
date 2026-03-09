@@ -7,6 +7,7 @@ describe('useEditorKeyboardShortcuts', () => {
     const onAddParameters = jest.fn();
     const onAddProperty = jest.fn();
     const onAddOutput = jest.fn();
+    const onToggleZenMode = jest.fn();
     const onToggleDependencyEdges = jest.fn();
     const onToggleSideContent = jest.fn();
     const onFitView = jest.fn();
@@ -17,6 +18,7 @@ describe('useEditorKeyboardShortcuts', () => {
         onAddParameters,
         onAddProperty,
         onAddOutput,
+        onToggleZenMode,
         onToggleDependencyEdges,
         onToggleSideContent,
         onFitView,
@@ -28,6 +30,7 @@ describe('useEditorKeyboardShortcuts', () => {
       onAddParameters,
       onAddProperty,
       onAddOutput,
+      onToggleZenMode,
       onToggleDependencyEdges,
       onToggleSideContent,
       onFitView,
@@ -40,6 +43,7 @@ describe('useEditorKeyboardShortcuts', () => {
       onAddParameters,
       onAddProperty,
       onAddOutput,
+      onToggleZenMode,
       onToggleDependencyEdges,
       onToggleSideContent,
       onFitView,
@@ -54,6 +58,7 @@ describe('useEditorKeyboardShortcuts', () => {
     expect(onAddParameters).toHaveBeenCalledTimes(1);
     expect(onAddProperty).toHaveBeenCalledTimes(1);
     expect(onAddOutput).toHaveBeenCalledTimes(1);
+    expect(onToggleZenMode).not.toHaveBeenCalled();
     expect(onToggleDependencyEdges).not.toHaveBeenCalled();
     expect(onToggleSideContent).not.toHaveBeenCalled();
     expect(onFitView).not.toHaveBeenCalled();
@@ -112,6 +117,18 @@ describe('useEditorKeyboardShortcuts', () => {
     expect(onFitView).toHaveBeenCalledTimes(1);
   });
 
+  it('triggers zen mode toggle on F without modifiers', () => {
+    const { onToggleZenMode } = setup();
+
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'f',
+      }),
+    );
+
+    expect(onToggleZenMode).toHaveBeenCalledTimes(1);
+  });
+
   it('does not trigger shortcuts when an input is focused', () => {
     const callbacks = setup();
     const input = document.createElement('input');
@@ -132,8 +149,10 @@ describe('useEditorKeyboardShortcuts', () => {
         altKey: true,
       }),
     );
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'f' }));
 
     expect(callbacks.onAddStep).not.toHaveBeenCalled();
+    expect(callbacks.onToggleZenMode).not.toHaveBeenCalled();
     expect(callbacks.onToggleDependencyEdges).not.toHaveBeenCalled();
     expect(callbacks.onToggleSideContent).not.toHaveBeenCalled();
     expect(callbacks.onFitView).not.toHaveBeenCalled();

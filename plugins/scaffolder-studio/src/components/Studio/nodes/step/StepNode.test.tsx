@@ -31,6 +31,7 @@ const renderWithProviders = (
     isStepRelated: () => false,
     getIncomingConnectionCount: () => 0,
     getOutgoingConnectionCount: () => 0,
+    getRelationshipHandleColor: () => undefined,
     getTemplateOutgoingSlots: () => defaultSlots,
     getParameterType: () => undefined,
   };

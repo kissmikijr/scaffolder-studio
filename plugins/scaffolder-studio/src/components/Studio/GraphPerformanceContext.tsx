@@ -6,6 +6,11 @@ export type GraphPerformanceContextValue = {
   isStepRelated: (stepNodeId: string) => boolean;
   getIncomingConnectionCount: (nodeId: string) => number;
   getOutgoingConnectionCount: (nodeId: string) => number;
+  getRelationshipHandleColor: (
+    nodeId: string,
+    handleId: string,
+    direction: 'source' | 'target',
+  ) => string | undefined;
   getTemplateOutgoingSlots: (templateId: string) => TemplateOutgoingSlots;
   getParameterType: (parameterName: string) => string | undefined;
 };
@@ -22,6 +27,7 @@ const EMPTY_GRAPH_PERFORMANCE_CONTEXT: GraphPerformanceContextValue = {
   isStepRelated: () => false,
   getIncomingConnectionCount: () => 0,
   getOutgoingConnectionCount: () => 0,
+  getRelationshipHandleColor: () => undefined,
   getTemplateOutgoingSlots: () => EMPTY_TEMPLATE_SLOTS,
   getParameterType: () => undefined,
 };

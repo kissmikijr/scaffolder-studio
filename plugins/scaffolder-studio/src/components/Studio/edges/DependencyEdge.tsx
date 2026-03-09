@@ -1,5 +1,4 @@
 import { BaseEdge, EdgeProps, getBezierPath } from '@xyflow/react';
-import { useTheme, alpha } from '@mui/material';
 
 const DependencyEdge = ({
   id,
@@ -11,7 +10,6 @@ const DependencyEdge = ({
   targetPosition,
   markerEnd,
 }: EdgeProps) => {
-  const theme = useTheme();
   const [edgePath] = getBezierPath({
     sourceX,
     sourceY,
@@ -27,9 +25,7 @@ const DependencyEdge = ({
       path={edgePath}
       markerEnd={markerEnd}
       style={{
-        stroke: alpha(theme.palette.text.secondary, 0.5),
-        strokeWidth: 1.5,
-        strokeDasharray: '6 4',
+        strokeWidth: 2.5,
         strokeLinecap: 'round',
       }}
     />

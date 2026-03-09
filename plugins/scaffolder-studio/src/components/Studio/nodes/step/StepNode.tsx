@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type CSSProperties } from 'react';
 import { NodeProps, Position, Node, Handle as FlowHandle } from '@xyflow/react';
 import { Box, useTheme, Tooltip, Typography, alpha, Chip } from '@mui/material';
 import { Handle } from '../../components/Handle';
@@ -28,9 +28,6 @@ const relationshipHandleStyle = {
   width: 10,
   height: 10,
   borderRadius: '50%',
-  border: `1px solid ${alpha(NodeTypeColors.step, 0.8)}`,
-  backgroundColor: NodeTypeColors.step,
-  boxShadow: `0 0 0 3px ${alpha(NodeTypeColors.step, 0.18)}`,
   pointerEvents: 'all' as const,
   cursor: 'crosshair',
   zIndex: 3200,
@@ -47,7 +44,13 @@ const inferTypeFromValue = (value: unknown): string => {
 const sanitizeTestId = (value: string): string =>
   value.replace(/[^a-zA-Z0-9_-]/g, '_');
 
-const StepNode = ({ selected, id, data, disabled = false }: StepNodeProps) => {
+const StepNode = ({
+  selected,
+  id,
+  data,
+  width,
+  disabled = false,
+}: StepNodeProps) => {
   const theme = useTheme();
   const {
     relationshipMode,
@@ -55,6 +58,7 @@ const StepNode = ({ selected, id, data, disabled = false }: StepNodeProps) => {
     getIncomingConnectionCount,
     getOutgoingConnectionCount,
     getParameterType,
+    getRelationshipHandleColor,
   } = useGraphPerformanceContext();
 
   const canAcceptIncoming = hasIncomingCapacity(
@@ -99,6 +103,8 @@ const StepNode = ({ selected, id, data, disabled = false }: StepNodeProps) => {
   }, [outputSchemaProperties]);
 
   const hasIoContent = true;
+  const resolvedNodeWidth =
+    typeof width === 'number' && width > 0 ? Math.max(width, 200) : 200;
   const isLightTheme = theme.palette.mode === 'light';
 
   const persistedExpanded = Boolean(data.uiState?.ioExpanded);
@@ -163,6 +169,26 @@ const StepNode = ({ selected, id, data, disabled = false }: StepNodeProps) => {
     );
   };
 
+  const getRelationshipHandleVisualStyle = (
+    connectedColor?: string,
+  ): CSSProperties => {
+    const baseColor = connectedColor ?? NodeTypeColors.step;
+
+    if (!connectedColor) {
+      return {
+        border: `1px solid ${alpha(baseColor, 0.82)}`,
+        backgroundColor: theme.palette.background.paper,
+        boxShadow: 'none',
+      };
+    }
+
+    return {
+      border: `1px solid ${alpha(baseColor, 0.95)}`,
+      backgroundColor: baseColor,
+      boxShadow: 'none',
+    };
+  };
+
   let toggleTooltipTitle = 'Show step inputs/outputs';
   if (isForceExpanded) {
     toggleTooltipTitle = 'Expanded while relationship mode is enabled';
@@ -180,8 +206,9 @@ const StepNode = ({ selected, id, data, disabled = false }: StepNodeProps) => {
   return (
     <Box
       sx={{
-        minWidth: 180,
-        maxWidth: 360,
+        width: resolvedNodeWidth,
+        minWidth: resolvedNodeWidth,
+        maxWidth: resolvedNodeWidth,
         borderRadius: '20px',
         border: `2px solid ${
           selected ? SELECTED_BORDER_COLOR : theme.palette.divider
@@ -221,7 +248,7 @@ const StepNode = ({ selected, id, data, disabled = false }: StepNodeProps) => {
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          zIndex: 1000,
+          zIndex: 3,
         }}
       >
         {!disabled && <Box>Step</Box>}
@@ -460,6 +487,13 @@ const StepNode = ({ selected, id, data, disabled = false }: StepNodeProps) => {
               position={Position.Left}
               style={{
                 ...relationshipHandleStyle,
+                ...getRelationshipHandleVisualStyle(
+                  getRelationshipHandleColor(
+                    id,
+                    RELATIONSHIP_IF_INPUT_HANDLE,
+                    'target',
+                  ),
+                ),
                 left: 0,
                 top: '50%',
                 transform: 'translate(-50%, -50%)',
@@ -543,6 +577,13 @@ const StepNode = ({ selected, id, data, disabled = false }: StepNodeProps) => {
                     position={Position.Left}
                     style={{
                       ...relationshipHandleStyle,
+                      ...getRelationshipHandleVisualStyle(
+                        getRelationshipHandleColor(
+                          id,
+                          toInputHandleId(inputKey),
+                          'target',
+                        ),
+                      ),
                       left: 0,
                       top: '50%',
                       transform: 'translate(-50%, -50%)',
@@ -630,6 +671,13 @@ const StepNode = ({ selected, id, data, disabled = false }: StepNodeProps) => {
                         position={Position.Right}
                         style={{
                           ...relationshipHandleStyle,
+                          ...getRelationshipHandleVisualStyle(
+                            getRelationshipHandleColor(
+                              id,
+                              toOutputHandleId(outputKey),
+                              'source',
+                            ),
+                          ),
                           right: 0,
                           top: '50%',
                           transform: 'translate(50%, -50%)',

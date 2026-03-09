@@ -11,6 +11,7 @@ interface UseEditorKeyboardShortcutsProps {
   onAddParameters: () => void;
   onAddProperty: () => void;
   onAddOutput: () => void;
+  onToggleZenMode: () => void;
   onToggleDependencyEdges: () => void;
   onToggleSideContent: () => void;
   onFitView: () => void;
@@ -21,6 +22,7 @@ export const useEditorKeyboardShortcuts = ({
   onAddParameters,
   onAddProperty,
   onAddOutput,
+  onToggleZenMode,
   onToggleDependencyEdges,
   onToggleSideContent,
   onFitView,
@@ -89,6 +91,9 @@ export const useEditorKeyboardShortcuts = ({
       } else if (isDigitShortcutKey(event, 0)) {
         event.preventDefault();
         onFitView();
+      } else if (isLetterShortcutKey(event, 'f')) {
+        event.preventDefault();
+        onToggleZenMode();
       }
     };
 
@@ -99,6 +104,7 @@ export const useEditorKeyboardShortcuts = ({
     onAddParameters,
     onAddProperty,
     onAddStep,
+    onToggleZenMode,
     onToggleDependencyEdges,
     onToggleSideContent,
     onFitView,

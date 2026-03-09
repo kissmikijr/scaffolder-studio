@@ -20,8 +20,11 @@ export const PropertyNodeContent = ({
   disabled = false,
 }: NodeProps<Node<PropertyNodeData>> & { disabled?: boolean }) => {
   const theme = useTheme();
-  const { getIncomingConnectionCount, getOutgoingConnectionCount } =
-    useGraphPerformanceContext();
+  const {
+    getIncomingConnectionCount,
+    getOutgoingConnectionCount,
+    getRelationshipHandleColor,
+  } = useGraphPerformanceContext();
   const canAcceptIncoming = useMemo(
     () => hasIncomingCapacity('property', getIncomingConnectionCount(id)),
     [getIncomingConnectionCount, id],
@@ -34,6 +37,12 @@ export const PropertyNodeContent = ({
     theme.palette.mode === 'light'
       ? theme.palette.primary.main
       : theme.palette.info.light;
+  const relationshipHandleColor = getRelationshipHandleColor(
+    id,
+    RELATIONSHIP_PROPERTY_OUTPUT_HANDLE,
+    'source',
+  );
+  const relationshipBaseColor = relationshipHandleColor ?? relationshipAccent;
 
   return (
     <Box
@@ -218,13 +227,19 @@ export const PropertyNodeContent = ({
               width: 10,
               height: 10,
               borderRadius: '50%',
-              border: `1px solid ${alpha(relationshipAccent, 0.95)}`,
-              backgroundColor: relationshipAccent,
+              border: `1.5px solid ${
+                theme.palette.mode === 'light'
+                  ? alpha(theme.palette.common.black, 0.55)
+                  : alpha(theme.palette.common.black, 0.78)
+              }`,
+              backgroundColor: relationshipHandleColor
+                ? relationshipBaseColor
+                : theme.palette.background.paper,
               right: 0,
               top: '28%',
               transform: 'translate(50%, -50%)',
               cursor: 'crosshair',
-              boxShadow: `0 0 0 3px ${alpha(relationshipAccent, 0.18)}`,
+              boxShadow: 'none',
               zIndex: 4600,
               pointerEvents: 'all',
             }}

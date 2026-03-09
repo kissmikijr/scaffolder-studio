@@ -646,6 +646,20 @@ export const useEditorHandlers = ({
         return !node || !isTemplateNode(node);
       });
 
+      // Ignore pane-click deselect batches so the current node selection is preserved.
+      // React Flow emits select=false changes for selected nodes when clicking empty canvas.
+      const hasSelectTrueChange = processedChanges.some(
+        change => change.type === 'select' && change.selected === true,
+      );
+      const hasNonSelectChange = processedChanges.some(
+        change => change.type !== 'select',
+      );
+      if (!hasSelectTrueChange && !hasNonSelectChange) {
+        processedChanges = processedChanges.filter(
+          change => !(change.type === 'select' && change.selected === false),
+        );
+      }
+
       if (isShiftPressed) {
         processedChanges = processedChanges.map(change => {
           if (change.type === 'position' && change.position) {

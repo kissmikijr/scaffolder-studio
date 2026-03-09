@@ -5,6 +5,7 @@ import {
   StepNodeData,
   isStepNode,
   isPropertyNode,
+  getPropertyBackgroundColor,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import {
   findAllTokens,
@@ -194,7 +195,19 @@ export const computeRelationshipGraph = (
       targetHandle,
       type: 'relationship',
       className: 'relationship-edge',
-      data: { kind: 'relationship', isRelationship: true },
+      data: {
+        kind: 'relationship',
+        isRelationship: true,
+        sourceKind:
+          sourceHandle === RELATIONSHIP_PROPERTY_OUTPUT_HANDLE
+            ? 'parameter'
+            : 'stepOutput',
+        sourceColor:
+          sourceHandle === RELATIONSHIP_PROPERTY_OUTPUT_HANDLE &&
+          isPropertyNode(sourceNode)
+            ? getPropertyBackgroundColor(sourceNode.data.variableType)
+            : undefined,
+      },
       selectable: false,
       deletable: false,
       focusable: false,

@@ -28,7 +28,10 @@ import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import { useParams, useNavigate } from 'react-router-dom';
 import { nodeTypes } from './nodes/nodeTypes';
 import { defaultEdgeOptions, edgeTypes } from './edges';
-import { AllNodeData } from '@kissmiklosjr/plugin-scaffolder-studio-common';
+import {
+  AllNodeData,
+  NodeTypeColors,
+} from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { ScaffolderAction } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import {
   isTemplateNode,
@@ -48,6 +51,7 @@ import { PrefabInstanceContextMenu } from './nodes/prefab/PrefabInstanceContextM
 import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
 import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
 import {
   useCopyPaste,
@@ -161,7 +165,8 @@ const ScaffolderStudioEditor = ({
     resolve: (value: { stepId: string; name: string } | null) => void;
   } | null>(null);
   const [isSideContentCollapsed, setIsSideContentCollapsed] = useState(false);
-  const [showRelationshipEdges, setShowRelationshipEdges] = useState(false);
+  const [showRelationshipEdges, setShowRelationshipEdges] = useState(true);
+  const [isZenMode, setIsZenMode] = useState(false);
   const ensureRelationshipEdgesShown = useCallback(() => {
     setShowRelationshipEdges(true);
   }, []);
@@ -225,14 +230,88 @@ const ScaffolderStudioEditor = ({
   const isPanning = usePanning();
   const project = useProjectSync({ id, nodes, setViewportState });
 
-  const { relationshipEdges, relatedStepNodeIds } = useDependencyEdges(
-    nodes,
-    showRelationshipEdges,
+  const {
+    relationshipEdges: allRelationshipEdges,
+    relatedStepNodeIds: allRelatedStepNodeIds,
+  } = useDependencyEdges(nodes, true);
+  const relationshipVisibilityEnabled = showRelationshipEdges || isZenMode;
+  const relationshipEdges = useMemo(
+    () => (relationshipVisibilityEnabled ? allRelationshipEdges : []),
+    [allRelationshipEdges, relationshipVisibilityEnabled],
   );
+  const relatedStepNodeIds = useMemo(
+    () =>
+      relationshipVisibilityEnabled ? allRelatedStepNodeIds : new Set<string>(),
+    [allRelatedStepNodeIds, relationshipVisibilityEnabled],
+  );
+  const zenFocusEdgeIds = useMemo(() => {
+    if (!isZenMode || !selectedNode?.id) {
+      return new Set<string>();
+    }
+
+    return new Set(
+      allRelationshipEdges
+        .filter(
+          edge =>
+            edge.source === selectedNode.id || edge.target === selectedNode.id,
+        )
+        .map(edge => edge.id),
+    );
+  }, [allRelationshipEdges, isZenMode, selectedNode?.id]);
+  const zenFocusNodeIds = useMemo(() => {
+    if (!isZenMode || !selectedNode?.id) {
+      return new Set<string>();
+    }
+
+    const nodeIds = new Set<string>([selectedNode.id]);
+    for (const edge of allRelationshipEdges) {
+      if (edge.source === selectedNode.id || edge.target === selectedNode.id) {
+        nodeIds.add(edge.source);
+        nodeIds.add(edge.target);
+      }
+    }
+    return nodeIds;
+  }, [allRelationshipEdges, isZenMode, selectedNode?.id]);
+  const relationshipHandleColorIndex = useMemo(() => {
+    const sourceColors = new Map<string, string>();
+    const targetColors = new Map<string, string>();
+
+    for (const edge of allRelationshipEdges) {
+      const edgeData = edge.data as
+        | {
+            sourceKind?: 'parameter' | 'stepOutput';
+            sourceColor?: string;
+          }
+        | undefined;
+      let color: string | undefined;
+      if (edgeData?.sourceKind === 'parameter') {
+        color = edgeData.sourceColor ?? NodeTypeColors.parameters;
+      } else if (edgeData?.sourceKind === 'stepOutput') {
+        color = NodeTypeColors.step;
+      }
+
+      if (!color) {
+        continue;
+      }
+
+      if (edge.sourceHandle) {
+        sourceColors.set(`${edge.source}:${edge.sourceHandle}`, color);
+      }
+
+      if (edge.targetHandle) {
+        targetColors.set(`${edge.target}:${edge.targetHandle}`, color);
+      }
+    }
+
+    return {
+      sourceColors,
+      targetColors,
+    };
+  }, [allRelationshipEdges]);
   const graphIndexes = useGraphIndexes(nodes, edges);
   const graphPerformanceContextValue = useMemo<GraphPerformanceContextValue>(
     () => ({
-      relationshipMode: showRelationshipEdges,
+      relationshipMode: relationshipVisibilityEnabled,
       isStepRelated: (stepNodeId: string) => relatedStepNodeIds.has(stepNodeId),
       getIncomingConnectionCount: (nodeId: string) =>
         getIncomingConnectionCountFromIndex(
@@ -244,6 +323,16 @@ const ScaffolderStudioEditor = ({
           graphIndexes.connectionIndex,
           nodeId,
         ),
+      getRelationshipHandleColor: (
+        nodeId: string,
+        handleId: string,
+        direction: 'source' | 'target',
+      ) => {
+        const key = `${nodeId}:${handleId}`;
+        return direction === 'source'
+          ? relationshipHandleColorIndex.sourceColors.get(key)
+          : relationshipHandleColorIndex.targetColors.get(key);
+      },
       getTemplateOutgoingSlots: (templateId: string) =>
         getTemplateOutgoingSlotsFromIndex(
           graphIndexes.connectionIndex,
@@ -256,12 +345,84 @@ const ScaffolderStudioEditor = ({
       graphIndexes.connectionIndex,
       graphIndexes.parameterTypeByName,
       relatedStepNodeIds,
-      showRelationshipEdges,
+      relationshipHandleColorIndex.sourceColors,
+      relationshipHandleColorIndex.targetColors,
+      relationshipVisibilityEnabled,
     ],
   );
-  const displayEdges = showRelationshipEdges
-    ? [...edges, ...relationshipEdges]
-    : edges;
+  const displayEdges = useMemo(() => {
+    if (!relationshipVisibilityEnabled) {
+      return edges;
+    }
+
+    const selectedNodeId = selectedNode?.id;
+    const styledBaseEdges = isZenMode ? [] : edges;
+    const elevatedRelationshipEdges = relationshipEdges.map(edge => {
+      if (isZenMode && !zenFocusEdgeIds.has(edge.id)) {
+        return {
+          ...edge,
+          className: 'relationship-edge relationship-edge--background',
+          zIndex: -4,
+        };
+      }
+
+      const isConnectedToSelectedNode =
+        !!selectedNodeId &&
+        (edge.source === selectedNodeId || edge.target === selectedNodeId);
+
+      return {
+        ...edge,
+        className: isConnectedToSelectedNode
+          ? 'relationship-edge relationship-edge--selected-node'
+          : 'relationship-edge',
+        zIndex: isConnectedToSelectedNode ? 1003 : -3,
+      };
+    });
+
+    return [...styledBaseEdges, ...elevatedRelationshipEdges];
+  }, [
+    edges,
+    isZenMode,
+    relationshipEdges,
+    relationshipVisibilityEnabled,
+    selectedNode?.id,
+    zenFocusEdgeIds,
+  ]);
+  const displayNodes = useMemo(() => {
+    if (!relationshipVisibilityEnabled) {
+      return nodes;
+    }
+
+    const selectedNodeId = selectedNode?.id;
+    if (!selectedNodeId) {
+      return nodes;
+    }
+
+    return nodes.map(node => {
+      const baseZIndex = typeof node.zIndex === 'number' ? node.zIndex : 0;
+      const isSelected = node.id === selectedNodeId;
+      const isZenFocusedNode = !isZenMode || zenFocusNodeIds.has(node.id);
+
+      return {
+        ...node,
+        zIndex: isSelected ? Math.max(baseZIndex, 2) : Math.min(baseZIndex, -3),
+        style: {
+          ...(node.style ?? {}),
+          opacity: isZenFocusedNode ? 1 : 0.08,
+          filter: isZenFocusedNode ? 'none' : 'grayscale(0.85)',
+          pointerEvents: isZenFocusedNode
+            ? ('auto' as const)
+            : ('none' as const),
+        },
+      };
+    });
+  }, [
+    isZenMode,
+    nodes,
+    relationshipVisibilityEnabled,
+    selectedNode?.id,
+    zenFocusNodeIds,
+  ]);
 
   useThumbnail({
     id,
@@ -432,7 +593,27 @@ const ScaffolderStudioEditor = ({
 
   const onPaneClick = useCallback(() => {
     setPrefabMenu(null);
-  }, [setPrefabMenu]);
+    setSelectedEdge(undefined);
+
+    const preferredNodeId =
+      selectedNode?.id ?? previousSelectedNodeIdRef.current;
+    const fallbackNode =
+      (preferredNodeId && nodes.find(n => n.id === preferredNodeId)) ||
+      nodes.find(n => isTemplateNode(n)) ||
+      nodes[0];
+
+    if (!fallbackNode) {
+      return;
+    }
+
+    setNodes(currentNodes =>
+      currentNodes.map(node => ({
+        ...node,
+        selected: node.id === fallbackNode.id,
+      })),
+    );
+    setSelectedNode(fallbackNode);
+  }, [nodes, selectedNode?.id, setNodes, setPrefabMenu, setSelectedEdge]);
 
   const getNodeDimensions = useCallback((node: Node<AllNodeData>) => {
     return {
@@ -583,6 +764,9 @@ const ScaffolderStudioEditor = ({
   const toggleDependencyEdges = useCallback(() => {
     setShowRelationshipEdges(prev => !prev);
   }, []);
+  const toggleZenMode = useCallback(() => {
+    setIsZenMode(prev => !prev);
+  }, []);
 
   const toggleSideContent = useCallback(() => {
     setIsSideContentCollapsed(prev => !prev);
@@ -593,6 +777,7 @@ const ScaffolderStudioEditor = ({
     onAddParameters: handleAddParametersFromToolbar,
     onAddProperty: handleAddPropertyFromToolbar,
     onAddOutput: handleAddOutputFromToolbar,
+    onToggleZenMode: toggleZenMode,
     onToggleDependencyEdges: toggleDependencyEdges,
     onToggleSideContent: toggleSideContent,
     onFitView: handleFitView,
@@ -789,6 +974,24 @@ const ScaffolderStudioEditor = ({
             </StyledIconButton>
           </Tooltip>
           <Tooltip
+            title={isZenMode ? 'Disable zen mode (F)' : 'Enable zen mode (F)'}
+            arrow
+          >
+            <StyledIconButton
+              size="small"
+              color={isZenMode ? 'primary' : 'secondary'}
+              data-testid="zen-mode-toggle-button"
+              onClick={toggleZenMode}
+              sx={{
+                width: 48,
+                height: 34,
+                borderRadius: '12px !important',
+              }}
+            >
+              <CenterFocusStrongIcon sx={{ fontSize: '1rem' }} />
+            </StyledIconButton>
+          </Tooltip>
+          <Tooltip
             title={
               isSideContentCollapsed
                 ? 'Expand side panel (Option+Cmd+B)'
@@ -832,19 +1035,25 @@ const ScaffolderStudioEditor = ({
                   theme.palette.mode === 'dark' ? '#16161a' : '#fafafa',
                 overflowX: 'hidden',
                 overflowY: 'hidden',
-                '& .react-flow__edge-path': {
-                  strokeWidth: 2,
-                },
-                // Keep edges under nodes so dense relationship overlays do not obscure node content.
-                '& .react-flow__edges': {
-                  zIndex: 0,
-                },
-                '& .react-flow__nodes': {
-                  zIndex: 1,
-                },
                 '& .react-flow__edge.relationship-edge': {
-                  zIndex: -1,
+                  zIndex: -3,
                 },
+                '& .react-flow__edge.zen-edge--background': {
+                  zIndex: -4,
+                  opacity: 0.2,
+                },
+                '& .react-flow__edge.zen-edge--selected': {
+                  opacity: 1,
+                },
+                '& .react-flow__edge.relationship-edge.relationship-edge--background':
+                  {
+                    zIndex: -4,
+                    opacity: 0.22,
+                  },
+                '& .react-flow__edge.relationship-edge.relationship-edge--selected-node':
+                  {
+                    zIndex: 3,
+                  },
                 '& .react-flow__pane.selection': {
                   cursor: isPanning ? 'grab' : 'default',
                   transition: 'cursor 0.2s',
@@ -861,7 +1070,7 @@ const ScaffolderStudioEditor = ({
                   onNodesChange={handleNodesChange}
                   onViewportChange={handleViewportChange}
                   edges={displayEdges}
-                  nodes={nodes}
+                  nodes={displayNodes}
                   connectionRadius={42}
                   viewport={viewport}
                   panOnDrag={isPanning}
