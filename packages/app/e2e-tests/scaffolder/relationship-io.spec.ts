@@ -112,16 +112,16 @@ test.describe('Scaffolder Studio - Relationship I/O', () => {
     await editorPage.collapseSideContent();
 
     const buildNode = editorPage.getNodeLocatorByText('Build');
-    await editorPage.waitForRelationshipEdges(0);
-    await expect(buildNode.getByTestId('step-node-io-section')).toHaveCount(0);
-
-    await editorPage.pressRelationshipShortcut();
     await editorPage.waitForRelationshipEdges(count => count >= 1);
     await expect(buildNode.getByTestId('step-node-io-section')).toBeVisible();
 
     await editorPage.pressRelationshipShortcut();
     await editorPage.waitForRelationshipEdges(0);
     await expect(buildNode.getByTestId('step-node-io-section')).toHaveCount(0);
+
+    await editorPage.pressRelationshipShortcut();
+    await editorPage.waitForRelationshipEdges(count => count >= 1);
+    await expect(buildNode.getByTestId('step-node-io-section')).toBeVisible();
   });
 
   test('manual I/O expansion persists across reload and YAML remains unchanged', async ({

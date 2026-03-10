@@ -298,9 +298,12 @@ export class ScaffolderStudioPage {
   }
 
   async deleteEdge() {
-    const edge = this.page.locator('.react-flow__edge').first();
+    const edge = this.page
+      .locator('.react-flow__edge:not([data-id*="rel-"])')
+      .first();
     await expect(edge).toBeVisible();
     await edge.click({ force: true });
+    await expect(edge).toHaveClass(/selected/);
     await this.page.keyboard.press('Backspace');
   }
 
@@ -312,7 +315,7 @@ export class ScaffolderStudioPage {
   ) {
     await this.collapseSideContent();
     const initialEdgeCount = await this.page
-      .locator('.react-flow__edge')
+      .locator('.react-flow__edge:not([data-id*="rel-"])')
       .count();
 
     const sourceNode = this.getNodeLocatorByText(sourceNodeText);
@@ -350,7 +353,7 @@ export class ScaffolderStudioPage {
       try {
         await expect(async () => {
           const edgeCount = await this.page
-            .locator('.react-flow__edge')
+            .locator('.react-flow__edge:not([data-id*="rel-"])')
             .count();
           expect(edgeCount).toBeGreaterThan(initialEdgeCount);
         }).toPass({ timeout: 5000 });

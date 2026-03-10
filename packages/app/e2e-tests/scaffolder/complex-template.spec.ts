@@ -140,8 +140,7 @@ test.describe('Scaffolder Studio - Complex Template', () => {
       'Display modified alerts file',
     );
 
-    await page.waitForTimeout(1000);
-
+    await expect(page.getByLabel('id', { exact: true })).toBeVisible();
     await page.getByLabel('id', { exact: true }).fill('createPullRequest');
     await page
       .getByLabel('name', { exact: true })

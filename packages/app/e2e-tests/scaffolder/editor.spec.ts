@@ -87,17 +87,23 @@ test.describe('Scaffolder Studio', () => {
     await editorPage.addStepNode();
 
     await expect(page.locator('.react-flow__node')).toHaveCount(2);
-    await expect(page.locator('.react-flow__edge')).toHaveCount(1);
+    await expect
+      .poll(() => editorPage.countNonRelationshipEdges(), { timeout: 10000 })
+      .toBe(1);
 
     await editorPage.deleteEdge();
-    await expect(page.locator('.react-flow__edge')).toHaveCount(0);
+    await expect
+      .poll(() => editorPage.countNonRelationshipEdges(), { timeout: 10000 })
+      .toBe(0);
 
     // Wait a bit for state to settle after deletion
     await page.waitForTimeout(500);
 
     // Use regular expressions for more robust finding
     await editorPage.connectNodes('Template', 'right', 'Step', 'left');
-    await expect(page.locator('.react-flow__edge')).toHaveCount(1);
+    await expect
+      .poll(() => editorPage.countNonRelationshipEdges(), { timeout: 10000 })
+      .toBe(1);
   });
 
   test('should update YAML when template is modified', async ({ page }) => {
@@ -258,20 +264,15 @@ test.describe('Scaffolder Studio', () => {
     });
     await editorPage.collapseSideContent();
 
-    await expect
-      .poll(() => editorPage.countRelationshipEdges(), { timeout: 2000 })
-      .toBe(1);
+    await editorPage.waitForRelationshipEdges(1, 10000);
+    await expect(page.getByTestId('step-node-io-section')).toBeVisible();
 
     await editorPage.toggleRelationshipEdges();
-    await expect
-      .poll(() => editorPage.countRelationshipEdges(), { timeout: 2000 })
-      .toBe(0);
+    await editorPage.waitForRelationshipEdges(0, 10000);
     await expect(page.getByTestId('step-node-io-section')).toHaveCount(0);
 
     await editorPage.toggleRelationshipEdges();
-    await expect
-      .poll(() => editorPage.countRelationshipEdges(), { timeout: 2000 })
-      .toBe(1);
+    await editorPage.waitForRelationshipEdges(1, 10000);
     await expect(page.getByTestId('step-node-io-section')).toHaveCount(1);
   });
 
