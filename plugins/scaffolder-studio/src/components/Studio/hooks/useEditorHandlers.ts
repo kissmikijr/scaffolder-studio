@@ -794,6 +794,15 @@ export const useEditorHandlers = ({
         if (selected) {
           setSelectedEdge(selected);
           setSelectedNode(undefined);
+          setNodes(currentNodes => {
+            if (!currentNodes.some(node => node.selected)) {
+              return currentNodes;
+            }
+
+            return currentNodes.map(node =>
+              node.selected ? { ...node, selected: false } : node,
+            );
+          });
         } else if (!nodesRef.current.some(n => n.selected)) {
           // If no edge and no node is selected, EdgeSideContent will be empty.
           // But our useEffect normally picks a fallback node.
@@ -802,7 +811,7 @@ export const useEditorHandlers = ({
         return updatedEdges;
       });
     },
-    [setEdges, setSelectedEdge, setSelectedNode],
+    [setEdges, setNodes, setSelectedEdge, setSelectedNode],
   );
 
   const onConnectStart: OnConnectStart = useCallback(

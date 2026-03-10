@@ -1,0 +1,4 @@
+interface:
+  display_name: "Scaffolder Studio E2E"
+  short_description: "Project-specific Playwright guide for node canvas tests"
+  default_prompt: "Write or debug Playwright E2E tests for Scaffolder Studio node editor flows, using existing page objects and stable selectors."

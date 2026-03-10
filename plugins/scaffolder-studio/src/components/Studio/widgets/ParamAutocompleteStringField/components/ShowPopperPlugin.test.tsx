@@ -252,6 +252,51 @@ describe('ShowPopperPlugin', () => {
     });
   });
 
+  it('still applies a filter even if selected token state is reset', async () => {
+    const AutocompletePopperMock =
+      require('./AutocompletePopper').AutocompletePopper;
+    const editorRef: { current: LexicalEditor | null } = { current: null };
+
+    render(
+      <Wrapper
+        onEditorReady={e => {
+          editorRef.current = e;
+        }}
+      >
+        <ShowPopperPlugin {...defaultProps} showAutocomplete />
+      </Wrapper>,
+    );
+
+    await waitForEditorReady(editorRef);
+
+    let popperProps = AutocompletePopperMock.mock.lastCall[0];
+    await act(async () => {
+      popperProps.onParamSelect('myParam');
+    });
+
+    popperProps = AutocompletePopperMock.mock.lastCall[0];
+    await act(async () => {
+      popperProps.onBack();
+    });
+
+    popperProps = AutocompletePopperMock.mock.lastCall[0];
+    await act(async () => {
+      popperProps.onFilterSelect({
+        name: 'upper',
+        syntax: 'upper',
+        category: 'nunjucks',
+        requiresParams: false,
+      });
+    });
+
+    await waitFor(() => {
+      const token = readTokenFromEditor(editorRef.current!);
+      expect(token).not.toBeNull();
+      expect(token!.text).toBe('myParam | upper');
+      expect(token!.fullExpression).toBe('parameters.myParam | upper');
+    });
+  });
+
   // ─── Filter with params opens dialog ────────────────────────────────
 
   it('opens the param dialog when a filter requiring params is selected', async () => {
@@ -425,6 +470,123 @@ describe('ShowPopperPlugin', () => {
 
     await waitFor(() => {
       expect(setShowAutocomplete).toHaveBeenCalledWith(true);
+    });
+  });
+
+  it('navigates main options with arrow keys and selects with enter', async () => {
+    const AutocompletePopperMock =
+      require('./AutocompletePopper').AutocompletePopper;
+    const editorRef: { current: LexicalEditor | null } = { current: null };
+
+    render(
+      <Wrapper
+        onEditorReady={e => {
+          editorRef.current = e;
+        }}
+      >
+        <ShowPopperPlugin
+          {...defaultProps}
+          parameters={[
+            { name: 'firstParam', type: 'string' },
+            { name: 'secondParam', type: 'string' },
+          ]}
+          showAutocomplete
+        />
+      </Wrapper>,
+    );
+
+    await waitForEditorReady(editorRef);
+
+    const rootElement = editorRef.current!.getRootElement()!;
+
+    await waitFor(() => {
+      const popperProps = AutocompletePopperMock.mock.lastCall[0];
+      expect(popperProps.activeOptionIndex).toBe(0);
+    });
+
+    await act(async () => {
+      rootElement.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }),
+      );
+      rootElement.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }),
+      );
+    });
+
+    await waitFor(() => {
+      const popperProps = AutocompletePopperMock.mock.lastCall[0];
+      expect(popperProps.activeOptionIndex).toBe(2);
+    });
+
+    await act(async () => {
+      rootElement.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
+      );
+    });
+
+    await waitFor(() => {
+      const token = readTokenFromEditor(editorRef.current!);
+      expect(token).not.toBeNull();
+      expect(token!.text).toBe('secondParam');
+      expect(token!.fullExpression).toBe('parameters.secondParam');
+    });
+  });
+
+  it('navigates filter options with arrow keys and selects with enter', async () => {
+    const AutocompletePopperMock =
+      require('./AutocompletePopper').AutocompletePopper;
+    const editorRef: { current: LexicalEditor | null } = { current: null };
+
+    render(
+      <Wrapper
+        onEditorReady={e => {
+          editorRef.current = e;
+        }}
+      >
+        <ShowPopperPlugin
+          {...defaultProps}
+          parameters={[{ name: 'myParam', type: 'string' }]}
+          showAutocomplete
+        />
+      </Wrapper>,
+    );
+
+    await waitForEditorReady(editorRef);
+    const rootElement = editorRef.current!.getRootElement()!;
+
+    const popperProps = AutocompletePopperMock.mock.lastCall[0];
+    await act(async () => {
+      popperProps.onParamSelect('myParam');
+    });
+
+    await waitFor(() => {
+      const latestProps = AutocompletePopperMock.mock.lastCall[0];
+      expect(latestProps.viewMode).toBe('filters');
+      expect(latestProps.activeOptionIndex).toBe(0);
+    });
+
+    await act(async () => {
+      rootElement.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }),
+      );
+    });
+
+    await waitFor(() => {
+      const latestProps = AutocompletePopperMock.mock.lastCall[0];
+      expect(latestProps.activeOptionIndex).toBe(1);
+    });
+
+    await act(async () => {
+      rootElement.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
+      );
+    });
+
+    await waitFor(() => {
+      const token = readTokenFromEditor(editorRef.current!);
+      expect(token).not.toBeNull();
+      expect(token!.text).toBe('myParam | center');
+      expect(token!.fullExpression).toBe('parameters.myParam | center');
     });
   });
 

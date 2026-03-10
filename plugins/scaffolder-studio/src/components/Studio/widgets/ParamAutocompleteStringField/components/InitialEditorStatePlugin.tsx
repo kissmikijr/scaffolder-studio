@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo } from 'react';
+import { useLayoutEffect, useRef, useEffect } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { $getRoot, $createParagraphNode, $createTextNode } from 'lexical';
 import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
@@ -21,11 +21,12 @@ export const InitialEditorStatePlugin = ({
   outputs?: Array<{ id: string; outputs: any }>;
 }) => {
   const [editor] = useLexicalComposerContext();
+  const parameterTypeMapRef = useRef(createParameterTypeMap(parameters));
+  const previousExternalValueRef = useRef<string | undefined>(undefined);
 
-  const parameterTypeMap = useMemo(
-    () => createParameterTypeMap(parameters),
-    [parameters],
-  );
+  useEffect(() => {
+    parameterTypeMapRef.current = createParameterTypeMap(parameters);
+  }, [parameters]);
 
   // Keep Lexical state in sync with external form value changes (e.g. relationship drag insertion).
   useLayoutEffect(() => {
@@ -34,7 +35,17 @@ export const InitialEditorStatePlugin = ({
     }
 
     const valueToInitialize = initialEditorState ?? '';
+    const externalValueUnchanged =
+      previousExternalValueRef.current === valueToInitialize;
+    previousExternalValueRef.current = valueToInitialize;
     let currentEditorValue = '';
+    const rootElement = editor.getRootElement();
+    const isEditorFocused =
+      !!rootElement &&
+      !!document.activeElement &&
+      (rootElement === document.activeElement ||
+        rootElement.contains(document.activeElement));
+    const shouldRestoreCursorToEnd = isEditorFocused;
 
     editor.getEditorState().read(() => {
       const root = $getRoot();
@@ -51,6 +62,17 @@ export const InitialEditorStatePlugin = ({
     });
 
     if (currentEditorValue === valueToInitialize) {
+      return;
+    }
+
+    // Avoid re-applying unchanged external snapshots while the user is editing.
+    // This prevents delete-all / fast-edit flicker where stale formData immediately reappears.
+    if (isEditorFocused && externalValueUnchanged) {
+      return;
+    }
+
+    // While focused, don't clobber non-empty local edits with external snapshots.
+    if (isEditorFocused && currentEditorValue.trim().length > 0) {
       return;
     }
 
@@ -82,7 +104,9 @@ export const InitialEditorStatePlugin = ({
             if (parsed.type === 'step' && parsed.stepId && parsed.outputName) {
               color = NodeTypeColors.step;
             } else if (parsed.type === 'parameter' && parsed.paramName) {
-              const paramType = parameterTypeMap.get(parsed.paramName);
+              const paramType = parameterTypeMapRef.current.get(
+                parsed.paramName,
+              );
               color = getColorForType(paramType);
             }
           }
@@ -101,10 +125,14 @@ export const InitialEditorStatePlugin = ({
           const textNode = $createTextNode(valueToInitialize.slice(lastIndex));
           paragraph.append(textNode);
         }
+
+        if (shouldRestoreCursorToEnd) {
+          paragraph.selectEnd();
+        }
       },
       { discrete: true },
     );
-  }, [editor, initialEditorState, parameterTypeMap]);
+  }, [editor, initialEditorState]);
 
   return null;
 };

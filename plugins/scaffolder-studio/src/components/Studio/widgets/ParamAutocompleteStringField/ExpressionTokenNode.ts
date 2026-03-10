@@ -50,6 +50,10 @@ export class ExpressionTokenNode extends TextNode {
   getFullExpression(): string {
     return $getState(this, fullExpressionState);
   }
+
+  getColor(): string {
+    return $getState(this, colorState);
+  }
 }
 
 export function $createExpressionTokenNode(

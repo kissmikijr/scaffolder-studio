@@ -41,4 +41,22 @@ describe('MainView', () => {
     // NodeTypeColors.step (#ffb86c)
     expect(style.backgroundColor).toBe('rgb(255, 184, 108)');
   });
+
+  it('marks the active option as selected', () => {
+    const onActiveOptionChange = jest.fn();
+
+    render(
+      <MainView
+        {...defaultProps}
+        parameters={[{ name: 'selectedParam', type: 'string' }]}
+        activeOptionIndex={1}
+        onActiveOptionChange={onActiveOptionChange}
+      />,
+    );
+
+    const selectedParam = screen.getByText('selectedParam');
+    const selectedButton = selectedParam.closest('.MuiListItemButton-root');
+
+    expect(selectedButton).toHaveClass('Mui-selected');
+  });
 });

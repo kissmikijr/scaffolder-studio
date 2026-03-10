@@ -34,6 +34,7 @@ describe('useEditorHandlers snapping', () => {
   let mockSetNodes: jest.Mock;
   let mockSetEdges: jest.Mock;
   let mockSetSelectedNode: jest.Mock;
+  let mockSetSelectedEdge: jest.Mock;
   let mockHandleTabChange: jest.Mock;
   let mockHandleAddOutputNode: jest.Mock;
   let mockHandleAddStepNode: jest.Mock;
@@ -49,6 +50,7 @@ describe('useEditorHandlers snapping', () => {
     mockSetNodes = jest.fn();
     mockSetEdges = jest.fn();
     mockSetSelectedNode = jest.fn();
+    mockSetSelectedEdge = jest.fn();
     mockHandleTabChange = jest.fn();
     mockHandleAddOutputNode = jest.fn();
     mockHandleAddStepNode = jest.fn();
@@ -79,7 +81,7 @@ describe('useEditorHandlers snapping', () => {
         handleAddPropertyNode: mockHandleAddPropertyNode,
         onRelationshipConnectionDrawn: mockOnRelationshipConnectionDrawn,
         onChange: jest.fn(),
-        setSelectedEdge: jest.fn(),
+        setSelectedEdge: mockSetSelectedEdge,
         loadPrefab: mockLoadPrefab,
         promptForStepPrefabOverrides: mockPromptForStepPrefabOverrides,
       }),
@@ -90,6 +92,50 @@ describe('useEditorHandlers snapping', () => {
     mockSetNodes.mock.calls[mockSetNodes.mock.calls.length - 1][0];
   const getLatestSetEdgesUpdater = () =>
     mockSetEdges.mock.calls[mockSetEdges.mock.calls.length - 1][0];
+
+  it('clears node selection when an edge is selected', () => {
+    const nodeA: Node<AllNodeData> = {
+      id: 'A',
+      position: { x: 0, y: 0 },
+      selected: true,
+      data: {} as any,
+    };
+    const nodeB: Node<AllNodeData> = {
+      id: 'B',
+      position: { x: 100, y: 100 },
+      selected: false,
+      data: {} as any,
+    };
+    const edge: Edge = { id: 'e1', source: 'A', target: 'B', selected: false };
+
+    const { result } = setup([nodeA, nodeB], [edge]);
+
+    act(() => {
+      result.current.handleEdgesChange([
+        { id: 'e1', type: 'select', selected: true } as any,
+      ]);
+    });
+
+    expect(mockSetEdges).toHaveBeenCalled();
+    const edgesUpdater = getLatestSetEdgesUpdater();
+
+    mockSetNodes.mockClear();
+    const updatedEdges = edgesUpdater([edge]);
+    const selectedEdge = updatedEdges.find((e: Edge) => e.id === 'e1');
+
+    expect(selectedEdge?.selected).toBe(true);
+    expect(mockSetSelectedEdge).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'e1' }),
+    );
+    expect(mockSetSelectedNode).toHaveBeenCalledWith(undefined);
+    expect(mockSetNodes).toHaveBeenCalled();
+
+    const nodesUpdater = getLatestSetNodesUpdater();
+    const updatedNodes = nodesUpdater([nodeA, nodeB]);
+    expect(updatedNodes.every((n: Node<AllNodeData>) => !n.selected)).toBe(
+      true,
+    );
+  });
 
   it('should NOT snap when Shift is NOT pressed', () => {
     const nodeA: Node<AllNodeData> = {

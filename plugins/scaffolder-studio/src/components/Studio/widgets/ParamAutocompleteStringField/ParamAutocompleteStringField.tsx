@@ -174,6 +174,7 @@ export const ParamAutocompleteStringField = ({
         ErrorBoundary={LexicalErrorBoundary}
         contentEditable={
           <ContentEditable
+            onBlur={() => debouncedOnChange.flush()}
             style={{
               position: 'relative',
               minHeight: '32px',

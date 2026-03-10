@@ -1,6 +1,13 @@
 import { useRef, useCallback, useEffect, useState, useMemo } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
-import { $getSelection, $getNodeByKey } from 'lexical';
+import {
+  $getSelection,
+  $getRoot,
+  $getNodeByKey,
+  $isRangeSelection,
+  KEY_DOWN_COMMAND,
+  COMMAND_PRIORITY_EDITOR,
+} from 'lexical';
 import { NodeTypeColors } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { createToken } from '../createToken';
 import { getColorForType } from '../../../utils/colorUtils';
@@ -10,8 +17,11 @@ import {
   NunjucksFilter,
   NUNJUCKS_FILTERS,
 } from './filterDefinitions';
+import { getMainViewOptions, MainViewOption } from './MainView';
+import { getFilterViewOptions, FilterViewOption } from './FilterView';
 import { AutocompletePopper } from './AutocompletePopper';
 import { FilterParamDialog } from './FilterParamDialog';
+import { ExpressionTokenNode } from '../ExpressionTokenNode';
 
 export function ShowPopperPlugin({
   parameters,
@@ -26,6 +36,17 @@ export function ShowPopperPlugin({
   setShowAutocomplete: (show: boolean) => void;
   customFilters?: NunjucksFilter[];
 }) {
+  const isExpressionTokenNode = (
+    node: unknown,
+  ): node is ExpressionTokenNode => {
+    return (
+      !!node &&
+      typeof (node as any).getType === 'function' &&
+      (node as any).getType() === 'expression-token-node' &&
+      typeof (node as any).getFullExpression === 'function'
+    );
+  };
+
   const [editor] = useLexicalComposerContext();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('main');
@@ -36,6 +57,8 @@ export function ShowPopperPlugin({
   const [selectedFilterForParams, setSelectedFilterForParams] =
     useState<NunjucksFilter | null>(null);
   const [paramValues, setParamValues] = useState<Record<string, string>>({});
+  const [activeMainOptionIndex, setActiveMainOptionIndex] = useState(0);
+  const [activeFilterOptionIndex, setActiveFilterOptionIndex] = useState(0);
 
   const allParams = useMemo(() => parameters || [], [parameters]);
   const allOutputs = useMemo(() => outputs || [], [outputs]);
@@ -53,8 +76,28 @@ export function ShowPopperPlugin({
   const allFilters = [...NUNJUCKS_FILTERS, ...customFilters];
   const nunjucksFilters = allFilters.filter(f => f.category === 'nunjucks');
   const backstageFilters = allFilters.filter(f => f.category === 'backstage');
+  const mainViewOptions = useMemo(
+    () => getMainViewOptions(allParams, allOutputs),
+    [allParams, allOutputs],
+  );
+  const filterViewOptions = useMemo(
+    () => getFilterViewOptions(nunjucksFilters, backstageFilters),
+    [nunjucksFilters, backstageFilters],
+  );
 
   const lastInsertedNodeKey = useRef<string | null>(null);
+  const showAutocompleteRef = useRef(showAutocomplete);
+  const viewModeRef = useRef(viewMode);
+  const activeMainOptionIndexRef = useRef(activeMainOptionIndex);
+  const activeFilterOptionIndexRef = useRef(activeFilterOptionIndex);
+  const mainViewOptionsRef = useRef(mainViewOptions);
+  const filterViewOptionsRef = useRef(filterViewOptions);
+  const handleMainViewOptionSelectRef = useRef<
+    (option: MainViewOption) => void
+  >(() => {});
+  const handleFilterViewOptionSelectRef = useRef<
+    (option: FilterViewOption) => void
+  >(() => {});
 
   const insertToken = (
     lexicalEditor: any,
@@ -135,56 +178,97 @@ export function ShowPopperPlugin({
         setShowParamDialog(true);
         setShowAutocomplete(false);
       } else {
-        // No parameters needed
-        if (selectedToken) {
-          // Apply filter to existing token (chaining)
-          const newBaseExpression = `${selectedToken.baseExpression} | ${filter.syntax}`;
-          const fullExpression = newBaseExpression;
-          const newDisplay = `${selectedToken.display} | ${filter.name}`;
+        let chainedToken: {
+          display: string;
+          baseExpression: string;
+          color: string;
+        } | null = null;
+        let insertedAtCursor = false;
 
-          if (lastInsertedNodeKey.current) {
-            editor.update(() => {
-              const node = $getNodeByKey(lastInsertedNodeKey.current!);
-              if (node) {
-                const newNode = createToken({
-                  display: newDisplay,
-                  fullExpression,
-                  color: selectedToken.color,
-                });
-                node.replace(newNode);
-                newNode.selectNext();
-                // Update the node key to the new node
-                lastInsertedNodeKey.current = newNode.getKey();
+        editor.update(() => {
+          const selection = $getSelection();
+          const root = $getRoot();
+
+          const resolveTargetToken = (): ExpressionTokenNode | null => {
+            const byLastInsertedKey = lastInsertedNodeKey.current
+              ? $getNodeByKey(lastInsertedNodeKey.current)
+              : null;
+            if (isExpressionTokenNode(byLastInsertedKey)) {
+              return byLastInsertedKey;
+            }
+
+            if ($isRangeSelection(selection)) {
+              const anchorNode = selection.anchor.getNode();
+              if (isExpressionTokenNode(anchorNode)) {
+                return anchorNode;
               }
+
+              const previousSibling = anchorNode.getPreviousSibling();
+              if (isExpressionTokenNode(previousSibling)) {
+                return previousSibling;
+              }
+
+              const nextSibling = anchorNode.getNextSibling();
+              if (isExpressionTokenNode(nextSibling)) {
+                return nextSibling;
+              }
+            }
+
+            const textNodes = root.getAllTextNodes();
+            for (let i = textNodes.length - 1; i >= 0; i -= 1) {
+              const candidate = textNodes[i];
+              if (isExpressionTokenNode(candidate)) {
+                return candidate;
+              }
+            }
+
+            return null;
+          };
+
+          const targetToken = resolveTargetToken();
+
+          if (targetToken) {
+            const existingExpression = targetToken.getFullExpression();
+            const existingDisplay = targetToken.getTextContent();
+            const color = targetToken.getColor();
+            const newBaseExpression = `${existingExpression} | ${filter.syntax}`;
+            const newDisplay = `${existingDisplay} | ${filter.name}`;
+
+            const newNode = createToken({
+              display: newDisplay,
+              fullExpression: newBaseExpression,
+              color,
             });
+            targetToken.replace(newNode);
+            newNode.selectNext();
+            lastInsertedNodeKey.current = newNode.getKey();
+
+            chainedToken = {
+              display: newDisplay,
+              baseExpression: newBaseExpression,
+              color,
+            };
+            return;
           }
 
-          // Update selectedToken to allow chaining more filters
-          setSelectedToken({
-            display: newDisplay,
-            baseExpression: newBaseExpression,
-            color: selectedToken.color,
-          });
-        } else {
-          // Insert filter at cursor position (no previous token selected)
-          editor.update(() => {
-            const selection = $getSelection();
-            if (selection && selection.isCollapsed()) {
-              // Check if there is a space before the cursor, if not add one
-              // actually let's just insert " | filterName"
-              selection.insertText(` | ${filter.syntax}`);
-            }
-          });
-          // Close autocomplete after inserting
+          if (selection && selection.isCollapsed()) {
+            selection.insertText(` | ${filter.syntax}`);
+            insertedAtCursor = true;
+          }
+        });
+
+        if (chainedToken) {
+          setSelectedToken(chainedToken);
+        } else if (insertedAtCursor) {
           setShowAutocomplete(false);
         }
       }
     },
-    [editor, selectedToken, setShowAutocomplete],
+    [editor, setShowAutocomplete],
   );
 
   const handleParamDialogSubmit = useCallback(() => {
-    if (!selectedToken || !selectedFilterForParams) return;
+    if (!selectedFilterForParams) return;
 
     // Build filter syntax with user-provided values
     let filterSyntax = selectedFilterForParams.syntax;
@@ -192,24 +276,56 @@ export function ShowPopperPlugin({
       filterSyntax = filterSyntax.replace(`{${key}}`, value);
     });
 
-    const fullExpression = `${selectedToken.baseExpression} | ${filterSyntax}`;
-    // Include the filter syntax with values in the display
-    const display = `${selectedToken.display} | ${filterSyntax}`;
+    editor.update(() => {
+      const selection = $getSelection();
+      const root = $getRoot();
+      let targetToken: ExpressionTokenNode | null = null;
 
-    if (lastInsertedNodeKey.current) {
-      editor.update(() => {
-        const node = $getNodeByKey(lastInsertedNodeKey.current!);
-        if (node) {
-          const newNode = createToken({
-            display,
-            fullExpression,
-            color: selectedToken.color,
-          });
-          node.replace(newNode);
-          newNode.selectNext();
+      if (lastInsertedNodeKey.current) {
+        const byLastInsertedKey = $getNodeByKey(lastInsertedNodeKey.current);
+        if (isExpressionTokenNode(byLastInsertedKey)) {
+          targetToken = byLastInsertedKey;
         }
-      });
-    }
+      }
+
+      if (!targetToken && $isRangeSelection(selection)) {
+        const anchorNode = selection.anchor.getNode();
+        if (isExpressionTokenNode(anchorNode)) {
+          targetToken = anchorNode;
+        } else {
+          const previousSibling = anchorNode.getPreviousSibling();
+          if (isExpressionTokenNode(previousSibling)) {
+            targetToken = previousSibling;
+          }
+        }
+      }
+
+      if (!targetToken) {
+        const textNodes = root.getAllTextNodes();
+        for (let i = textNodes.length - 1; i >= 0; i -= 1) {
+          const candidate = textNodes[i];
+          if (isExpressionTokenNode(candidate)) {
+            targetToken = candidate;
+            break;
+          }
+        }
+      }
+
+      if (targetToken) {
+        const fullExpression = `${targetToken.getFullExpression()} | ${filterSyntax}`;
+        const display = `${targetToken.getTextContent()} | ${filterSyntax}`;
+        const newNode = createToken({
+          display,
+          fullExpression,
+          color: targetToken.getColor(),
+        });
+        targetToken.replace(newNode);
+        newNode.selectNext();
+        lastInsertedNodeKey.current = newNode.getKey();
+      } else if (selection && selection.isCollapsed()) {
+        selection.insertText(` | ${filterSyntax}`);
+      }
+    });
 
     // Reset state and close dialog and popper
     setShowParamDialog(false);
@@ -219,13 +335,7 @@ export function ShowPopperPlugin({
     setSelectedToken(null);
     setShowAutocomplete(false);
     lastInsertedNodeKey.current = null;
-  }, [
-    editor,
-    selectedToken,
-    selectedFilterForParams,
-    paramValues,
-    setShowAutocomplete,
-  ]);
+  }, [editor, selectedFilterForParams, paramValues, setShowAutocomplete]);
 
   const handleParamDialogCancel = useCallback(() => {
     setShowParamDialog(false);
@@ -248,6 +358,147 @@ export function ShowPopperPlugin({
     setSelectedToken(null);
   }, []);
 
+  const handleMainViewOptionSelect = useCallback(
+    (option: MainViewOption) => {
+      if (option.kind === 'next') {
+        handleNext();
+        return;
+      }
+
+      if (option.kind === 'param') {
+        handleParamSelect(option.name);
+        return;
+      }
+
+      handleOutputSelect({
+        stepId: option.stepId,
+        outputName: option.outputName,
+      });
+    },
+    [handleNext, handleOutputSelect, handleParamSelect],
+  );
+
+  const moveMainViewSelection = useCallback((direction: 1 | -1) => {
+    const options = mainViewOptionsRef.current;
+    if (options.length === 0) {
+      return;
+    }
+
+    setActiveMainOptionIndex(prev => {
+      const normalizedPrev = prev >= 0 && prev < options.length ? prev : 0;
+      const nextIndex =
+        (normalizedPrev + direction + options.length) % options.length;
+      activeMainOptionIndexRef.current = nextIndex;
+      return nextIndex;
+    });
+  }, []);
+
+  const handleActiveOptionChange = useCallback((index: number) => {
+    activeMainOptionIndexRef.current = index;
+    setActiveMainOptionIndex(index);
+  }, []);
+
+  const handleFilterViewOptionSelect = useCallback(
+    (option: FilterViewOption) => {
+      handleFilterSelect(option.filter);
+    },
+    [handleFilterSelect],
+  );
+
+  const moveFilterViewSelection = useCallback((direction: 1 | -1) => {
+    const options = filterViewOptionsRef.current;
+    if (options.length === 0) {
+      return;
+    }
+
+    setActiveFilterOptionIndex(prev => {
+      const normalizedPrev = prev >= 0 && prev < options.length ? prev : 0;
+      const nextIndex =
+        (normalizedPrev + direction + options.length) % options.length;
+      activeFilterOptionIndexRef.current = nextIndex;
+      return nextIndex;
+    });
+  }, []);
+
+  const handleFilterActiveOptionChange = useCallback((index: number) => {
+    activeFilterOptionIndexRef.current = index;
+    setActiveFilterOptionIndex(index);
+  }, []);
+
+  useEffect(() => {
+    showAutocompleteRef.current = showAutocomplete;
+  }, [showAutocomplete]);
+
+  useEffect(() => {
+    viewModeRef.current = viewMode;
+  }, [viewMode]);
+
+  useEffect(() => {
+    activeMainOptionIndexRef.current = activeMainOptionIndex;
+  }, [activeMainOptionIndex]);
+
+  useEffect(() => {
+    activeFilterOptionIndexRef.current = activeFilterOptionIndex;
+  }, [activeFilterOptionIndex]);
+
+  useEffect(() => {
+    mainViewOptionsRef.current = mainViewOptions;
+  }, [mainViewOptions]);
+
+  useEffect(() => {
+    filterViewOptionsRef.current = filterViewOptions;
+  }, [filterViewOptions]);
+
+  useEffect(() => {
+    handleMainViewOptionSelectRef.current = handleMainViewOptionSelect;
+  }, [handleMainViewOptionSelect]);
+
+  useEffect(() => {
+    handleFilterViewOptionSelectRef.current = handleFilterViewOptionSelect;
+  }, [handleFilterViewOptionSelect]);
+
+  useEffect(() => {
+    if (!showAutocomplete || viewMode !== 'main') {
+      handleActiveOptionChange(0);
+      return;
+    }
+
+    if (
+      mainViewOptions.length === 0 ||
+      activeMainOptionIndex < 0 ||
+      activeMainOptionIndex >= mainViewOptions.length
+    ) {
+      handleActiveOptionChange(0);
+    }
+  }, [
+    activeMainOptionIndex,
+    handleActiveOptionChange,
+    mainViewOptions.length,
+    showAutocomplete,
+    viewMode,
+  ]);
+
+  useEffect(() => {
+    if (!showAutocomplete || viewMode !== 'filters') {
+      handleFilterActiveOptionChange(0);
+      return;
+    }
+
+    if (
+      filterViewOptions.length === 0 ||
+      activeFilterOptionIndex < 0 ||
+      activeFilterOptionIndex >= filterViewOptions.length
+    ) {
+      handleFilterActiveOptionChange(0);
+    }
+  }, [
+    activeFilterOptionIndex,
+    filterViewOptions.length,
+    handleFilterActiveOptionChange,
+    showAutocomplete,
+    viewMode,
+  ]);
+
   useEffect(() => {
     return editor.registerRootListener(rootElement => {
       if (rootElement === null) return () => {};
@@ -261,27 +512,84 @@ export function ShowPopperPlugin({
         setShowAutocomplete(false);
       };
 
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === ' ') {
-          setViewMode('main');
-          setSelectedToken(null);
-          lastInsertedNodeKey.current = null;
-        }
-      };
-
       rootElement.addEventListener('focus', handleFocus, true);
       rootElement.addEventListener('click', handleFocus, true);
       rootElement.addEventListener('blur', handleBlur, true);
-      rootElement.addEventListener('keydown', handleKeyDown, true);
 
       return () => {
         rootElement.removeEventListener('focus', handleFocus, true);
         rootElement.removeEventListener('click', handleFocus, true);
         rootElement.removeEventListener('blur', handleBlur, true);
-        rootElement.removeEventListener('keydown', handleKeyDown, true);
       };
     });
   }, [editor, setShowAutocomplete]);
+
+  useEffect(() => {
+    return editor.registerCommand(
+      KEY_DOWN_COMMAND,
+      (e: KeyboardEvent) => {
+        if (e.key === ' ') {
+          setViewMode('main');
+          setSelectedToken(null);
+          lastInsertedNodeKey.current = null;
+          return false;
+        }
+
+        if (!showAutocompleteRef.current) {
+          return false;
+        }
+
+        if (viewModeRef.current === 'main') {
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            e.stopPropagation();
+            moveMainViewSelection(e.key === 'ArrowDown' ? 1 : -1);
+            return true;
+          }
+
+          if (e.key === 'Enter') {
+            const options = mainViewOptionsRef.current;
+            if (options.length === 0) {
+              return false;
+            }
+
+            e.preventDefault();
+            e.stopPropagation();
+            const activeOption =
+              options[activeMainOptionIndexRef.current] ?? options[0];
+            handleMainViewOptionSelectRef.current(activeOption);
+            return true;
+          }
+        }
+
+        if (viewModeRef.current === 'filters') {
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            e.stopPropagation();
+            moveFilterViewSelection(e.key === 'ArrowDown' ? 1 : -1);
+            return true;
+          }
+
+          if (e.key === 'Enter') {
+            const options = filterViewOptionsRef.current;
+            if (options.length === 0) {
+              return false;
+            }
+
+            e.preventDefault();
+            e.stopPropagation();
+            const activeOption =
+              options[activeFilterOptionIndexRef.current] ?? options[0];
+            handleFilterViewOptionSelectRef.current(activeOption);
+            return true;
+          }
+        }
+
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    );
+  }, [editor, moveFilterViewSelection, moveMainViewSelection]);
 
   return (
     <>
@@ -299,6 +607,14 @@ export function ShowPopperPlugin({
         onFilterSelect={handleFilterSelect}
         onBack={handleBackToMain}
         onNext={handleNext}
+        activeOptionIndex={
+          viewMode === 'main' ? activeMainOptionIndex : activeFilterOptionIndex
+        }
+        onActiveOptionChange={
+          viewMode === 'main'
+            ? handleActiveOptionChange
+            : handleFilterActiveOptionChange
+        }
       />
       <FilterParamDialog
         open={showParamDialog}

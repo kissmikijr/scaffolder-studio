@@ -1,11 +1,17 @@
 import { useEffect } from 'react';
-import { render, waitFor } from '@testing-library/react';
+import { render, waitFor, act } from '@testing-library/react';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
-import { $getRoot, LexicalEditor } from 'lexical';
+import {
+  $getRoot,
+  $createTextNode,
+  $createParagraphNode,
+  $isElementNode,
+  LexicalEditor,
+} from 'lexical';
 
 import { ExpressionTokenNode } from '../ExpressionTokenNode';
 import { InitialEditorStatePlugin } from './InitialEditorStatePlugin';
@@ -54,9 +60,11 @@ const readSerializedText = (editor: LexicalEditor) => {
 
 const Wrapper = ({
   value,
+  parameters = [],
   onEditorReady,
 }: {
   value: string;
+  parameters?: Array<{ name: string; type: string }>;
   onEditorReady: (editor: LexicalEditor) => void;
 }) => {
   return (
@@ -71,7 +79,10 @@ const Wrapper = ({
           onEditorReady(editor);
         }}
       />
-      <InitialEditorStatePlugin initialEditorState={value} />
+      <InitialEditorStatePlugin
+        initialEditorState={value}
+        parameters={parameters}
+      />
     </LexicalComposer>
   );
 };
@@ -110,5 +121,188 @@ describe('InitialEditorStatePlugin', () => {
       expect(editorRef.current).not.toBeNull();
       expect(readSerializedText(editorRef.current!)).toBe(updatedValue);
     });
+  });
+
+  it('does not reset local edits when parameters are re-created with same values', async () => {
+    const initialValue = 'parameters.repoUrl';
+    const editorRef: { current: LexicalEditor | null } = { current: null };
+
+    const { rerender } = render(
+      <Wrapper
+        value={initialValue}
+        parameters={[{ name: 'repoUrl', type: 'string' }]}
+        onEditorReady={editor => {
+          editorRef.current = editor;
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(editorRef.current).not.toBeNull();
+      expect(readSerializedText(editorRef.current!)).toBe(initialValue);
+    });
+
+    editorRef.current!.update(() => {
+      const root = $getRoot();
+      const paragraph = root.getFirstChild();
+      if ($isElementNode(paragraph)) {
+        paragraph.append($createTextNode(' | lower'));
+      }
+    });
+
+    await waitFor(() => {
+      expect(readSerializedText(editorRef.current!)).toBe(
+        'parameters.repoUrl | lower',
+      );
+    });
+
+    rerender(
+      <Wrapper
+        value={initialValue}
+        parameters={[{ name: 'repoUrl', type: 'string' }]}
+        onEditorReady={editor => {
+          editorRef.current = editor;
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(readSerializedText(editorRef.current!)).toBe(
+        'parameters.repoUrl | lower',
+      );
+    });
+  });
+
+  it('does not override local edits from external value changes while focused', async () => {
+    const initialValue = 'parameters.repoUrl';
+    const editorRef: { current: LexicalEditor | null } = { current: null };
+
+    const { rerender } = render(
+      <Wrapper
+        value={initialValue}
+        onEditorReady={editor => {
+          editorRef.current = editor;
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(editorRef.current).not.toBeNull();
+      expect(readSerializedText(editorRef.current!)).toBe(initialValue);
+    });
+
+    const originalActiveElementDescriptor = Object.getOwnPropertyDescriptor(
+      document,
+      'activeElement',
+    );
+    Object.defineProperty(document, 'activeElement', {
+      configurable: true,
+      get: () => editorRef.current!.getRootElement(),
+    });
+
+    act(() => {
+      editorRef.current!.update(() => {
+        const root = $getRoot();
+        const paragraph = root.getFirstChild();
+        if ($isElementNode(paragraph)) {
+          paragraph.append($createTextNode(' | lower'));
+        }
+      });
+    });
+
+    await waitFor(() => {
+      expect(readSerializedText(editorRef.current!)).toBe(
+        'parameters.repoUrl | lower',
+      );
+    });
+
+    rerender(
+      <Wrapper
+        value="parameters.repoUrl | abs"
+        onEditorReady={editor => {
+          editorRef.current = editor;
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(readSerializedText(editorRef.current!)).toBe(
+        'parameters.repoUrl | lower',
+      );
+    });
+
+    if (originalActiveElementDescriptor) {
+      Object.defineProperty(
+        document,
+        'activeElement',
+        originalActiveElementDescriptor,
+      );
+    } else {
+      delete (document as any).activeElement;
+    }
+  });
+
+  it('does not re-apply stale external value after local delete-all while focused', async () => {
+    const initialValue = 'parameters.repoUrl';
+    const editorRef: { current: LexicalEditor | null } = { current: null };
+
+    const { rerender } = render(
+      <Wrapper
+        value={initialValue}
+        onEditorReady={editor => {
+          editorRef.current = editor;
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(editorRef.current).not.toBeNull();
+      expect(readSerializedText(editorRef.current!)).toBe(initialValue);
+    });
+
+    const originalActiveElementDescriptor = Object.getOwnPropertyDescriptor(
+      document,
+      'activeElement',
+    );
+    Object.defineProperty(document, 'activeElement', {
+      configurable: true,
+      get: () => editorRef.current!.getRootElement(),
+    });
+
+    act(() => {
+      editorRef.current!.update(() => {
+        const root = $getRoot();
+        root.clear();
+        root.append($createParagraphNode());
+      });
+    });
+
+    await waitFor(() => {
+      expect(readSerializedText(editorRef.current!)).toBe('');
+    });
+
+    // Simulate parent rerender before debounced onChange has flushed
+    rerender(
+      <Wrapper
+        value={initialValue}
+        onEditorReady={editor => {
+          editorRef.current = editor;
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(readSerializedText(editorRef.current!)).toBe('');
+    });
+
+    if (originalActiveElementDescriptor) {
+      Object.defineProperty(
+        document,
+        'activeElement',
+        originalActiveElementDescriptor,
+      );
+    } else {
+      delete (document as any).activeElement;
+    }
   });
 });
