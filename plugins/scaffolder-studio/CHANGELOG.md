@@ -1,5 +1,14 @@
 # @kissmiklosjr/plugin-scaffolder-studio
 
+## 1.3.2
+
+### Patch Changes
+
+- de60600: move relationship edges to the back
+- e704902: Move comment into the sidebar
+- be95d9c: Support arrow keys in popper for params and filters
+- b95654f: Implement zen mode
+
 ## 1.3.1
 
 ### Patch Changes
