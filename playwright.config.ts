@@ -34,7 +34,7 @@ export default defineConfig({
     : [
         {
           command: 'yarn dev',
-          port: 3000,
+          port: 3001,
           reuseExistingServer: true,
           timeout: 60_000,
         },
@@ -51,7 +51,7 @@ export default defineConfig({
     actionTimeout: 0,
     baseURL:
       process.env.PLAYWRIGHT_URL ??
-      (process.env.CI ? 'http://localhost:7007' : 'http://localhost:3000'),
+      (process.env.CI ? 'http://localhost:7008' : 'http://localhost:3001'),
     storageState: 'node_modules/.cache/e2e-auth/guest.json',
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',

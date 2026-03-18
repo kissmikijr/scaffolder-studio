@@ -7,7 +7,7 @@ export class TemplateListPage {
 
   private getBackendBaseCandidates(): string[] {
     const configuredBase = process.env.PLAYWRIGHT_URL?.replace(/\/$/, '');
-    const candidates = [configuredBase, 'http://localhost:7007'].filter(
+    const candidates = [configuredBase, 'http://localhost:7008'].filter(
       Boolean,
     ) as string[];
     return [...new Set(candidates)];
