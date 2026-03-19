@@ -46,6 +46,7 @@
     "@types/jest": "^30.0.0",
     "@types/lodash.debounce": "^4",
     "@types/luxon": "^3",
+    "cross-env": "^10.1.0",
     "husky": "^9.1.7",
     "jest": "^30.2.0",
     "lint-staged": "^16.2.7",
