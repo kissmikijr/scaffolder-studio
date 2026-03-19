@@ -32,14 +32,14 @@
     "postpack": "backstage-cli package postpack"
   },
   "dependencies": {
-    "@backstage/backend-plugin-api": "^1.7.0",
-    "@backstage/plugin-permission-common": "^0.9.6",
-    "@backstage/plugin-permission-node": "^0.10.10",
+    "@backstage/backend-plugin-api": "^1.8.0",
+    "@backstage/plugin-permission-common": "^0.9.7",
+    "@backstage/plugin-permission-node": "^0.10.11",
     "@kissmiklosjr/plugin-scaffolder-studio-common": "workspace:^"
   },
   "devDependencies": {
-    "@backstage/backend-test-utils": "^1.11.0",
-    "@backstage/cli": "^0.35.4"
+    "@backstage/backend-test-utils": "^1.11.1",
+    "@backstage/cli": "^0.36.0"
   },
   "files": [
     "dist"
