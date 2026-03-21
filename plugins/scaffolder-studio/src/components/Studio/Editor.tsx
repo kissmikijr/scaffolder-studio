@@ -79,6 +79,7 @@ import {
   getOutgoingConnectionCountFromIndex,
   getTemplateOutgoingSlotsFromIndex,
 } from './utils/connectionLimits';
+import { elevateSelectedBaseEdges } from './utils/edgeStacking';
 import { collectAssignedStepIds } from './utils/prefabStepIds';
 import { buildZenFocusSets } from './utils/zenMode';
 
@@ -334,12 +335,15 @@ const ScaffolderStudioEditor = ({
     ],
   );
   const displayEdges = useMemo(() => {
+    const selectedNodeId = selectedNode?.id;
+
     if (!relationshipVisibilityEnabled) {
-      return edges;
+      return elevateSelectedBaseEdges(edges, selectedNodeId);
     }
 
-    const selectedNodeId = selectedNode?.id;
-    const styledBaseEdges = isZenMode ? [] : edges;
+    const styledBaseEdges = isZenMode
+      ? []
+      : elevateSelectedBaseEdges(edges, selectedNodeId);
     const elevatedRelationshipEdges = relationshipEdges.map(edge => {
       if (isZenMode && !zenFocusSets.edgeIds.has(edge.id)) {
         return {
