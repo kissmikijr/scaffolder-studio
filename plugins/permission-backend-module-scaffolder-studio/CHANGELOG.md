@@ -1,5 +1,16 @@
 # @kissmiklosjr/plugin-permission-backend-module-scaffolder-studio
 
+## 1.1.0
+
+### Minor Changes
+
+- 0927a1d: Upgrade to backstage v1.49.0
+
+### Patch Changes
+
+- Updated dependencies [0927a1d]
+  - @kissmiklosjr/plugin-scaffolder-studio-common@1.3.0
+
 ## 1.0.1
 
 ### Patch Changes

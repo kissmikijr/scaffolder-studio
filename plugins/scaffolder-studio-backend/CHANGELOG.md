@@ -1,5 +1,17 @@
 # @kissmiklosjr/plugin-scaffolder-studio-backend
 
+## 1.2.0
+
+### Minor Changes
+
+- 0927a1d: Upgrade to backstage v1.49.0
+
+### Patch Changes
+
+- Updated dependencies [0927a1d]
+  - @kissmiklosjr/plugin-catalog-backend-module-scaffolder-studio-provider@1.1.0
+  - @kissmiklosjr/plugin-scaffolder-studio-common@1.3.0
+
 ## 1.1.2
 
 ### Patch Changes
