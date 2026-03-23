@@ -1,5 +1,12 @@
 import { BaseEdge, EdgeProps, getBezierPath } from '@xyflow/react';
 
+export const shouldRenderRelationshipMarker = (
+  data?: EdgeProps['data'],
+): boolean => {
+  const edgeData = data as { sourceKind?: string } | undefined;
+  return edgeData?.sourceKind !== 'parameter';
+};
+
 const DependencyEdge = ({
   id,
   sourceX,
@@ -9,6 +16,7 @@ const DependencyEdge = ({
   sourcePosition,
   targetPosition,
   markerEnd,
+  data,
 }: EdgeProps) => {
   const [edgePath] = getBezierPath({
     sourceX,
@@ -23,7 +31,7 @@ const DependencyEdge = ({
     <BaseEdge
       id={id}
       path={edgePath}
-      markerEnd={markerEnd}
+      markerEnd={shouldRenderRelationshipMarker(data) ? markerEnd : undefined}
       style={{
         strokeWidth: 2.5,
         strokeLinecap: 'round',
