@@ -59,6 +59,7 @@ const studioPage = PageBlueprint.make({
   params: {
     path: '/scaffolder-studio',
     routeRef: rootRouteRef,
+    noHeader: true,
     loader: async () => {
       return <NfsScaffolderStudioPage />;
     },

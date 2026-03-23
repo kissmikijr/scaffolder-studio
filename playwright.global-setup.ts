@@ -10,7 +10,7 @@ export default async function globalSetup(config: FullConfig) {
   const projectBaseUrl = config.projects.find(p => p.use?.baseURL)?.use
     ?.baseURL as string | undefined;
   const baseURL =
-    configuredBaseUrl ?? projectBaseUrl ?? 'http://localhost:3001';
+    configuredBaseUrl ?? projectBaseUrl ?? 'http://localhost:7008';
 
   const browser = await chromium.launch();
   const context = await browser.newContext();

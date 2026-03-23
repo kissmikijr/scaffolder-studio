@@ -79,6 +79,7 @@ import {
   getOutgoingConnectionCountFromIndex,
   getTemplateOutgoingSlotsFromIndex,
 } from './utils/connectionLimits';
+import { elevateSelectedBaseEdges } from './utils/edgeStacking';
 import { collectAssignedStepIds } from './utils/prefabStepIds';
 import { buildZenFocusSets } from './utils/zenMode';
 
@@ -334,31 +335,50 @@ const ScaffolderStudioEditor = ({
     ],
   );
   const displayEdges = useMemo(() => {
+    const selectedNodeId = selectedNode?.id;
+
     if (!relationshipVisibilityEnabled) {
-      return edges;
+      return elevateSelectedBaseEdges(edges, selectedNodeId);
     }
 
-    const selectedNodeId = selectedNode?.id;
-    const styledBaseEdges = isZenMode ? [] : edges;
+    const styledBaseEdges = isZenMode
+      ? []
+      : elevateSelectedBaseEdges(edges, selectedNodeId);
     const elevatedRelationshipEdges = relationshipEdges.map(edge => {
+      const edgeData = edge.data as { sourceKind?: 'parameter' | 'stepOutput' };
+      const isParameterRelationshipEdge = edgeData?.sourceKind === 'parameter';
+
       if (isZenMode && !zenFocusSets.edgeIds.has(edge.id)) {
         return {
           ...edge,
-          className: 'relationship-edge relationship-edge--background',
-          zIndex: -4,
+          className: `relationship-edge relationship-edge--background${
+            isParameterRelationshipEdge ? ' relationship-edge--parameter' : ''
+          }`,
+          zIndex: isParameterRelationshipEdge ? 1 : -4,
         };
       }
 
       const isConnectedToSelectedNode =
         !!selectedNodeId &&
         (edge.source === selectedNodeId || edge.target === selectedNodeId);
+      let relationshipZIndex = -3;
+      if (isParameterRelationshipEdge) {
+        relationshipZIndex = 1;
+      }
+      if (isConnectedToSelectedNode) {
+        relationshipZIndex = 1003;
+      }
 
       return {
         ...edge,
         className: isConnectedToSelectedNode
-          ? 'relationship-edge relationship-edge--selected-node'
-          : 'relationship-edge',
-        zIndex: isConnectedToSelectedNode ? 1003 : -3,
+          ? `relationship-edge relationship-edge--selected-node${
+              isParameterRelationshipEdge ? ' relationship-edge--parameter' : ''
+            }`
+          : `relationship-edge${
+              isParameterRelationshipEdge ? ' relationship-edge--parameter' : ''
+            }`,
+        zIndex: relationshipZIndex,
       };
     });
 

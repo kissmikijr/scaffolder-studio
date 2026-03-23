@@ -60,16 +60,16 @@ jobs:
         env:
           NODE_ENV: development
           NODE_OPTIONS: --no-node-snapshot
-          APP_CONFIG_app_baseUrl: http://localhost:7007
-          APP_CONFIG_backend_baseUrl: http://localhost:7007
-          APP_CONFIG_backend_cors_origin: http://localhost:7007
+          APP_CONFIG_app_baseUrl: http://localhost:7008
+          APP_CONFIG_backend_baseUrl: http://localhost:7008
+          APP_CONFIG_backend_cors_origin: http://localhost:7008
           APP_CONFIG_backend_database_connection_port: '5432'
 
       - name: Wait for backend to be ready
         run: |
           echo "Waiting for backend to start..."
           for i in $(seq 1 60); do
-            if curl -s http://localhost:7007/api/catalog/entities > /dev/null 2>&1; then
+            if curl -s http://localhost:7008/api/catalog/entities > /dev/null 2>&1; then
               echo "Backend is ready!"
               break
             fi
@@ -84,7 +84,7 @@ jobs:
         run: yarn test:e2e
         env:
           CI: 'true'
-          PLAYWRIGHT_URL: http://localhost:7007
+          PLAYWRIGHT_URL: http://localhost:7008
 
       - name: Upload E2E test report
         if: failure()
