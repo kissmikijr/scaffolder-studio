@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Grid } from '@mui/material';
 import ScaffolderStudioEditor from './Editor';
 import { Edge, Node, ReactFlowProvider } from '@xyflow/react';
-import { alertApiRef, useApi } from '@backstage/core-plugin-api';
+import { alertApiRef, configApiRef, useApi } from '@backstage/core-plugin-api';
 import { scaffolderVisualApiRef } from '../../api/ScaffolderVisualClient';
 import { useParams, useNavigate } from 'react-router-dom';
 import { onChange } from './handlers';
@@ -20,6 +20,7 @@ import {
   createSerializableTemplateDraftState,
   isDraftNewerThanServer,
   readTemplateDraft,
+  useTemplateLintResult,
   useTemplateDraftPersistence,
   useUnsavedChangesGuard,
 } from './hooks';
@@ -35,6 +36,7 @@ import {
   getPrefabCacheKey,
   normalizePrefabStepIdOverrides,
 } from './utils/prefabStepIds';
+import { TemplateLintState } from './TemplateLintContext';
 
 const queryClient = new QueryClient();
 
@@ -43,8 +45,11 @@ export const VisualTemplateEditorComponent = () => {
   const prefabsApi = useApi(prefabsApiRef);
   const prefabLibraryApi = useApi(prefabLibraryApiRef);
   const alertApi = useApi(alertApiRef);
+  const configApi = useApi(configApiRef);
   const { id } = useParams();
   const navigate = useNavigate();
+  const isLintEnabled =
+    configApi.getOptionalBoolean('scaffolder.studio.lint.enabled') ?? true;
 
   const [nodes, setNodes] = useState<Node<AllNodeData>[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
@@ -430,6 +435,14 @@ export const VisualTemplateEditorComponent = () => {
     };
   }, []);
 
+  const lintState: TemplateLintState = useTemplateLintResult({
+    api,
+    templateId: id,
+    nodes,
+    edges,
+    enabled: isProjectLoaded && isLintEnabled,
+  });
+
   return (
     <ReactFlowProvider>
       <QueryClientProvider client={queryClient}>
@@ -453,6 +466,7 @@ export const VisualTemplateEditorComponent = () => {
                 syncStatus={syncStatus}
                 lastSyncedAt={lastSyncedAt}
                 onSyncBeforeDryRun={() => saveNow(true)}
+                lintState={lintState}
               />
             )}
           </Grid>

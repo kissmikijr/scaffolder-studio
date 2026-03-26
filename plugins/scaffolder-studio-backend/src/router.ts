@@ -40,6 +40,16 @@ const importTemplateSchema = z.object({
   template: z.record(z.string(), z.any()),
   id: z.string(),
 });
+const lintTemplateSchema = z.object({
+  templateId: z.string().optional(),
+  nodes: z.array(z.any()),
+  edges: z.array(z.any()),
+  options: z
+    .object({
+      includeRuleMetadata: z.boolean().optional(),
+    })
+    .optional(),
+});
 
 export async function createRouter({
   httpAuth,
@@ -171,27 +181,30 @@ export async function createRouter({
       parsed.data.nodes.length > 0
         ? parsed.data.nodes
         : [
-          {
-            id: `${parsed.data.id}-template`,
-            type: 'template',
-            position: { x: 100, y: 100 },
-            data: {
-              nodeType: 'template',
-              name: 'Untitled',
-              owner: '',
-              description: 'This is an example template',
-              annotations: {},
-              spec: { type: 'component' },
+            {
+              id: `${parsed.data.id}-template`,
+              type: 'template',
+              position: { x: 100, y: 100 },
+              data: {
+                nodeType: 'template',
+                name: 'Untitled',
+                owner: '',
+                description: 'This is an example template',
+                annotations: {},
+                spec: { type: 'component' },
+              },
             },
-          },
-        ];
+          ];
 
     await scaffolderStudioService.createOrUpdateTemplate({
       data: {
         ...parsed.data,
         nodes: nodesWithDefaultTemplate,
         owner,
-        metadata: { name: parsed.data.metadata?.name || '', description: parsed.data.metadata?.description || '' },
+        metadata: {
+          name: parsed.data.metadata?.name || '',
+          description: parsed.data.metadata?.description || '',
+        },
         published_at: parsed.data.published_at ?? null,
       },
     });
@@ -214,7 +227,10 @@ export async function createRouter({
       data: {
         ...parsed.data,
         owner,
-        metadata: { name: parsed.data.metadata?.name || '', description: parsed.data.metadata?.description || '' },
+        metadata: {
+          name: parsed.data.metadata?.name || '',
+          description: parsed.data.metadata?.description || '',
+        },
         published_at: parsed.data.published_at ?? null,
       },
     });
@@ -326,11 +342,10 @@ export async function createRouter({
     if (!parsed.success) {
       throw new InputError(parsed.error.toString());
     }
-    const data =
-      await scaffolderStudioService.serializeScaffolderTemplate({
-        template: parsed.data.template,
-        actions: await scaffolderStudioService.getActions(),
-      });
+    const data = await scaffolderStudioService.serializeScaffolderTemplate({
+      template: parsed.data.template,
+      actions: await scaffolderStudioService.getActions(),
+    });
     const credentials = await httpAuth.credentials(req, {
       allow: ['user', 'service'],
     });
@@ -388,6 +403,19 @@ export async function createRouter({
       sourceNodeId: parsed.data.sourceNodeId,
     });
     res.json(yaml);
+  });
+  router.post('/templates/lint', async (req, res) => {
+    const parsed = lintTemplateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new InputError(parsed.error.toString());
+    }
+
+    const result = await scaffolderStudioService.lintTemplateGraph({
+      templateId: parsed.data.templateId,
+      nodes: parsed.data.nodes,
+      edges: parsed.data.edges,
+    });
+    res.json(result);
   });
 
   router.get('/prefabs', async (req, res) => {

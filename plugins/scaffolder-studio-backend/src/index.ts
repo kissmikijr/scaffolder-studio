@@ -17,7 +17,6 @@ export default createBackendFeatureLoader({
     ) {
       yield import('./modules/eventPublisherModule');
     }
-
   },
 });
 
@@ -25,5 +24,12 @@ export { ScaffolderStudioClient } from './clients/ScaffolderStudioClient';
 export { default as scaffolderStudioPlugin } from './plugin';
 export { githubPublisherModule } from './modules/githubPublisherModule';
 export { eventPublisherModule } from './modules/eventPublisherModule';
-export { scaffolderStudioPublisherExtensionPoint } from './extensions/alpha';
-export type { ScaffolderStudioPublisherExtensionPoint } from './extensions/alpha';
+export {
+  scaffolderStudioLinterExtensionPoint,
+  scaffolderStudioPublisherExtensionPoint,
+} from './extensions/alpha';
+export type {
+  ScaffolderStudioLinterExtensionPoint,
+  ScaffolderStudioPublisherExtensionPoint,
+} from './extensions/alpha';
+export type { LintRuleExtension } from './extensions/types';

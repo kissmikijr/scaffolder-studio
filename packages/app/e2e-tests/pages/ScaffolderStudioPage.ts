@@ -535,11 +535,7 @@ export class ScaffolderStudioPage {
 
       // Case 2: Lexical-based input (contenteditable div)
       // Look for a textbox within the container that has the label text or is near it
-      const lexicalTextbox = this.page
-        .locator(
-          `xpath=//*[translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')=translate('${key}', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz') or translate(@label, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')=translate('${key}', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')]/ancestor::div[contains(@class, "MuiBox-root") or contains(@class, "MuiFormControl-root")][1]//*[ @role="textbox" ]`,
-        )
-        .first();
+      const lexicalTextbox = this.findStepFieldTextbox(key);
 
       let targetTextbox = lexicalTextbox;
       if (!(await targetTextbox.isVisible())) {
@@ -613,6 +609,34 @@ export class ScaffolderStudioPage {
         }
       }
     }
+  }
+
+  findStepFieldTextbox(key: string): Locator {
+    const lowerKey = key.toLowerCase();
+
+    return this.page.locator(
+      `xpath=(
+        //*[translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')='${lowerKey}' or translate(@label, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')='${lowerKey}']/ancestor::div[contains(@class, "MuiBox-root") or contains(@class, "MuiFormControl-root")][1]//*[@role="textbox"]
+        |
+        //*[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '${lowerKey}')]/ancestor::div[1]//*[@role="textbox"]
+      )[1]`,
+    );
+  }
+
+  async clearStepExpressionField(key: string) {
+    await this.expandSideContent();
+    const textbox = this.getStepExpressionTextbox(key);
+    await expect(textbox).toBeVisible();
+    await textbox.click({ force: true });
+    await this.page.keyboard.press('ControlOrMeta+a');
+    await this.page.keyboard.press('Backspace');
+    await this.page.keyboard.press('Tab');
+  }
+
+  async getStepExpressionFieldValue(key: string) {
+    const textbox = this.getStepExpressionTextbox(key);
+    await expect(textbox).toBeVisible();
+    return (await textbox.innerText()).trim();
   }
 
   async configureOutput(links?: Array<{ title: string; url: string }>) {

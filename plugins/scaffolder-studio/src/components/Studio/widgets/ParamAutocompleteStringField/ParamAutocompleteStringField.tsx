@@ -20,6 +20,8 @@ import {
 } from '@backstage/core-plugin-api';
 import debounce from 'lodash.debounce';
 
+const NO_PENDING_VALUE = Symbol('no-pending-value');
+
 const StyledLexicalComposer = styled(LexicalComposer)({
   position: 'relative',
   width: '100%',
@@ -114,9 +116,36 @@ export const ParamAutocompleteStringField = ({
   });
 
   const onChangeRef = useRef(onChange);
+  const latestFormDataRef = useRef(formData);
+  const pendingExternalValueRef = useRef<unknown>(NO_PENDING_VALUE);
+  const [editorValue, setEditorValue] = useState(() =>
+    formData !== undefined && formData !== null ? String(formData) : '',
+  );
+
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
+
+  useEffect(() => {
+    latestFormDataRef.current = formData;
+  }, [formData]);
+
+  useEffect(() => {
+    const externalEditorValue =
+      formData !== undefined && formData !== null ? String(formData) : '';
+
+    if (pendingExternalValueRef.current !== NO_PENDING_VALUE) {
+      if (Object.is(formData, pendingExternalValueRef.current)) {
+        pendingExternalValueRef.current = NO_PENDING_VALUE;
+      } else {
+        return;
+      }
+    }
+
+    setEditorValue(currentValue =>
+      currentValue === externalEditorValue ? currentValue : externalEditorValue,
+    );
+  }, [formData]);
 
   const debouncedOnChange = useMemo(
     () =>
@@ -147,7 +176,12 @@ export const ParamAutocompleteStringField = ({
         }
       }
 
-      if (finalValue !== formData) {
+      setEditorValue(currentValue =>
+        currentValue === text ? currentValue : text,
+      );
+
+      if (!Object.is(finalValue, latestFormDataRef.current)) {
+        pendingExternalValueRef.current = finalValue;
         debouncedOnChange(finalValue);
       }
     });
@@ -213,9 +247,7 @@ export const ParamAutocompleteStringField = ({
       <AutoPairPlugin />
       <OnChangePlugin onChange={handleEditorChange} />
       <InitialEditorStatePlugin
-        initialEditorState={
-          formData !== undefined && formData !== null ? String(formData) : ''
-        }
+        initialEditorState={editorValue}
         parameters={allParams}
         outputs={allOutputs}
       />

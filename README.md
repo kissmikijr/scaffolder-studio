@@ -33,6 +33,7 @@ With Scaffolder Studio, you can:
   - [Templates](#templates)
   - [Prefabs](#prefabs)
   - [Comments](#comments)
+  - [Linting](#linting)
 - [Shortcuts](#shortcuts)
 - [Permissions](#permissions)
 - [Publishers](#publishers)
@@ -214,6 +215,30 @@ These permissions control the prefabs:
 The comment feature allows you to add persist comments to your Step, property, output and template nodes. You can add or edit a comment by hovering over the node's top-right corner and clicking the comment icon. The comment will be saved to the node's data.
 
 The intended use of comments is to provide additional context or notes about the configuration of that element. It can be especially usful to document a complex scm action configuration.
+
+### Linting
+
+Scaffolder Studio runs backend-powered lint checks against the current in-memory graph while you edit. Linting is debounced and keyed off semantic graph changes, so panning, zooming, selection changes, and node dragging do not retrigger lint work on their own.
+
+Linting is enabled by default. If you need to turn it off for your Backstage instance, disable it in `app-config.yaml`:
+
+```yaml
+scaffolder:
+  studio:
+    lint:
+      enabled: false
+```
+
+This setting is instance-wide and applies to both the editor UI and backend lint responses.
+
+Current default lint rules:
+
+- `required-fields`: warns when a step is missing an id, name, action id, or required action inputs
+- `broken-references`: errors on references to unknown parameters, steps, or step outputs
+- `unused-parameters`: warns when a parameter is defined but never referenced
+- `dangling-edges`: warns when a property-to-step connection does not match any inferred dependency
+
+Lint issues are surfaced directly on nodes via badges and tooltips. Save, sync, and publish still use backend validation as the authoritative check.
 
 ## Shortcuts
 

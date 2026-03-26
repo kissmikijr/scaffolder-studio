@@ -4,6 +4,7 @@ import debounce from 'lodash.debounce';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { scaffolderVisualApiRef } from '../../../api/ScaffolderVisualClient';
 import { AllNodeData, isTemplateNode } from '../types';
+import { toGraphContentHash } from '../utils/templateContentHash';
 
 export type TemplateDraftState = {
   nodes: Node<AllNodeData>[];
@@ -86,58 +87,13 @@ const toStateHash = (state: SerializedTemplateDraftState): string => {
 };
 
 /**
- * Layout-only fields that should NOT affect the "last modified" timestamp.
- * Changes to these fields are still persisted, but they won't bump the
- * template to the top of the sorted list.
- */
-const LAYOUT_ONLY_NODE_KEYS = new Set([
-  'position',
-  'positionAbsolute',
-  'selected',
-  'dragging',
-  'measured',
-  'width',
-  'height',
-  'resizing',
-  'draggable',
-  'selectable',
-  'deletable',
-  'focusable',
-  'hidden',
-  'internals',
-  'origin',
-  'sourcePosition',
-  'targetPosition',
-  'zIndex',
-  'expandParent',
-]);
-
-const stripLayoutFields = (node: Record<string, unknown>): Record<string, unknown> => {
-  const entries = Object.entries(node).filter(
-    ([key]) => !LAYOUT_ONLY_NODE_KEYS.has(key),
-  );
-  return Object.fromEntries(entries);
-};
-
-/**
  * Produces a hash that only reflects "content" changes — node data, types,
  * edges, and metadata. Viewport and node layout fields are excluded so that
  * panning, zooming, selecting, or dragging nodes does not count as a
  * meaningful modification.
  */
 export const toContentHash = (state: SerializedTemplateDraftState): string => {
-  const contentNodes = state.nodes.map(n =>
-    stripLayoutFields(n as unknown as Record<string, unknown>),
-  );
-  const contentEdges = state.edges.map(e => ({
-    id: (e as any).id,
-    source: (e as any).source,
-    target: (e as any).target,
-    sourceHandle: (e as any).sourceHandle,
-    targetHandle: (e as any).targetHandle,
-    type: (e as any).type,
-  }));
-  return JSON.stringify({ nodes: contentNodes, edges: contentEdges, metadata: state.metadata });
+  return toGraphContentHash(state.nodes, state.edges, state.metadata);
 };
 
 const getStorageKey = (templateId: string) => `${STORAGE_PREFIX}${templateId}`;
@@ -177,7 +133,9 @@ const getTemplateName = (state: SerializedTemplateDraftState): string => {
   );
 };
 
-const getTemplateDescription = (state: SerializedTemplateDraftState): string => {
+const getTemplateDescription = (
+  state: SerializedTemplateDraftState,
+): string => {
   const templateNode = state.nodes.find(node => isTemplateNode(node as any));
   return (
     (
@@ -272,14 +230,17 @@ export const useTemplateDraftPersistence = ({
     };
   }, [debouncedWriteDraft]);
 
-  const setPersistedState = useCallback((nextState: TemplateDraftState, serverUpdated?: string) => {
-    const serialized = toSerializableState(nextState);
-    setPersistedStateHash(toStateHash(serialized));
-    persistedContentHashRef.current = toContentHash(serialized);
-    if (serverUpdated) {
-      lastSyncedUpdatedRef.current = serverUpdated;
-    }
-  }, []);
+  const setPersistedState = useCallback(
+    (nextState: TemplateDraftState, serverUpdated?: string) => {
+      const serialized = toSerializableState(nextState);
+      setPersistedStateHash(toStateHash(serialized));
+      persistedContentHashRef.current = toContentHash(serialized);
+      if (serverUpdated) {
+        lastSyncedUpdatedRef.current = serverUpdated;
+      }
+    },
+    [],
+  );
 
   const isDirty =
     Boolean(persistedStateHash) && currentStateHash !== persistedStateHash;
@@ -330,10 +291,11 @@ export const useTemplateDraftPersistence = ({
       // Layout-only changes (viewport, positions, selection) preserve the
       // previous timestamp so the template doesn't jump in sorted lists.
       const latestContentHash = toContentHash(latestSerializedState);
-      const contentChanged = latestContentHash !== persistedContentHashRef.current;
+      const contentChanged =
+        latestContentHash !== persistedContentHashRef.current;
       const updatedTimestamp = contentChanged
         ? now
-        : (lastSyncedUpdatedRef.current ?? now);
+        : lastSyncedUpdatedRef.current ?? now;
 
       try {
         await api.update({

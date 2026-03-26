@@ -1,0 +1,54 @@
+{
+  "name": "@kissmiklosjr/scaffolder-studio-linter",
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "Shared template graph linter for scaffolder-studio",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "publishConfig": {
+    "access": "public",
+    "main": "dist/index.cjs.js",
+    "module": "dist/index.esm.js",
+    "types": "dist/index.d.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kissmikijr/scaffolder-studio",
+    "directory": "packages/scaffolder-studio-linter"
+  },
+  "homepage": "https://github.com/kissmikijr/scaffolder-studio/tree/main/packages/scaffolder-studio-linter",
+  "bugs": "https://github.com/kissmikijr/scaffolder-studio/issues",
+  "backstage": {
+    "role": "common-library",
+    "pluginId": "scaffolder-studio",
+    "pluginPackages": [
+      "@kissmiklosjr/plugin-scaffolder-studio",
+      "@kissmiklosjr/plugin-scaffolder-studio-backend",
+      "@kissmiklosjr/plugin-scaffolder-studio-common",
+      "@kissmiklosjr/scaffolder-studio-linter"
+    ]
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "backstage-cli package build",
+    "lint": "backstage-cli package lint",
+    "test": "backstage-cli package test",
+    "clean": "backstage-cli package clean",
+    "prepack": "backstage-cli package prepack",
+    "postpack": "backstage-cli package postpack"
+  },
+  "dependencies": {
+    "@kissmiklosjr/plugin-scaffolder-studio-common": "workspace:^",
+    "@xyflow/react": "^12.5.5"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "devDependencies": {
+    "@backstage/cli": "^0.36.0"
+  },
+  "files": [
+    "dist"
+  ]
+}

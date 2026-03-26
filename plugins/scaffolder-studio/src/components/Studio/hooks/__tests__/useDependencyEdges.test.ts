@@ -237,6 +237,47 @@ describe('computeRelationshipGraph', () => {
     });
   });
 
+  it('detects wrapped parameter references inside literal text', () => {
+    const nodes = [
+      makeProperty('p1', 'property1'),
+      makeStep('s1', 'debug-log-1', {
+        message: 'alma1234e ${{parameters.property1 | upper}}',
+      }),
+    ];
+
+    const { relationshipEdges } = computeRelationshipGraph(nodes);
+    expect(relationshipEdges).toHaveLength(1);
+    expect(relationshipEdges[0]).toMatchObject({
+      source: 'p1',
+      target: 's1',
+      targetHandle: toInputHandleId('message'),
+    });
+  });
+
+  it('detects references from form data fields even when the schema omits that key', () => {
+    const nodes = [
+      makeProperty('p1', 'property1'),
+      makeStep(
+        's1',
+        'debug-log-1',
+        {
+          message: '${{ parameters.property1 }}',
+        },
+        '',
+        { x: 0, y: 0 },
+        {},
+      ),
+    ];
+
+    const { relationshipEdges } = computeRelationshipGraph(nodes);
+    expect(relationshipEdges).toHaveLength(1);
+    expect(relationshipEdges[0]).toMatchObject({
+      source: 'p1',
+      target: 's1',
+      targetHandle: toInputHandleId('message'),
+    });
+  });
+
   it('does not create self-referencing step edges', () => {
     const nodes = [
       makeStep('s1', 'same-step', {

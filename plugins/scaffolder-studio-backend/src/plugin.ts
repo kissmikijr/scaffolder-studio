@@ -15,8 +15,12 @@ import { PrefabService } from './service/PrefabService';
 import { DatabasePrefabStore } from './database/DatabasePrefabStore';
 import { DatabasePrefabLibraryStore } from './database/DatabasePrefabLibraryStore';
 import { PrefabLibraryService } from './service/PrefabLibraryService';
-import { scaffolderStudioPublisherExtensionPoint } from './extensions/alpha';
+import {
+  scaffolderStudioLinterExtensionPoint,
+  scaffolderStudioPublisherExtensionPoint,
+} from './extensions/alpha';
 import { PublisherExtension } from './extensions/types';
+import type { TemplateLintRule } from '@kissmiklosjr/scaffolder-studio-linter';
 
 export const scaffolderStudioServiceRef =
   createServiceRef<ScaffolderStudioService>({
@@ -27,10 +31,19 @@ export default createBackendPlugin({
   pluginId: 'scaffolder-studio',
   register(env) {
     const publishers: PublisherExtension[] = [];
+    const lintRules: TemplateLintRule[] = [];
 
     env.registerExtensionPoint(scaffolderStudioPublisherExtensionPoint, {
       addPublisher(publisher) {
         publishers.push(publisher);
+      },
+    });
+    env.registerExtensionPoint(scaffolderStudioLinterExtensionPoint, {
+      addRule(rule) {
+        lintRules.push(rule);
+      },
+      addRules(rules) {
+        lintRules.push(...rules);
       },
     });
 
@@ -78,17 +91,20 @@ export default createBackendPlugin({
         const prefabLibraryStore = await DatabasePrefabLibraryStore.create({
           database,
         });
+        const lintEnabled =
+          config.getOptionalBoolean('scaffolder.studio.lint.enabled') ?? true;
 
-        const scaffolderStudioService =
-          new ScaffolderStudioService({
-            events,
-            visualTemplateProjectStore,
-            publishedTemplatesStore,
-            schemaPatcher,
-            prefabLibraryStore,
-            prefabStore,
-            publishers: [...publishers],
-          });
+        const scaffolderStudioService = new ScaffolderStudioService({
+          events,
+          visualTemplateProjectStore,
+          publishedTemplatesStore,
+          schemaPatcher,
+          prefabLibraryStore,
+          prefabStore,
+          publishers: [...publishers],
+          lintRules: [...lintRules],
+          lintEnabled,
+        });
 
         // Register cleanup on shutdown
         rootLifecycle.addShutdownHook(async () => {

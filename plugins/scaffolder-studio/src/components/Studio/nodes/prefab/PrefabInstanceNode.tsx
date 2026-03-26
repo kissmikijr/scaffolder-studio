@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Box, useTheme, Typography } from '@mui/material';
+import { Box, useTheme, Typography, Tooltip, alpha } from '@mui/material';
 import { Node, NodeProps, Position } from '@xyflow/react';
 import { PrefabInstanceNodeData } from '../../types';
 import {
@@ -24,6 +24,13 @@ import {
   hasOutgoingCapacity,
 } from '../../utils/connectionLimits';
 import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
+import { useTemplateLintContext } from '../../TemplateLintContext';
+import {
+  NodeLintBadge,
+  getLintSeverityColor,
+  getNodeLintSeverity,
+  getNodeLintTooltipTitle,
+} from '../NodeLintBadge';
 
 type LoadingState = 'loading' | 'loaded' | 'error' | 'not-found';
 
@@ -35,6 +42,7 @@ const PrefabInstanceNode = ({
   selected,
 }: NodeProps<Node<PrefabInstanceNodeData>>) => {
   const theme = useTheme();
+  const { issuesByNodeId } = useTemplateLintContext();
   const libraryApi = useApi(prefabLibraryApiRef);
   const personalApi = useApi(prefabsApiRef);
   const { getIncomingConnectionCount, getOutgoingConnectionCount } =
@@ -107,6 +115,19 @@ const PrefabInstanceNode = ({
   const effectivePrefabNode = prefab?.node
     ? applyPrefabInstanceOverridesToNode(prefab.node as Node<AllNodeData>, data)
     : undefined;
+  const isError = loadingState === 'not-found' || loadingState === 'error';
+  const lintSeverity = getNodeLintSeverity(issuesByNodeId.get(id) ?? []);
+  const lintSeverityColor = getLintSeverityColor(theme, lintSeverity);
+  let fallbackBorderColor = NodeTypeColors.unknown as string;
+  if (selected) {
+    fallbackBorderColor = SELECTED_BORDER_COLOR;
+  } else if (isError) {
+    fallbackBorderColor = theme.palette.warning.main;
+  } else if (effectivePrefabNode?.type) {
+    fallbackBorderColor = getBorderColor(effectivePrefabNode.type);
+  }
+  const lintBorderColor = lintSeverityColor ?? fallbackBorderColor;
+  const lintIssues = issuesByNodeId.get(id) ?? [];
 
   const renderNode = () => {
     if (loadingState === 'loading') {
@@ -172,7 +193,12 @@ const PrefabInstanceNode = ({
     switch (effectivePrefabNode.type) {
       case 'step':
         return (
-          <StepNode {...(nodeWithHandlers as any)} disabled selected={false} />
+          <StepNode
+            {...(nodeWithHandlers as any)}
+            disabled
+            selected={false}
+            showLintBadge={false}
+          />
         );
       case 'property':
         return (
@@ -180,6 +206,7 @@ const PrefabInstanceNode = ({
             {...(nodeWithHandlers as any)}
             disabled
             selected={false}
+            showLintBadge={false}
           />
         );
       case 'templateOutput':
@@ -188,6 +215,7 @@ const PrefabInstanceNode = ({
             {...(nodeWithHandlers as any)}
             disabled
             selected={false}
+            showLintBadge={false}
           />
         );
       default:
@@ -201,10 +229,9 @@ const PrefabInstanceNode = ({
     }
   };
 
-  const isError = loadingState === 'not-found' || loadingState === 'error';
-
   return (
     <Box>
+      <NodeLintBadge nodeId={id} />
       <Box
         sx={{
           position: 'absolute',
@@ -241,37 +268,51 @@ const PrefabInstanceNode = ({
             : effectivePrefabNode?.type}
         </Box>
       )}
-      <Box
-        sx={{
-          borderRadius: '24px',
-          color: theme.palette.text.primary,
-          backgroundColor: theme.complimentBackground,
-          position: 'relative',
-          display: 'block',
-          border: `4px ${isError ? 'dashed' : 'solid'} ${(() => {
-            if (selected) return SELECTED_BORDER_COLOR;
-            if (isError) return theme.palette.warning.main;
-            if (effectivePrefabNode?.type) {
-              return getBorderColor(effectivePrefabNode.type);
-            }
-            return NodeTypeColors.unknown;
-          })()}`,
-
-          overflow: 'visible',
-          '&:hover': {
-            boxShadow: 2,
-          },
-          outline: 'none',
-        }}
+      <Tooltip
+        arrow
+        enterDelay={150}
+        disableHoverListener={lintIssues.length === 0}
+        title={getNodeLintTooltipTitle(lintIssues)}
       >
         <Box
           sx={{
+            borderRadius: '24px',
+            color: theme.palette.text.primary,
+            backgroundColor: theme.complimentBackground,
+            position: 'relative',
+            display: 'block',
+            border: `4px ${isError ? 'dashed' : 'solid'} ${lintBorderColor}`,
+            '&::after':
+              lintIssues.length > 0
+                ? {
+                    content: '""',
+                    position: 'absolute',
+                    inset: 0,
+                    borderRadius: 'inherit',
+                    backgroundColor: alpha(
+                      lintSeverityColor ?? theme.palette.warning.main,
+                      0.08,
+                    ),
+                    pointerEvents: 'none',
+                  }
+                : undefined,
+
             overflow: 'visible',
+            '&:hover': {
+              boxShadow: 2,
+            },
+            outline: 'none',
           }}
         >
-          {renderNode()}
+          <Box
+            sx={{
+              overflow: 'visible',
+            }}
+          >
+            {renderNode()}
+          </Box>
         </Box>
-      </Box>
+      </Tooltip>
       <Handle
         type="target"
         position={Position.Top}

@@ -74,6 +74,7 @@ import {
   GraphPerformanceContext,
   GraphPerformanceContextValue,
 } from './GraphPerformanceContext';
+import { TemplateLintContext, TemplateLintState } from './TemplateLintContext';
 import {
   getIncomingConnectionCountFromIndex,
   getOutgoingConnectionCountFromIndex,
@@ -124,6 +125,7 @@ const ScaffolderStudioEditor = ({
   syncStatus,
   lastSyncedAt,
   onSyncBeforeDryRun,
+  lintState,
 }: {
   setEdges: Dispatch<SetStateAction<Edge[]>>;
   setNodes: Dispatch<SetStateAction<Node<AllNodeData>[]>>;
@@ -141,6 +143,7 @@ const ScaffolderStudioEditor = ({
   syncStatus: TemplateSyncStatus;
   lastSyncedAt: string | null;
   onSyncBeforeDryRun: () => Promise<boolean>;
+  lintState: TemplateLintState;
 }) => {
   const [prefabMenu, setPrefabMenu] = useState<{
     id: string;
@@ -1066,43 +1069,45 @@ const ScaffolderStudioEditor = ({
                 },
               }}
             >
-              <GraphPerformanceContext.Provider
-                value={graphPerformanceContextValue}
-              >
-                <ReactFlow
-                  onNodesChange={handleNodesChange}
-                  onViewportChange={handleViewportChange}
-                  edges={displayEdges}
-                  nodes={displayNodes}
-                  connectionRadius={42}
-                  viewport={viewport}
-                  panOnDrag={isPanning}
-                  panOnScroll
-                  zoomOnPinch
-                  zoomOnScroll={false}
-                  nodesDraggable={!isPanning}
-                  elementsSelectable={!isPanning}
-                  selectionOnDrag={!isPanning}
-                  zoomActivationKeyCode={null}
-                  maxZoom={1.5}
-                  minZoom={0.3}
-                  onEdgesChange={handleEdgesChange}
-                  nodeTypes={nodeTypes}
-                  edgeTypes={edgeTypes}
-                  defaultEdgeOptions={defaultEdgeOptions}
-                  onConnect={onConnect}
-                  isValidConnection={isValidConnection}
-                  onConnectStart={onConnectStart}
-                  onConnectEnd={onConnectEnd}
-                  onNodesDelete={handleNodesDelete}
-                  onNodeClick={handleOnNodeClick}
-                  onPaneClick={onPaneClick}
-                  onNodeContextMenu={onNodeContextMenu}
-                  onNodeDragStop={onNodeDragStop}
+              <TemplateLintContext.Provider value={lintState}>
+                <GraphPerformanceContext.Provider
+                  value={graphPerformanceContextValue}
                 >
-                  <Background gap={40} />
-                </ReactFlow>
-              </GraphPerformanceContext.Provider>
+                  <ReactFlow
+                    onNodesChange={handleNodesChange}
+                    onViewportChange={handleViewportChange}
+                    edges={displayEdges}
+                    nodes={displayNodes}
+                    connectionRadius={42}
+                    viewport={viewport}
+                    panOnDrag={isPanning}
+                    panOnScroll
+                    zoomOnPinch
+                    zoomOnScroll={false}
+                    nodesDraggable={!isPanning}
+                    elementsSelectable={!isPanning}
+                    selectionOnDrag={!isPanning}
+                    zoomActivationKeyCode={null}
+                    maxZoom={1.5}
+                    minZoom={0.3}
+                    onEdgesChange={handleEdgesChange}
+                    nodeTypes={nodeTypes}
+                    edgeTypes={edgeTypes}
+                    defaultEdgeOptions={defaultEdgeOptions}
+                    onConnect={onConnect}
+                    isValidConnection={isValidConnection}
+                    onConnectStart={onConnectStart}
+                    onConnectEnd={onConnectEnd}
+                    onNodesDelete={handleNodesDelete}
+                    onNodeClick={handleOnNodeClick}
+                    onPaneClick={onPaneClick}
+                    onNodeContextMenu={onNodeContextMenu}
+                    onNodeDragStop={onNodeDragStop}
+                  >
+                    <Background gap={40} />
+                  </ReactFlow>
+                </GraphPerformanceContext.Provider>
+              </TemplateLintContext.Provider>
               <Box
                 sx={{
                   position: 'fixed',

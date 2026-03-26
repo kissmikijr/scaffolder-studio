@@ -7,23 +7,12 @@ import {
   isPropertyNode,
   getPropertyBackgroundColor,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
-import {
-  findAllTokens,
-  parseTokenContent,
-  ParsedToken,
-} from '../utils/tokenParser';
+import { findReferenceTokens } from '@kissmiklosjr/scaffolder-studio-linter';
 
 const stringifyValue = (value: unknown): string => {
   if (typeof value === 'string') return value;
   if (value === null || value === undefined) return '';
   return JSON.stringify(value);
-};
-
-const extractTokens = (value: unknown): ParsedToken[] => {
-  const str = stringifyValue(value);
-  return findAllTokens(str)
-    .map(t => parseTokenContent(t.content))
-    .filter((t): t is ParsedToken => t !== null);
 };
 
 const INPUT_HANDLE_PREFIX = 'in:';
@@ -65,6 +54,19 @@ export const fromOutputHandleId = (handleId?: string | null): string | null => {
 
 type HandleSide = 'top' | 'right' | 'bottom' | 'left';
 type HandlePair = { sourceHandle: HandleSide; targetHandle: HandleSide };
+type RelationshipToken =
+  | {
+      type: 'parameter';
+      paramName: string;
+    }
+  | {
+      type: 'step';
+      stepId: string;
+      outputName: string;
+    };
+
+const FILTER_ONLY_SUFFIX_REGEX =
+  /^\s*(?:\|\s*[a-zA-Z_][a-zA-Z0-9_]*(?:\([^()]*\))?\s*)*$/;
 
 const nodeAbsoluteCenter = (
   node: Node<AllNodeData>,
@@ -106,7 +108,7 @@ export const getClosestHandles = (
 };
 
 type RelationshipReference = {
-  token: ParsedToken;
+  token: RelationshipToken;
   targetInputPath: string;
 };
 
@@ -114,24 +116,84 @@ const collectReferencesFromValue = (
   value: unknown,
   targetInputPath: string,
   refs: RelationshipReference[],
+  propertyNodeByName: Map<string, Node<AllNodeData>>,
 ) => {
   if (typeof value === 'string') {
-    for (const token of extractTokens(value)) {
-      refs.push({ token, targetInputPath });
+    const parsedTokens = findReferenceTokens(stringifyValue(value));
+
+    for (const token of parsedTokens) {
+      if (token.type === 'parameter' && token.paramName) {
+        refs.push({
+          token: {
+            type: 'parameter',
+            paramName: token.paramName,
+          },
+          targetInputPath,
+        });
+      } else if (token.type === 'step' && token.stepId && token.outputName) {
+        refs.push({
+          token: {
+            type: 'step',
+            stepId: token.stepId,
+            outputName: token.outputName,
+          },
+          targetInputPath,
+        });
+      }
     }
+
+    if (parsedTokens.length === 0) {
+      const trimmedValue = value.trim();
+      if (
+        trimmedValue &&
+        !trimmedValue.includes('parameters.') &&
+        !trimmedValue.includes('steps')
+      ) {
+        for (const propertyName of propertyNodeByName.keys()) {
+          if (!trimmedValue.startsWith(propertyName)) {
+            continue;
+          }
+
+          const suffix = trimmedValue.slice(propertyName.length);
+          if (!FILTER_ONLY_SUFFIX_REGEX.test(suffix)) {
+            continue;
+          }
+
+          refs.push({
+            token: {
+              type: 'parameter',
+              paramName: propertyName,
+            },
+            targetInputPath,
+          });
+          break;
+        }
+      }
+    }
+
     return;
   }
 
   if (Array.isArray(value)) {
     for (const item of value) {
-      collectReferencesFromValue(item, targetInputPath, refs);
+      collectReferencesFromValue(
+        item,
+        targetInputPath,
+        refs,
+        propertyNodeByName,
+      );
     }
     return;
   }
 
   if (value && typeof value === 'object') {
     for (const nested of Object.values(value)) {
-      collectReferencesFromValue(nested, targetInputPath, refs);
+      collectReferencesFromValue(
+        nested,
+        targetInputPath,
+        refs,
+        propertyNodeByName,
+      );
     }
   }
 };
@@ -274,29 +336,25 @@ export const computeRelationshipGraph = (
       const data = node.data as StepNodeData;
 
       if (data.if) {
-        const ifReferences: RelationshipReference[] = extractTokens(
+        const ifReferences: RelationshipReference[] = [];
+        collectReferencesFromValue(
           data.if,
-        ).map(token => ({
-          token,
-          targetInputPath: 'if',
-        }));
+          'if',
+          ifReferences,
+          propertyNodeByName,
+        );
         processReferences(ifReferences, node);
       }
 
       if (data.formData && typeof data.formData === 'object') {
-        const inputProperties = (data.schema as any)?.input?.properties as
-          | Record<string, unknown>
-          | undefined;
-        const allowedInputKeys =
-          inputProperties && Object.keys(inputProperties).length > 0
-            ? new Set(Object.keys(inputProperties))
-            : undefined;
         const inputReferences: RelationshipReference[] = [];
         for (const [inputKey, inputValue] of Object.entries(data.formData)) {
-          if (allowedInputKeys && !allowedInputKeys.has(inputKey)) {
-            continue;
-          }
-          collectReferencesFromValue(inputValue, inputKey, inputReferences);
+          collectReferencesFromValue(
+            inputValue,
+            inputKey,
+            inputReferences,
+            propertyNodeByName,
+          );
         }
         processReferences(inputReferences, node);
       }

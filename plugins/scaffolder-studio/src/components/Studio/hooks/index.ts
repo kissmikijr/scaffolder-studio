@@ -13,3 +13,4 @@ export * from './useThumbnail';
 export * from './useDependencyEdges';
 export * from './useEditorKeyboardShortcuts';
 export * from './useGraphIndexes';
+export * from './useTemplateLintResult';
