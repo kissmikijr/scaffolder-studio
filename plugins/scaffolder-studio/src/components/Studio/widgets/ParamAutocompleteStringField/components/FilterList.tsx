@@ -50,6 +50,13 @@ export function FilterList({
               title={filter.description}
               arrow
               placement="left"
+              slotProps={{
+                popper: {
+                  sx: {
+                    zIndex: 100001,
+                  },
+                },
+              }}
             >
               <ListItemButton
                 sx={{
