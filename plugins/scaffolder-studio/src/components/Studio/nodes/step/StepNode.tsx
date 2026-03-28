@@ -373,7 +373,7 @@ const StepNode = ({
                 variant="h6"
                 sx={{
                   fontSize: '1rem',
-                  lineHeight: 1.4,
+                  lineHeight: 2,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -385,15 +385,12 @@ const StepNode = ({
                     lintIssues.length > 0 ? 'wavy' : undefined,
                   textDecorationColor:
                     lintIssues.length > 0
-                      ? alpha(
-                          lintSeverityColor ?? theme.palette.error.main,
-                          0.92,
-                        )
+                      ? alpha(theme.palette.error.main, 0.92)
                       : undefined,
                   textDecorationThickness:
                     lintIssues.length > 0 ? '2px' : undefined,
                   textUnderlineOffset:
-                    lintIssues.length > 0 ? '3px' : undefined,
+                    lintIssues.length > 0 ? '4px' : undefined,
                 }}
               >
                 {data.name || 'Select action'}

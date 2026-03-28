@@ -168,19 +168,17 @@ export const PropertyNodeContent = ({
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
-                lineHeight: 1.4,
+                lineHeight: 2,
                 display: 'flex',
                 justifyContent: 'center',
                 textDecorationLine:
                   lintIssues.length > 0 ? 'underline' : 'none',
                 textDecorationStyle: lintIssues.length > 0 ? 'wavy' : undefined,
                 textDecorationColor:
-                  lintIssues.length > 0
-                    ? alpha(lintSeverityColor ?? theme.palette.error.main, 0.92)
-                    : undefined,
+                  lintIssues.length > 0 ? theme.palette.error.main : undefined,
                 textDecorationThickness:
                   lintIssues.length > 0 ? '2px' : undefined,
-                textUnderlineOffset: lintIssues.length > 0 ? '3px' : undefined,
+                textUnderlineOffset: lintIssues.length > 0 ? '4px' : undefined,
               }}
               noWrap
             >
