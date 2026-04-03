@@ -5,6 +5,7 @@ import {
   VisualTemplateProject,
   ScaffolderAction,
   isPrefabNode,
+  isStepNode,
   applyPrefabInstanceOverridesToNode,
   serializeToYaml,
   AllNodeData,
@@ -14,15 +15,25 @@ import parseScaffolderTemplate from './parseScaffolderTemplate';
 import { PrefabLibraryStore, PrefabStore } from '../database/types';
 import type { Edge, Node } from '@xyflow/react';
 import { PublisherExtension } from '../extensions/types';
+import {
+  builtinRules,
+  lintTemplateGraph,
+  normalizeRequestToSnapshot,
+  type TemplateLintResult,
+  type TemplateLintRule,
+} from '@kissmiklosjr/scaffolder-studio-linter';
 
 export class ScaffolderStudioService {
   private static readonly ENTITY_PROVIDER_PUBLISHER_ID = 'event-publisher';
+  private static readonly LINT_RULES_VERSION = '1';
   private readonly visualTemplateProjectStore: VisualTemplateProjectStore;
   private readonly publishedTemplatesStore: PublishedTemplatesStore;
   private readonly prefabLibraryStore: PrefabLibraryStore;
   private readonly prefabStore: PrefabStore;
   private readonly schemaPatcher: SchemaPatcher;
   private readonly publishers: PublisherExtension[];
+  private readonly lintRules: TemplateLintRule[];
+  private readonly lintEnabled: boolean;
 
   constructor({
     visualTemplateProjectStore,
@@ -31,6 +42,8 @@ export class ScaffolderStudioService {
     prefabStore,
     schemaPatcher,
     publishers,
+    lintRules = [],
+    lintEnabled = true,
   }: {
     events: EventsService;
     visualTemplateProjectStore: VisualTemplateProjectStore;
@@ -39,6 +52,8 @@ export class ScaffolderStudioService {
     prefabStore: PrefabStore;
     schemaPatcher: SchemaPatcher;
     publishers: PublisherExtension[];
+    lintRules?: TemplateLintRule[];
+    lintEnabled?: boolean;
   }) {
     this.visualTemplateProjectStore = visualTemplateProjectStore;
     this.publishedTemplatesStore = publishedTemplatesStore;
@@ -46,6 +61,8 @@ export class ScaffolderStudioService {
     this.prefabStore = prefabStore;
     this.schemaPatcher = schemaPatcher;
     this.publishers = publishers;
+    this.lintRules = lintRules;
+    this.lintEnabled = lintEnabled;
   }
 
   get stores() {
@@ -147,6 +164,70 @@ export class ScaffolderStudioService {
   }
   async resolve({ nodes }: { nodes: Node<AllNodeData>[] }) {
     return this.resolveNodes(nodes);
+  }
+  async lintTemplateGraph({
+    templateId,
+    nodes,
+    edges,
+  }: {
+    templateId?: string;
+    nodes: Node<AllNodeData>[];
+    edges: Edge[];
+  }): Promise<TemplateLintResult> {
+    if (!this.lintEnabled) {
+      return {
+        issues: [],
+        summary: {
+          errorCount: 0,
+          warningCount: 0,
+          infoCount: 0,
+        },
+        meta: {
+          rulesVersion: ScaffolderStudioService.LINT_RULES_VERSION,
+          generatedAt: new Date().toISOString(),
+        },
+      };
+    }
+
+    const [resolvedNodes, actions] = await Promise.all([
+      this.resolveNodes(nodes),
+      this.getActions(),
+    ]);
+
+    const enrichedNodes = resolvedNodes.map(node => {
+      if (!isStepNode(node)) {
+        return node;
+      }
+
+      const actionId = node.data.actionId;
+      const actionSchema = actionId
+        ? actions.find(action => action.id === actionId)?.schema
+        : undefined;
+
+      if (!actionSchema) {
+        return node;
+      }
+
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          schema: actionSchema,
+        },
+      };
+    });
+
+    return lintTemplateGraph(
+      normalizeRequestToSnapshot({
+        templateId,
+        nodes: enrichedNodes,
+        edges,
+      }),
+      {
+        actions,
+        rules: [...builtinRules, ...this.lintRules],
+      },
+    );
   }
   async createOrUpdateTemplate({
     data,

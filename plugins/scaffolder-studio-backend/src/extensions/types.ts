@@ -1,3 +1,5 @@
+import type { TemplateLintRule } from '@kissmiklosjr/scaffolder-studio-linter';
+
 export interface PublishContext {
   visualTemplateId: string;
   scaffolderTemplate: string;
@@ -16,4 +18,8 @@ export interface PublisherExtension {
   title: string;
   publish(context: PublishContext): Promise<void>;
   unpublish?(context: UnpublishContext): Promise<void>;
+}
+
+export interface LintRuleExtension {
+  rule: TemplateLintRule;
 }

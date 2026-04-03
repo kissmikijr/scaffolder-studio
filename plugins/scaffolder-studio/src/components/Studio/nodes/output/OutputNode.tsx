@@ -1,25 +1,50 @@
 import { NodeProps, Position, Node } from '@xyflow/react';
 import { Handle } from '../../components/Handle';
-import { Box, Typography, useTheme, Stack } from '@mui/material';
+import {
+  Box,
+  Typography,
+  useTheme,
+  Stack,
+  Tooltip,
+  alpha,
+} from '@mui/material';
 import LaunchIcon from '@mui/icons-material/Launch';
 import InfoIcon from '@mui/icons-material/Info';
 import { OutputNodeData } from '../../types';
 import { SELECTED_BORDER_COLOR } from '../../styles';
 import { hasIncomingCapacity } from '../../utils/connectionLimits';
 import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
+import { useTemplateLintContext } from '../../TemplateLintContext';
+import {
+  NodeLintBadge,
+  getLintSeverityColor,
+  getNodeLintSeverity,
+  getNodeLintTooltipTitle,
+} from '../NodeLintBadge';
 
 const OutputNode = ({
   id,
   selected,
   data,
   disabled = false,
-}: NodeProps<Node<OutputNodeData>> & { disabled?: boolean }) => {
+  showLintBadge = true,
+}: NodeProps<Node<OutputNodeData>> & {
+  disabled?: boolean;
+  showLintBadge?: boolean;
+}) => {
   const theme = useTheme();
+  const { issuesByNodeId } = useTemplateLintContext();
+  const lintIssues = issuesByNodeId.get(id) ?? [];
   const { getIncomingConnectionCount } = useGraphPerformanceContext();
   const canAcceptIncoming = hasIncomingCapacity(
     'templateOutput',
     getIncomingConnectionCount(id),
   );
+  const lintSeverity = getNodeLintSeverity(lintIssues);
+  const lintSeverityColor = getLintSeverityColor(theme, lintSeverity);
+  const lintBorderColor =
+    lintSeverityColor ??
+    (selected ? SELECTED_BORDER_COLOR : theme.palette.divider);
   const renderContent = () => {
     const linksCount = data?.links?.length || 0;
     const textsCount = data?.text?.length || 0;
@@ -92,81 +117,101 @@ const OutputNode = ({
     );
   };
   return (
-    <Box
-      sx={{
-        position: 'relative',
-        width: 260,
-        borderRadius: '20px',
-        backgroundColor: theme.palette.background.paper,
-        color: theme.palette.text.primary,
-        border: `2px solid ${
-          selected ? SELECTED_BORDER_COLOR : theme.palette.divider
-        }`,
-        pointerEvents: disabled ? 'none' : 'auto',
-        filter: disabled ? 'grayscale(1)' : 'none',
-        '&:hover': {
-          boxShadow: 3,
-          cursor: 'pointer',
-        },
-        outline: 'none',
-      }}
-      data-interactive="true"
+    <Tooltip
+      arrow
+      enterDelay={150}
+      disableHoverListener={lintIssues.length === 0 || disabled}
+      title={getNodeLintTooltipTitle(lintIssues)}
     >
       <Box
         sx={{
-          position: 'absolute',
-          top: -20,
-          left: 0,
-          right: 0,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          pointerEvents: 'none',
+          position: 'relative',
+          width: 260,
+          borderRadius: '20px',
+          backgroundColor: theme.palette.background.paper,
+          color: theme.palette.text.primary,
+          border: `2px solid ${lintBorderColor}`,
+          pointerEvents: disabled ? 'none' : 'auto',
+          filter: disabled ? 'grayscale(1)' : 'none',
+          '&::after':
+            lintIssues.length > 0
+              ? {
+                  content: '""',
+                  position: 'absolute',
+                  inset: 0,
+                  borderRadius: 'inherit',
+                  backgroundColor: alpha(
+                    lintSeverityColor ?? theme.palette.warning.main,
+                    0.08,
+                  ),
+                  pointerEvents: 'none',
+                }
+              : undefined,
+          '&:hover': {
+            boxShadow: 3,
+            cursor: 'pointer',
+          },
+          outline: 'none',
         }}
+        data-interactive="true"
       >
+        {showLintBadge ? <NodeLintBadge nodeId={id} /> : null}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: -20,
+            left: 0,
+            right: 0,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            pointerEvents: 'none',
+          }}
+        >
+          {!disabled && (
+            <Typography
+              sx={{
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                color: 'text.secondary',
+              }}
+            >
+              Output
+            </Typography>
+          )}
+        </Box>
+        {renderContent()}
+
         {!disabled && (
-          <Typography
-            sx={{
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              color: 'text.secondary',
-            }}
-          >
-            Output
-          </Typography>
+          <>
+            <Handle
+              type="target"
+              position={Position.Top}
+              id="top"
+              disabled={!canAcceptIncoming}
+            />
+            <Handle
+              type="target"
+              position={Position.Right}
+              id="right"
+              disabled={!canAcceptIncoming}
+            />
+            <Handle
+              type="target"
+              position={Position.Bottom}
+              id="bottom"
+              disabled={!canAcceptIncoming}
+            />
+            <Handle
+              type="target"
+              position={Position.Left}
+              id="left"
+              disabled={!canAcceptIncoming}
+            />
+          </>
         )}
       </Box>
-      {renderContent()}
-
-      {!disabled && (
-        <>
-          <Handle
-            type="target"
-            position={Position.Top}
-            id="top"
-            disabled={!canAcceptIncoming}
-          />
-          <Handle
-            type="target"
-            position={Position.Right}
-            id="right"
-            disabled={!canAcceptIncoming}
-          />
-          <Handle
-            type="target"
-            position={Position.Bottom}
-            id="bottom"
-            disabled={!canAcceptIncoming}
-          />
-          <Handle
-            type="target"
-            position={Position.Left}
-            id="left"
-            disabled={!canAcceptIncoming}
-          />
-        </>
-      )}
-    </Box>
+    </Tooltip>
   );
 };
 

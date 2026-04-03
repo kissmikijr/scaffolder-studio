@@ -305,4 +305,48 @@ describe('InitialEditorStatePlugin', () => {
       delete (document as any).activeElement;
     }
   });
+
+  it('does not re-apply stale external value after local delete-all once blurred', async () => {
+    const initialValue = 'parameters.repoUrl';
+    const editorRef: { current: LexicalEditor | null } = { current: null };
+
+    const { rerender } = render(
+      <Wrapper
+        value={initialValue}
+        onEditorReady={editor => {
+          editorRef.current = editor;
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(editorRef.current).not.toBeNull();
+      expect(readSerializedText(editorRef.current!)).toBe(initialValue);
+    });
+
+    act(() => {
+      editorRef.current!.update(() => {
+        const root = $getRoot();
+        root.clear();
+        root.append($createParagraphNode());
+      });
+    });
+
+    await waitFor(() => {
+      expect(readSerializedText(editorRef.current!)).toBe('');
+    });
+
+    rerender(
+      <Wrapper
+        value={initialValue}
+        onEditorReady={editor => {
+          editorRef.current = editor;
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(readSerializedText(editorRef.current!)).toBe('');
+    });
+  });
 });

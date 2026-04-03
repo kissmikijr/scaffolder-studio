@@ -2,6 +2,8 @@ import { ScaffolderStudioService } from './ScaffolderVisualTemplateEditorService
 import { PublisherExtension } from '../extensions/types';
 import { EventsService } from '@backstage/plugin-events-node';
 import yaml from 'js-yaml';
+import type { TemplateLintRule } from '@kissmiklosjr/scaffolder-studio-linter';
+import parseScaffolderTemplate from './parseScaffolderTemplate';
 
 const mockEventService = {
   publish: jest.fn(),
@@ -40,6 +42,27 @@ const mockPublisher2: PublisherExtension = {
   publish: jest.fn(),
 };
 
+const customLintRule: TemplateLintRule = {
+  id: 'custom-test-rule',
+  run(context) {
+    const stepNode = context.snapshot.nodes.find(node => node.type === 'step');
+    if (!stepNode) {
+      return [];
+    }
+
+    return [
+      {
+        id: 'custom-test-rule:1',
+        ruleId: 'custom-test-rule',
+        code: 'custom-test-issue',
+        severity: 'info',
+        message: 'Custom lint rule executed.',
+        nodeId: stepNode.id,
+      },
+    ];
+  },
+};
+
 describe('ScaffolderVisualTemplateEditorService', () => {
   let service: ScaffolderStudioService;
 
@@ -53,6 +76,7 @@ describe('ScaffolderVisualTemplateEditorService', () => {
       prefabStore: mockPrefabLibraryStore,
       schemaPatcher: mockSchemaPatcher,
       publishers: [mockPublisher1, mockPublisher2],
+      lintRules: [customLintRule],
     });
   });
 
@@ -250,6 +274,191 @@ describe('ScaffolderVisualTemplateEditorService', () => {
         'publish',
         'publish-1',
       ]);
+    });
+  });
+
+  describe('lintTemplateGraph', () => {
+    it('returns an empty result when linting is disabled', async () => {
+      service = new ScaffolderStudioService({
+        events: mockEventService,
+        visualTemplateProjectStore: mockVisualProjectStore,
+        publishedTemplatesStore: mockStore,
+        prefabLibraryStore: mockPrefabLibraryStore,
+        prefabStore: mockPrefabLibraryStore,
+        schemaPatcher: mockSchemaPatcher,
+        publishers: [mockPublisher1, mockPublisher2],
+        lintRules: [customLintRule],
+        lintEnabled: false,
+      });
+
+      const result = await service.lintTemplateGraph({
+        nodes: [
+          {
+            id: 'step-1',
+            type: 'step',
+            position: { x: 100, y: 0 },
+            data: {
+              type: 'step',
+              stepId: 'publish',
+              name: 'Publish',
+              if: '',
+              actionId: 'debug:log',
+              formData: {},
+            },
+          },
+        ] as any,
+        edges: [] as any,
+      });
+
+      expect(result.issues).toEqual([]);
+      expect(result.summary).toEqual({
+        errorCount: 0,
+        warningCount: 0,
+        infoCount: 0,
+      });
+      expect(result.meta.rulesVersion).toBe('1');
+      expect(mockSchemaPatcher.getActions).not.toHaveBeenCalled();
+    });
+
+    it('resolves prefabs, enriches step schemas from actions, and returns lint issues', async () => {
+      mockSchemaPatcher.getActions.mockResolvedValue([
+        {
+          id: 'debug:log',
+          schema: {
+            input: {
+              type: 'object',
+              required: ['message'],
+              properties: {
+                message: { type: 'string' },
+              },
+            },
+            output: {
+              type: 'object',
+              properties: {
+                result: { type: 'string' },
+              },
+            },
+          },
+        },
+      ]);
+
+      const result = await service.lintTemplateGraph({
+        nodes: [
+          {
+            id: 'property-1',
+            type: 'property',
+            position: { x: 0, y: 0 },
+            data: {
+              name: 'repoUrl',
+              variableType: 'string',
+              onChange: jest.fn(),
+            },
+          },
+          {
+            id: 'step-1',
+            type: 'step',
+            position: { x: 100, y: 0 },
+            data: {
+              type: 'step',
+              stepId: 'publish',
+              name: 'Publish',
+              if: '',
+              actionId: 'debug:log',
+              formData: {},
+            },
+          },
+        ] as any,
+        edges: [] as any,
+      });
+
+      expect(result.summary.warningCount).toBeGreaterThan(0);
+      expect(result.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'unused-parameter',
+            nodeId: 'property-1',
+          }),
+          expect.objectContaining({
+            code: 'missing-required-input',
+            nodeId: 'step-1',
+            fieldPath: 'message',
+          }),
+          expect.objectContaining({
+            code: 'custom-test-issue',
+            nodeId: 'step-1',
+            severity: 'info',
+          }),
+        ]),
+      );
+    });
+
+    it('attaches missing required input issues to the correct parsed step node', async () => {
+      mockSchemaPatcher.getActions.mockResolvedValue([
+        {
+          id: 'debug:log',
+          schema: {
+            input: {
+              type: 'object',
+              required: ['message'],
+              properties: {
+                message: { type: 'string' },
+              },
+            },
+            output: {
+              type: 'object',
+              properties: {},
+            },
+          },
+        },
+      ]);
+
+      const parsed = parseScaffolderTemplate(
+        yaml.load(`
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: alma
+  description: This is an example template
+spec:
+  owner: guest
+  type: component
+  parameters:
+    - title: Example Title
+      required: []
+      properties:
+        property1:
+          type: string
+  steps:
+    - id: debug-log
+      name: debug-log
+      if: \${{  }}
+      action: debug:log
+      input: {}
+    - id: debug-log-1
+      name: debug-log-1
+      action: debug:log
+      input:
+        message: alma1234e \${{parameters.property1 | upper}}
+`) as object,
+        await service.getActions(),
+      );
+
+      const stepNodes = parsed.nodes.filter(
+        (node: any) => node.type === 'step',
+      );
+      expect(stepNodes).toHaveLength(2);
+
+      const result = await service.lintTemplateGraph({
+        nodes: parsed.nodes as any,
+        edges: parsed.edges as any,
+      });
+
+      const missingMessageIssue = result.issues.find(
+        issue => issue.code === 'missing-required-input',
+      );
+
+      expect(missingMessageIssue?.nodeId).toBe(stepNodes[0].id);
+      expect(missingMessageIssue?.nodeId).not.toBe(stepNodes[1].id);
     });
   });
 });

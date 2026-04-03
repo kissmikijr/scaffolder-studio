@@ -178,8 +178,31 @@ Use these in your permission policy (e.g., `packages/backend/src/extensions/perm
 5.  **Prefabs**: Save reusable configurations as "Prefabs" to use in other templates.
 6.  **Dry Run**: Test your template directly within the editor.
 
+## Linting
+
+Scaffolder Studio runs backend-powered lint checks against the current unsaved graph while you edit. Linting is debounced and only reacts to semantic graph changes, so viewport movement, zoom, selection state, and drag-only layout updates do not retrigger lint requests by themselves.
+
+Linting is enabled by default. If you need to turn it off for your Backstage instance, disable it in `app-config.yaml`:
+
+```yaml
+scaffolder:
+  studio:
+    lint:
+      enabled: false
+```
+
+This setting is instance-wide and applies to both the editor UI and backend lint responses.
+
+The default lint rules are:
+
+- `required-fields`: warns when a step is missing its id, name, action id, or required action inputs
+- `broken-references`: errors on references to unknown parameters, steps, or step outputs
+- `unused-parameters`: warns when a parameter is defined but never referenced
+- `dangling-edges`: warns when a property-to-step connection does not correspond to an inferred dependency
+
+Lint issues appear as node-level badges and tooltips inside the editor. Save, sync, and publish still perform backend validation and should be treated as the authoritative check.
+
 ## Troubleshooting
 
--   **Duplicate React Error**: Ensure that your `package.json` resolutions or peer dependencies are correctly set if you encounter issues with multiple React instances, especially when linking locally.
--   **Missing Icons**: This plugin uses MUI v5. Ensure you have `@mui/icons-material` installed.
-
+- **Duplicate React Error**: Ensure that your `package.json` resolutions or peer dependencies are correctly set if you encounter issues with multiple React instances, especially when linking locally.
+- **Missing Icons**: This plugin uses MUI v5. Ensure you have `@mui/icons-material` installed.

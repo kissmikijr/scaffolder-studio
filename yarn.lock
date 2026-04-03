@@ -7427,6 +7427,7 @@ __metadata:
     "@backstage/types": "npm:^1.2.2"
     "@kissmiklosjr/plugin-catalog-backend-module-scaffolder-studio-provider": "workspace:^"
     "@kissmiklosjr/plugin-scaffolder-studio-common": "workspace:^"
+    "@kissmiklosjr/scaffolder-studio-linter": "workspace:^"
     "@playwright/test": "npm:^1.55.0"
     "@types/express": "npm:^4.17.6"
     "@types/js-yaml": "npm:^4"
@@ -7485,6 +7486,7 @@ __metadata:
     "@codemirror/state": "npm:^6.0.0"
     "@codemirror/view": "npm:^6.0.0"
     "@kissmiklosjr/plugin-scaffolder-studio-common": "workspace:*"
+    "@kissmiklosjr/scaffolder-studio-linter": "workspace:^"
     "@lexical/react": "npm:^0.34.0"
     "@lezer/highlight": "npm:^1.0.0"
     "@material-ui/icons": "npm:^4.9.1"
@@ -7529,6 +7531,19 @@ __metadata:
   peerDependencies:
     react: ^16.13.1 || ^17.0.0 || ^18.0.0
     react-router-dom: ^16.13.1 || ^17.0.0 || ^18.0.0
+  languageName: unknown
+  linkType: soft
+
+"@kissmiklosjr/scaffolder-studio-linter@workspace:^, @kissmiklosjr/scaffolder-studio-linter@workspace:packages/scaffolder-studio-linter":
+  version: 0.0.0-use.local
+  resolution: "@kissmiklosjr/scaffolder-studio-linter@workspace:packages/scaffolder-studio-linter"
+  dependencies:
+    "@backstage/cli": "npm:^0.36.0"
+    "@kissmiklosjr/plugin-scaffolder-studio-common": "workspace:^"
+    "@xyflow/react": "npm:^12.5.5"
+  peerDependencies:
+    react: ^18.0.0
+    react-dom: ^18.0.0
   languageName: unknown
   linkType: soft
 
@@ -18066,7 +18081,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.0.0, axios@npm:^1.12.0, axios@npm:^1.12.2":
+"axios@npm:1.13.5":
   version: 1.13.5
   resolution: "axios@npm:1.13.5"
   dependencies:

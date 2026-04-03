@@ -65,9 +65,10 @@ export const InitialEditorStatePlugin = ({
       return;
     }
 
-    // Avoid re-applying unchanged external snapshots while the user is editing.
-    // This prevents delete-all / fast-edit flicker where stale formData immediately reappears.
-    if (isEditorFocused && externalValueUnchanged) {
+    // Avoid re-applying unchanged external snapshots after local edits.
+    // This prevents delete-all / fast-edit flicker where stale formData
+    // immediately reappears before the debounced change has propagated.
+    if (externalValueUnchanged) {
       return;
     }
 

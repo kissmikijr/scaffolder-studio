@@ -1,87 +1,53 @@
 import { Page, expect, Locator } from '@playwright/test';
 import { ensureGuestLogin } from '../utils/auth';
+import {
+  getGuestAuthToken,
+  requestScaffolderStudioApi,
+} from '../utils/backendApi';
 
 export class TemplateListPage {
   constructor(private readonly page: Page) {}
   private authToken?: string;
 
-  private getBackendBaseCandidates(): string[] {
-    const configuredBase = process.env.PLAYWRIGHT_URL?.replace(/\/$/, '');
-    const candidates = [configuredBase, 'http://localhost:7008'].filter(
-      Boolean,
-    ) as string[];
-    return [...new Set(candidates)];
-  }
-
   private async getAuthToken(): Promise<string> {
     if (this.authToken) {
       return this.authToken;
     }
-    for (const base of this.getBackendBaseCandidates()) {
-      const res = await this.page.request.get(`${base}/api/auth/guest/refresh`);
-      if (!res.ok()) {
-        continue;
-      }
-      try {
-        const body = await res.json();
-        const token = body?.backstageIdentity?.token as string | undefined;
-        if (token) {
-          this.authToken = token;
-          return token;
-        }
-      } catch {
-        // ignore, continue
-      }
-    }
-    throw new Error('Failed to get backend auth token');
+
+    this.authToken = await getGuestAuthToken(this.page);
+    return this.authToken;
   }
 
   private async putTemplatesApi(path: string, data: unknown) {
     const token = await this.getAuthToken();
-    for (const base of this.getBackendBaseCandidates()) {
-      const res = await this.page.request.put(
-        `${base}/api/scaffolder-studio${path}`,
-        {
-          data,
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
+    const { response, base } = await requestScaffolderStudioApi(this.page, {
+      method: 'put',
+      path,
+      data,
+      token,
+    });
+
+    if (!response.ok()) {
+      throw new Error(
+        `PUT ${base}/api/scaffolder-studio${path} failed: ${response.status()} ${await response.text()}`,
       );
-      if (res.status() !== 404) {
-        if (!res.ok()) {
-          throw new Error(
-            `PUT ${base}/api/scaffolder-studio${path} failed: ${res.status()} ${await res.text()}`,
-          );
-        }
-        return;
-      }
     }
-    throw new Error(`PUT templates API route not found for ${path}`);
   }
 
   private async postTemplatesApi(path: string, data: unknown) {
     const token = await this.getAuthToken();
-    for (const base of this.getBackendBaseCandidates()) {
-      const res = await this.page.request.post(
-        `${base}/api/scaffolder-studio${path}`,
-        {
-          data,
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
+    const { response, base } = await requestScaffolderStudioApi(this.page, {
+      method: 'post',
+      path,
+      data,
+      token,
+    });
+
+    if (!response.ok()) {
+      throw new Error(
+        `POST ${base}/api/scaffolder-studio${path} failed: ${response.status()} ${await response.text()}`,
       );
-      if (res.status() !== 404) {
-        if (!res.ok()) {
-          throw new Error(
-            `POST ${base}/api/scaffolder-studio${path} failed: ${res.status()} ${await res.text()}`,
-          );
-        }
-        return;
-      }
     }
-    throw new Error(`POST templates API route not found for ${path}`);
   }
 
   async goto() {

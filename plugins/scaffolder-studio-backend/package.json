@@ -49,6 +49,7 @@
     "@backstage/types": "^1.2.2",
     "@kissmiklosjr/plugin-catalog-backend-module-scaffolder-studio-provider": "workspace:^",
     "@kissmiklosjr/plugin-scaffolder-studio-common": "workspace:^",
+    "@kissmiklosjr/scaffolder-studio-linter": "workspace:^",
     "express": "^4.17.1",
     "express-promise-router": "^4.1.0",
     "js-yaml": "^4.1.1",

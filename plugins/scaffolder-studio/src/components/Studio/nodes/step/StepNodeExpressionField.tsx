@@ -16,6 +16,8 @@ import {
 } from '@backstage/core-plugin-api';
 import debounce from 'lodash.debounce';
 
+const NO_PENDING_VALUE = Symbol('no-pending-value');
+
 // Use shared components from ParamAutocompleteStringField
 import { ShowPopperPlugin } from '../../widgets/ParamAutocompleteStringField/components/ShowPopperPlugin';
 import { InitialEditorStatePlugin } from '../../widgets/ParamAutocompleteStringField/components/InitialEditorStatePlugin';
@@ -112,8 +114,13 @@ export const StepNodeExpressionField = ({
   showAutocompletePopper = true,
 }: StepNodeExpressionFieldProps) => {
   const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [editorValue, setEditorValue] = useState(value);
   const fetchApi = useApi(fetchApiRef);
   const discoveryApi = useApi(discoveryApiRef);
+  const latestValueRef = useRef(value);
+  const pendingExternalValueRef = useRef<string | typeof NO_PENDING_VALUE>(
+    NO_PENDING_VALUE,
+  );
 
   const { data: customFilters = [] } = useQuery<NunjucksFilter[]>({
     queryKey: ['templating-extensions'],
@@ -136,6 +143,24 @@ export const StepNodeExpressionField = ({
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
+
+  useEffect(() => {
+    latestValueRef.current = value;
+  }, [value]);
+
+  useEffect(() => {
+    if (pendingExternalValueRef.current !== NO_PENDING_VALUE) {
+      if (value === pendingExternalValueRef.current) {
+        pendingExternalValueRef.current = NO_PENDING_VALUE;
+      } else {
+        return;
+      }
+    }
+
+    setEditorValue(currentValue =>
+      currentValue === value ? currentValue : value,
+    );
+  }, [value]);
 
   const debouncedOnChange = useMemo(
     () =>
@@ -166,7 +191,11 @@ export const StepNodeExpressionField = ({
     editorState.read(() => {
       const root = $getRoot();
       const text = serializeToText(root);
-      if (text !== value) {
+      setEditorValue(currentValue =>
+        currentValue === text ? currentValue : text,
+      );
+      if (text !== latestValueRef.current) {
+        pendingExternalValueRef.current = text;
         debouncedOnChange(text);
       }
     });
@@ -238,7 +267,7 @@ export const StepNodeExpressionField = ({
           <AutoPairPlugin />
           <OnChangePlugin onChange={handleEditorChange} />
           <InitialEditorStatePlugin
-            initialEditorState={value}
+            initialEditorState={editorValue}
             parameters={parameters}
             outputs={outputs}
           />

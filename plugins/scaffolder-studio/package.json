@@ -67,6 +67,7 @@
     "@codemirror/state": "^6.0.0",
     "@codemirror/view": "^6.0.0",
     "@kissmiklosjr/plugin-scaffolder-studio-common": "workspace:*",
+    "@kissmiklosjr/scaffolder-studio-linter": "workspace:^",
     "@lexical/react": "^0.34.0",
     "@lezer/highlight": "^1.0.0",
     "@material-ui/icons": "^4.9.1",

@@ -9,6 +9,7 @@ import {
   ScaffolderAction,
 } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import { Edge, Node } from '@xyflow/react';
+import { TemplateLintResult } from '@kissmiklosjr/scaffolder-studio-linter';
 
 export interface ScaffolderStudioApi {
   getProject(id: string): Promise<VisualTemplateProject>;
@@ -58,6 +59,15 @@ export interface ScaffolderStudioApi {
     edges: Edge[];
     sourceNodeId: string;
   }): Promise<string>;
+  lintTemplate({
+    templateId,
+    nodes,
+    edges,
+  }: {
+    templateId?: string;
+    nodes: Node[];
+    edges: Edge[];
+  }): Promise<TemplateLintResult>;
   resolve({ nodes }: { nodes: Node[] }): Promise<Node[]>;
   getDryRunInputs(templateId: string): Promise<Record<string, unknown>>;
   saveDryRunInputs(
@@ -276,6 +286,26 @@ export class ScaffolderVisualClient implements ScaffolderStudioApi {
     const body = await res.json();
     if (!res.ok) throw new Error('Failed to serialize template');
     return body;
+  }
+  async lintTemplate({
+    templateId,
+    nodes,
+    edges,
+  }: {
+    templateId?: string;
+    nodes: Node[];
+    edges: Edge[];
+  }): Promise<TemplateLintResult> {
+    const res = await this.fetchApi.fetch(
+      `${await this.getBaseUrl()}/templates/lint`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templateId, nodes, edges }),
+      },
+    );
+    if (!res.ok) throw new Error('Failed to lint template');
+    return await res.json();
   }
   async resolve({ nodes }: { nodes: Node[] }) {
     const res = await this.fetchApi.fetch(
