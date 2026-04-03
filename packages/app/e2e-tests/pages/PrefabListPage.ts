@@ -1,5 +1,9 @@
 import { Page, Locator } from '@playwright/test';
 import { ensureGuestLogin } from '../utils/auth';
+import {
+  getBackendBaseCandidates,
+  getGuestAuthToken,
+} from '../utils/backendApi';
 
 export class PrefabListPage {
   constructor(private readonly page: Page) {}
@@ -138,42 +142,18 @@ export class PrefabListPage {
 
   private authToken?: string;
 
-  private getBackendBaseCandidates(): string[] {
-    const configuredBase = process.env.PLAYWRIGHT_URL?.replace(/\/$/, '');
-    const candidates = [configuredBase, 'http://localhost:7008'].filter(
-      Boolean,
-    ) as string[];
-    return [...new Set(candidates)];
-  }
-
   private async getAuthToken(): Promise<string> {
     if (this.authToken) {
       return this.authToken;
     }
 
-    for (const base of this.getBackendBaseCandidates()) {
-      const res = await this.page.request.get(`${base}/api/auth/guest/refresh`);
-      if (!res.ok()) {
-        continue;
-      }
-      try {
-        const body = await res.json();
-        const token = body?.backstageIdentity?.token as string | undefined;
-        if (token) {
-          this.authToken = token;
-          return token;
-        }
-      } catch {
-        // Not JSON/token response, continue.
-      }
-    }
-
-    throw new Error('Failed to get backend auth token');
+    this.authToken = await getGuestAuthToken(this.page);
+    return this.authToken;
   }
 
   async createPrefabViaApi(title: string, data: any = {}): Promise<string> {
     const token = await this.getAuthToken();
-    const baseCandidates = this.getBackendBaseCandidates();
+    const baseCandidates = getBackendBaseCandidates();
     let response;
 
     for (const base of baseCandidates) {

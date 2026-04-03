@@ -513,114 +513,103 @@ export class ScaffolderStudioPage {
     }
 
     // Ensure the entry is visible in the side content
-    const sideContent = this.page.locator('[data-testid="side-content-form"]');
+    const sideContent = this.page.getByTestId('sidecontent-panel');
     if (!(await sideContent.isVisible())) {
       await this.expandSideContent();
     }
+    await expect(sideContent).toBeVisible();
 
     // Fill RJSF form values
     for (const [key, value] of Object.entries(formValues)) {
-      // Case 1: Standard inputs (MUI TextField, etc.)
-      const label = this.page.getByLabel(key, { exact: false }).first();
-      if (await label.isVisible()) {
-        const tagName = await label.evaluate(el => el.tagName.toLowerCase());
-        if (tagName === 'input' || tagName === 'textarea') {
-          await label.fill(value.toString());
-          continue;
-        } else if (tagName === 'select') {
-          await label.selectOption(value.toString());
+      const field = await this.waitForStepFormField(sideContent, key);
+      const tagName = await field.evaluate(el => el.tagName.toLowerCase());
+      const role = await field.getAttribute('role');
+      const type = await field.getAttribute('type');
+
+      if (tagName === 'input' || tagName === 'textarea') {
+        if (type === 'checkbox') {
+          const isChecked = await field.isChecked();
+          if (isChecked !== Boolean(value)) {
+            await field.click();
+          }
           continue;
         }
-      }
-
-      // Case 2: Lexical-based input (contenteditable div)
-      // Look for a textbox within the container that has the label text or is near it
-      const lexicalTextbox = this.findStepFieldTextbox(key);
-
-      let targetTextbox = lexicalTextbox;
-      if (!(await targetTextbox.isVisible())) {
-        // Relaxed search for Lexical
-        targetTextbox = this.page
-          .locator(
-            `xpath=//*[contains(text(), "${key}")]/ancestor::div[1]//*[ @role="textbox" ]`,
-          )
-          .first();
-      }
-
-      if (await targetTextbox.isVisible()) {
-        await targetTextbox.click({ force: true });
-        await this.page.waitForTimeout(300);
-        await targetTextbox.focus();
-
-        // Select all and delete to clear existing content
-        await this.page.keyboard.press('ControlOrMeta+a');
-        await this.page.keyboard.press('Backspace');
-        await this.page.waitForTimeout(200);
-
-        // Type the value slowly
-        await this.page.keyboard.type(value.toString(), { delay: 50 });
-        await this.page.waitForTimeout(300);
-
-        // Trigger blur to ensure state committed
-        await this.page.keyboard.press('Tab');
+        await field.fill(value.toString());
         continue;
       }
 
-      // Aggressive fallback Case 2b: Search for any element with the key text and find nearest role="textbox"
-      const anyLabel = this.page
-        .locator(`xpath=//*[contains(text(), "${key}")]`)
-        .first();
-      if (await anyLabel.isVisible()) {
-        const nearestTextbox = anyLabel
-          .locator('xpath=./ancestor::div[1]//*[ @role="textbox" ]')
-          .first();
-        if (await nearestTextbox.isVisible()) {
-          await nearestTextbox.click({ force: true });
-          await nearestTextbox.evaluate((el, val) => {
-            el.focus();
-            document.execCommand('selectAll', false);
-            document.execCommand('delete', false);
-            document.execCommand('insertText', false, val);
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.blur();
-          }, value.toString());
-          await this.page.waitForTimeout(200);
-          await this.page.keyboard.press('Tab');
-          continue;
-        }
+      if (tagName === 'select') {
+        await field.selectOption(value.toString());
+        continue;
       }
 
-      // Case 3: Fallback to placeholder search
-      const byPlaceholder = this.page.getByPlaceholder(key);
-      if (await byPlaceholder.isVisible()) {
-        const tagName = await byPlaceholder.evaluate(el =>
-          el.tagName.toLowerCase(),
-        );
-        if (
-          tagName === 'div' &&
-          (await byPlaceholder.getAttribute('role')) === 'textbox'
-        ) {
-          await byPlaceholder.click();
-          await this.page.keyboard.press('ControlOrMeta+a');
-          await this.page.keyboard.press('Backspace');
-          await this.page.keyboard.type(value.toString());
-        } else {
-          await byPlaceholder.fill(value.toString());
-        }
+      if (role === 'textbox' || tagName === 'div') {
+        await this.fillContentEditableField(field, value.toString());
+        continue;
       }
+
+      throw new Error(
+        `Unsupported step form field for key "${key}" (tag=${tagName}, role=${
+          role ?? 'none'
+        })`,
+      );
     }
   }
 
-  findStepFieldTextbox(key: string): Locator {
-    const lowerKey = key.toLowerCase();
+  private async waitForStepFormField(
+    sideContent: Locator,
+    key: string,
+  ): Promise<Locator> {
+    const exactField = sideContent.getByTestId(`step-form-field-${key}`);
 
-    return this.page.locator(
-      `xpath=(
-        //*[translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')='${lowerKey}' or translate(@label, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')='${lowerKey}']/ancestor::div[contains(@class, "MuiBox-root") or contains(@class, "MuiFormControl-root")][1]//*[@role="textbox"]
-        |
-        //*[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '${lowerKey}')]/ancestor::div[1]//*[@role="textbox"]
-      )[1]`,
-    );
+    await expect
+      .poll(async () => {
+        if (await exactField.count()) {
+          return true;
+        }
+
+        const labelledField = sideContent
+          .getByRole('textbox', { name: key, exact: true })
+          .or(sideContent.getByRole('combobox', { name: key, exact: true }))
+          .or(sideContent.getByRole('checkbox', { name: key, exact: true }))
+          .or(sideContent.getByLabel(key, { exact: true }))
+          .or(sideContent.getByPlaceholder(key))
+          .first();
+
+        return labelledField.count();
+      })
+      .toBeTruthy();
+
+    if (await exactField.count()) {
+      await expect(exactField.first()).toBeVisible();
+      return exactField.first();
+    }
+
+    const labelledField = sideContent
+      .getByRole('textbox', { name: key, exact: true })
+      .or(sideContent.getByRole('combobox', { name: key, exact: true }))
+      .or(sideContent.getByRole('checkbox', { name: key, exact: true }))
+      .or(sideContent.getByLabel(key, { exact: true }))
+      .or(sideContent.getByPlaceholder(key))
+      .first();
+
+    await expect(labelledField).toBeVisible();
+    return labelledField;
+  }
+
+  private async fillContentEditableField(field: Locator, value: string) {
+    await expect(field).toBeVisible();
+    await field.click({ force: true });
+    await this.page.waitForTimeout(150);
+    await field.focus();
+    await this.page.keyboard.press('ControlOrMeta+a');
+    await this.page.keyboard.press('Backspace');
+    await this.page.waitForTimeout(100);
+    await this.page.keyboard.insertText(value);
+    await expect(field).toContainText(value);
+    await this.page.waitForTimeout(100);
+    await this.page.keyboard.press('Tab');
+    await this.page.waitForTimeout(350);
   }
 
   async clearStepExpressionField(key: string) {

@@ -166,7 +166,7 @@ test.describe('Scaffolder Studio - Relationship I/O', () => {
 
     await editorPage.addStepAndSelectAction('debug:log');
     await editorPage.configureStep('build', 'Build', {
-      message: '${{ parameters.repoUrl | lower',
+      message: '${{ parameters.repoUrl | lower }}',
     });
 
     // Rename on the property node side panel to exercise legacy token rewrite

@@ -49,7 +49,9 @@ export default defineConfig({
 
   use: {
     actionTimeout: 0,
-    baseURL: process.env.PLAYWRIGHT_URL ?? 'http://localhost:7008',
+    // Use the live frontend dev server locally. The backend on 7008 serves
+    // packages/app/dist, which can drift from current FE source during E2E.
+    baseURL: process.env.PLAYWRIGHT_URL ?? 'http://localhost:3001',
     storageState: 'node_modules/.cache/e2e-auth/guest.json',
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',

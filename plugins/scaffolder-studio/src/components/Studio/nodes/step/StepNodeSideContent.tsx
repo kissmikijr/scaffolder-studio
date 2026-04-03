@@ -326,27 +326,29 @@ export const StepNodeSideContent = ({
         {currentData?.description}
       </Typography>
       {currentData?.schema && formSchema && (
-        <Form
-          disabled={disabled}
-          schema={formSchema}
-          formData={currentData?.formData}
-          onChange={newData => {
-            const formDataPayload =
-              newData.formData ?? (newData as any).formData ?? {};
-            handleChange({
-              formData: formDataPayload,
-            });
-          }}
-          formContext={{
-            parameters,
-            outputs: allParentStepsOutputs,
-          }}
-          validator={validator}
-          fields={customFields}
-          widgets={customWidgets}
-        >
-          <div />
-        </Form>
+        <Box data-testid="step-input-form">
+          <Form
+            disabled={disabled}
+            schema={formSchema}
+            formData={currentData?.formData}
+            onChange={newData => {
+              const formDataPayload =
+                newData.formData ?? (newData as any).formData ?? {};
+              handleChange({
+                formData: formDataPayload,
+              });
+            }}
+            formContext={{
+              parameters,
+              outputs: allParentStepsOutputs,
+            }}
+            validator={validator}
+            fields={customFields}
+            widgets={customWidgets}
+          >
+            <div />
+          </Form>
+        </Box>
       )}
     </Box>
   );

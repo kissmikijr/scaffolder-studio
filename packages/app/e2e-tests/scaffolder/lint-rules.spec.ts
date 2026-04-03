@@ -1,4 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
+import {
+  getGuestAuthToken,
+  requestScaffolderStudioApi,
+} from '../utils/backendApi';
 
 const makeProperty = (id: string, name: string) => ({
   id,
@@ -39,29 +43,11 @@ const makeStep = ({
   },
 });
 
-const getBackendBaseCandidates = (): string[] => {
-  const configuredBase = process.env.PLAYWRIGHT_URL?.replace(/\/$/, '');
-  const candidates = [configuredBase, 'http://localhost:7008'].filter(
-    Boolean,
-  ) as string[];
-  return [...new Set(candidates)];
-};
-
 const getAuthToken = async (page: Page): Promise<string> => {
-  for (const base of getBackendBaseCandidates()) {
-    const response = await page.request.get(`${base}/api/auth/guest/refresh`);
-    if (!response.ok()) {
-      continue;
-    }
-
-    const body = await response.json().catch(() => undefined);
-    const token = body?.backstageIdentity?.token as string | undefined;
-    if (token) {
-      return token;
-    }
-  }
-
-  throw new Error('Failed to get backend auth token for lint E2E');
+  return getGuestAuthToken(
+    page,
+    'Failed to get backend auth token for lint E2E',
+  );
 };
 
 const lintTemplate = async (
@@ -73,35 +59,21 @@ const lintTemplate = async (
   },
 ) => {
   const token = await getAuthToken(page);
-  let lastStatus = 0;
-  let lastBody = '';
+  const { response } = await requestScaffolderStudioApi(page, {
+    method: 'post',
+    path: '/templates/lint',
+    data: body,
+    token,
+  });
+  const responseBody = await response.text();
 
-  for (const base of getBackendBaseCandidates()) {
-    const response = await page.request.post(
-      `${base}/api/scaffolder-studio/templates/lint`,
-      {
-        data: body,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-
-    lastStatus = response.status();
-    lastBody = await response.text();
-
-    if (response.ok()) {
-      return JSON.parse(lastBody);
-    }
-
-    if (response.status() !== 404) {
-      break;
-    }
+  if (response.ok()) {
+    return JSON.parse(responseBody);
   }
 
   throw new Error(
-    `Lint endpoint request failed: ${lastStatus} ${
-      lastBody || 'No response body'
+    `Lint endpoint request failed: ${response.status()} ${
+      responseBody || 'No response body'
     }`,
   );
 };

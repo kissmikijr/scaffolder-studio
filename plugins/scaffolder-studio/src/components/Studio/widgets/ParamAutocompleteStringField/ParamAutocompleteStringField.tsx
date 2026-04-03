@@ -188,6 +188,7 @@ export const ParamAutocompleteStringField = ({
   };
 
   const isReadOnly = disabled || readonly;
+  const fieldTestId = `step-form-field-${String(name)}`;
 
   // Memoize initialConfig to prevent LexicalComposer from remounting on every render
   // This is critical to prevent cursor reset when parent state updates
@@ -208,6 +209,8 @@ export const ParamAutocompleteStringField = ({
         ErrorBoundary={LexicalErrorBoundary}
         contentEditable={
           <ContentEditable
+            aria-label={String(name)}
+            data-testid={fieldTestId}
             onBlur={() => debouncedOnChange.flush()}
             style={{
               position: 'relative',
