@@ -24,7 +24,7 @@ import {
   hasOutgoingCapacity,
 } from '../../utils/connectionLimits';
 import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
-import { useTemplateLintContext } from '../../TemplateLintContext';
+import { useNodeLintIssues } from '../../TemplateLintContext';
 import {
   NodeLintBadge,
   getLintSeverityColor,
@@ -42,7 +42,7 @@ const PrefabInstanceNode = ({
   selected,
 }: NodeProps<Node<PrefabInstanceNodeData>>) => {
   const theme = useTheme();
-  const { issuesByNodeId } = useTemplateLintContext();
+  const lintIssues = useNodeLintIssues(id);
   const libraryApi = useApi(prefabLibraryApiRef);
   const personalApi = useApi(prefabsApiRef);
   const { getIncomingConnectionCount, getOutgoingConnectionCount } =
@@ -116,7 +116,7 @@ const PrefabInstanceNode = ({
     ? applyPrefabInstanceOverridesToNode(prefab.node as Node<AllNodeData>, data)
     : undefined;
   const isError = loadingState === 'not-found' || loadingState === 'error';
-  const lintSeverity = getNodeLintSeverity(issuesByNodeId.get(id) ?? []);
+  const lintSeverity = getNodeLintSeverity(lintIssues);
   const lintSeverityColor = getLintSeverityColor(theme, lintSeverity);
   let fallbackBorderColor = NodeTypeColors.unknown as string;
   if (selected) {
@@ -127,8 +127,6 @@ const PrefabInstanceNode = ({
     fallbackBorderColor = getBorderColor(effectivePrefabNode.type);
   }
   const lintBorderColor = lintSeverityColor ?? fallbackBorderColor;
-  const lintIssues = issuesByNodeId.get(id) ?? [];
-
   const renderNode = () => {
     if (loadingState === 'loading') {
       return (
@@ -314,24 +312,28 @@ const PrefabInstanceNode = ({
         </Box>
       </Tooltip>
       <Handle
+        nodeId={id}
         type="target"
         position={Position.Top}
         id="top"
         disabled={!canAcceptIncoming}
       />
       <Handle
+        nodeId={id}
         type="target"
         position={Position.Right}
         id="right"
         disabled={!canAcceptIncoming}
       />
       <Handle
+        nodeId={id}
         type="target"
         position={Position.Bottom}
         id="bottom"
         disabled={!canAcceptIncoming}
       />
       <Handle
+        nodeId={id}
         type="target"
         position={Position.Left}
         id="left"
@@ -339,24 +341,28 @@ const PrefabInstanceNode = ({
       />
 
       <Handle
+        nodeId={id}
         type="source"
         position={Position.Top}
         id="top"
         disabled={!canAcceptOutgoing}
       />
       <Handle
+        nodeId={id}
         type="source"
         position={Position.Right}
         id="right"
         disabled={!canAcceptOutgoing}
       />
       <Handle
+        nodeId={id}
         type="source"
         position={Position.Bottom}
         id="bottom"
         disabled={!canAcceptOutgoing}
       />
       <Handle
+        nodeId={id}
         type="source"
         position={Position.Left}
         id="left"

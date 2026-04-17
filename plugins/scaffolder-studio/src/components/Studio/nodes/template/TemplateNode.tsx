@@ -14,7 +14,7 @@ import { MarkdownContent } from '@backstage/core-components';
 
 import { SELECTED_BORDER_COLOR } from '../../styles';
 import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
-import { useTemplateLintContext } from '../../TemplateLintContext';
+import { useNodeLintIssues } from '../../TemplateLintContext';
 import {
   NodeLintBadge,
   getLintSeverityColor,
@@ -28,15 +28,12 @@ const TemplateNode = ({
   data,
 }: NodeProps<Node<TemplateNodeData>>) => {
   const theme = useTheme();
-  const { issuesByNodeId } = useTemplateLintContext();
-  const lintIssues = issuesByNodeId.get(id) ?? [];
+  const lintIssues = useNodeLintIssues(id);
   const { getTemplateOutgoingSlots } = useGraphPerformanceContext();
   const templateSlots = getTemplateOutgoingSlots(id);
   const lintSeverity = getNodeLintSeverity(lintIssues);
   const lintSeverityColor = getLintSeverityColor(theme, lintSeverity);
-  const lintBorderColor =
-    lintSeverityColor ??
-    (selected ? SELECTED_BORDER_COLOR : theme.palette.divider);
+  const borderColor = selected ? SELECTED_BORDER_COLOR : theme.palette.divider;
   return (
     <Tooltip
       arrow
@@ -52,7 +49,7 @@ const TemplateNode = ({
           color: theme.palette.text.primary,
           pointerEvents: 'auto',
           borderRadius: '20px',
-          border: `2px solid ${lintBorderColor}`,
+          border: `2px solid ${borderColor}`,
           '&::after':
             lintIssues.length > 0
               ? {
@@ -172,24 +169,28 @@ const TemplateNode = ({
           </Box>
 
           <Handle
+            nodeId={id}
             type="source"
             id="top"
             position={Position.Top}
             disabled={!templateSlots.hasAny}
           />
           <Handle
+            nodeId={id}
             id="right"
             type="source"
             position={Position.Right}
             disabled={templateSlots.hasStep}
           />
           <Handle
+            nodeId={id}
             type="source"
             id="bottom"
             position={Position.Bottom}
             disabled={templateSlots.hasParameters}
           />
           <Handle
+            nodeId={id}
             type="source"
             id="left"
             position={Position.Left}

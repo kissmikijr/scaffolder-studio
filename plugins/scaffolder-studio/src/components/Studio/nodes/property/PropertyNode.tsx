@@ -20,7 +20,7 @@ import {
   hasOutgoingCapacity,
 } from '../../utils/connectionLimits';
 import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
-import { useTemplateLintContext } from '../../TemplateLintContext';
+import { useNodeLintIssues } from '../../TemplateLintContext';
 import {
   NodeLintBadge,
   getLintSeverityColor,
@@ -39,13 +39,9 @@ export const PropertyNodeContent = ({
   showLintBadge?: boolean;
 }) => {
   const theme = useTheme();
-  const { issuesByNodeId } = useTemplateLintContext();
-  const lintIssues = issuesByNodeId.get(id) ?? [];
-  const {
-    getIncomingConnectionCount,
-    getOutgoingConnectionCount,
-    getRelationshipHandleColor,
-  } = useGraphPerformanceContext();
+  const lintIssues = useNodeLintIssues(id);
+  const { getIncomingConnectionCount, getOutgoingConnectionCount } =
+    useGraphPerformanceContext();
   const canAcceptIncoming = useMemo(
     () => hasIncomingCapacity('property', getIncomingConnectionCount(id)),
     [getIncomingConnectionCount, id],
@@ -54,21 +50,9 @@ export const PropertyNodeContent = ({
     () => hasOutgoingCapacity('property', getOutgoingConnectionCount(id)),
     [getOutgoingConnectionCount, id],
   );
-  const relationshipAccent =
-    theme.palette.mode === 'light'
-      ? theme.palette.primary.main
-      : theme.palette.info.light;
-  const relationshipHandleColor = getRelationshipHandleColor(
-    id,
-    RELATIONSHIP_PROPERTY_OUTPUT_HANDLE,
-    'source',
-  );
-  const relationshipBaseColor = relationshipHandleColor ?? relationshipAccent;
   const lintSeverity = getNodeLintSeverity(lintIssues);
   const lintSeverityColor = getLintSeverityColor(theme, lintSeverity);
-  const lintBorderColor =
-    lintSeverityColor ??
-    (selected ? SELECTED_BORDER_COLOR : theme.palette.divider);
+  const borderColor = selected ? SELECTED_BORDER_COLOR : theme.palette.divider;
 
   return (
     <Tooltip
@@ -81,10 +65,12 @@ export const PropertyNodeContent = ({
         sx={{
           position: 'relative',
           minWidth: 180,
-          borderRadius: '20px',
+          borderTopLeftRadius: '20px',
+          borderBottomLeftRadius: '20px',
+          borderBottomRightRadius: '20px',
           color: theme.palette.text.primary,
           backgroundColor: theme.palette.background.paper,
-          border: `2px solid ${lintBorderColor}`,
+          border: `2px solid ${borderColor}`,
           pointerEvents: disabled ? 'none' : 'auto',
           filter: disabled ? 'grayscale(1)' : 'none',
           '&::after':
@@ -152,7 +138,6 @@ export const PropertyNodeContent = ({
               justifyContent: 'center',
               backgroundColor: getBackgroundColor(data.variableType),
               borderTopLeftRadius: '18px',
-              borderTopRightRadius: '18px',
               ...(!data?.name && {
                 borderBottomLeftRadius: '18px',
                 borderBottomRightRadius: '18px',
@@ -237,36 +222,42 @@ export const PropertyNodeContent = ({
         {!disabled && (
           <>
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Top}
               id="top"
               disabled={!canAcceptIncoming}
             />
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Right}
               id="right"
               disabled={!canAcceptIncoming}
             />
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Bottom}
               id="bottom"
               disabled={!canAcceptIncoming}
             />
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Left}
               id="left"
               disabled={!canAcceptIncoming}
             />
             <Handle
+              nodeId={id}
               type="source"
               position={Position.Top}
               id="top"
               disabled={!canAcceptOutgoing}
             />
             <Handle
+              nodeId={id}
               type="source"
               position={Position.Right}
               id="right"
@@ -277,20 +268,18 @@ export const PropertyNodeContent = ({
               position={Position.Right}
               id={RELATIONSHIP_PROPERTY_OUTPUT_HANDLE}
               style={{
-                width: 10,
-                height: 10,
+                width: 12,
+                height: 12,
                 borderRadius: '50%',
                 border: `1.5px solid ${
                   theme.palette.mode === 'light'
                     ? alpha(theme.palette.common.black, 0.55)
                     : alpha(theme.palette.common.black, 0.78)
                 }`,
-                backgroundColor: relationshipHandleColor
-                  ? relationshipBaseColor
-                  : theme.palette.background.paper,
-                right: 0,
-                top: '28%',
-                transform: 'translate(50%, -50%)',
+                backgroundColor: theme.palette.info.light,
+                right: 10,
+                top: '15%',
+                // transform: 'translate(50%, -50%)',
                 cursor: 'crosshair',
                 boxShadow: 'none',
                 zIndex: 4600,
@@ -299,12 +288,14 @@ export const PropertyNodeContent = ({
               data-testid={`property-relationship-handle-${id}`}
             />
             <Handle
+              nodeId={id}
               type="source"
               position={Position.Bottom}
               id="bottom"
               disabled={!canAcceptOutgoing}
             />
             <Handle
+              nodeId={id}
               type="source"
               position={Position.Left}
               id="left"

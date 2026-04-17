@@ -19,7 +19,7 @@ import {
   toOutputHandleId,
 } from '../../hooks/useDependencyEdges';
 import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
-import { useTemplateLintContext } from '../../TemplateLintContext';
+import { useNodeLintIssues } from '../../TemplateLintContext';
 import {
   NodeLintBadge,
   getLintSeverityColor,
@@ -61,8 +61,7 @@ const StepNode = ({
   showLintBadge = true,
 }: StepNodeProps) => {
   const theme = useTheme();
-  const { issuesByNodeId } = useTemplateLintContext();
-  const lintIssues = issuesByNodeId.get(id) ?? [];
+  const lintIssues = useNodeLintIssues(id);
   const {
     relationshipMode,
     isStepRelated,
@@ -82,9 +81,7 @@ const StepNode = ({
   );
   const lintSeverity = getNodeLintSeverity(lintIssues);
   const lintSeverityColor = getLintSeverityColor(theme, lintSeverity);
-  const lintBorderColor =
-    lintSeverityColor ??
-    (selected ? SELECTED_BORDER_COLOR : theme.palette.divider);
+  const borderColor = selected ? SELECTED_BORDER_COLOR : theme.palette.divider;
 
   const inputSchemaProperties =
     ((data.schema as any)?.input?.properties as
@@ -232,7 +229,7 @@ const StepNode = ({
           minWidth: resolvedNodeWidth,
           maxWidth: resolvedNodeWidth,
           borderRadius: '20px',
-          border: `2px solid ${lintBorderColor}`,
+          border: `2px solid ${borderColor}`,
           backgroundColor: theme.palette.background.paper,
           color: theme.palette.text.primary,
           boxShadow: selected ? 3 : 1,
@@ -743,6 +740,7 @@ const StepNode = ({
         {!disabled && (
           <>
             <Handle
+              nodeId={id}
               type="source"
               position={Position.Top}
               id="top"
@@ -750,6 +748,7 @@ const StepNode = ({
               data-testid={`step-node-source-handle-top-${id}`}
             />
             <Handle
+              nodeId={id}
               type="source"
               position={Position.Right}
               id="right"
@@ -757,6 +756,7 @@ const StepNode = ({
               data-testid={`step-node-source-handle-right-${id}`}
             />
             <Handle
+              nodeId={id}
               type="source"
               position={Position.Bottom}
               id="bottom"
@@ -764,6 +764,7 @@ const StepNode = ({
               data-testid={`step-node-source-handle-bottom-${id}`}
             />
             <Handle
+              nodeId={id}
               type="source"
               position={Position.Left}
               id="left"
@@ -771,6 +772,7 @@ const StepNode = ({
               data-testid={`step-node-source-handle-left-${id}`}
             />
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Top}
               id="top"
@@ -778,6 +780,7 @@ const StepNode = ({
               data-testid={`step-node-handle-top-${id}`}
             />
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Right}
               id="right"
@@ -785,6 +788,7 @@ const StepNode = ({
               data-testid={`step-node-handle-right-${id}`}
             />
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Bottom}
               id="bottom"
@@ -792,6 +796,7 @@ const StepNode = ({
               data-testid={`step-node-handle-bottom-${id}`}
             />
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Left}
               id="left"

@@ -14,7 +14,7 @@ import { OutputNodeData } from '../../types';
 import { SELECTED_BORDER_COLOR } from '../../styles';
 import { hasIncomingCapacity } from '../../utils/connectionLimits';
 import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
-import { useTemplateLintContext } from '../../TemplateLintContext';
+import { useNodeLintIssues } from '../../TemplateLintContext';
 import {
   NodeLintBadge,
   getLintSeverityColor,
@@ -33,8 +33,7 @@ const OutputNode = ({
   showLintBadge?: boolean;
 }) => {
   const theme = useTheme();
-  const { issuesByNodeId } = useTemplateLintContext();
-  const lintIssues = issuesByNodeId.get(id) ?? [];
+  const lintIssues = useNodeLintIssues(id);
   const { getIncomingConnectionCount } = useGraphPerformanceContext();
   const canAcceptIncoming = hasIncomingCapacity(
     'templateOutput',
@@ -185,24 +184,28 @@ const OutputNode = ({
         {!disabled && (
           <>
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Top}
               id="top"
               disabled={!canAcceptIncoming}
             />
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Right}
               id="right"
               disabled={!canAcceptIncoming}
             />
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Bottom}
               id="bottom"
               disabled={!canAcceptIncoming}
             />
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Left}
               id="left"

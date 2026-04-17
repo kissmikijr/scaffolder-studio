@@ -8,7 +8,12 @@ import {
   SetStateAction,
   ReactNode,
 } from 'react';
-import { ReactFlow, Background, useReactFlow } from '@xyflow/react';
+import {
+  ReactFlow,
+  Background,
+  useConnection,
+  useReactFlow,
+} from '@xyflow/react';
 import { Box, Tooltip, Typography, useTheme, Tabs, Tab } from '@mui/material';
 import { StyledIconButton } from './components/StyledIconButton';
 import type { Edge, Node } from '@xyflow/react';
@@ -74,7 +79,13 @@ import {
   GraphPerformanceContext,
   GraphPerformanceContextValue,
 } from './GraphPerformanceContext';
-import { TemplateLintContext, TemplateLintState } from './TemplateLintContext';
+import { PerimeterHandleContext } from './PerimeterHandleContext';
+import {
+  createTemplateLintIssuesStore,
+  TemplateLintContext,
+  TemplateLintIssuesStoreContext,
+  TemplateLintState,
+} from './TemplateLintContext';
 import {
   getIncomingConnectionCountFromIndex,
   getOutgoingConnectionCountFromIndex,
@@ -83,6 +94,7 @@ import {
 import { elevateSelectedBaseEdges } from './utils/edgeStacking';
 import { collectAssignedStepIds } from './utils/prefabStepIds';
 import { buildZenFocusSets } from './utils/zenMode';
+import PerimeterConnectionLine from './edges/PerimeterConnectionLine';
 
 const SidePanelToggleIcon = ({ collapsed }: { collapsed: boolean }) => (
   <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
@@ -151,6 +163,7 @@ const ScaffolderStudioEditor = ({
     left: number;
   } | null>(null);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const templateLintIssuesStoreRef = useRef(createTemplateLintIssuesStore());
   const previousSelectedNodeIdRef = useRef<string | undefined>(undefined);
   const [selectedNode, setSelectedNode] = useState<
     Node<AllNodeData> | undefined
@@ -212,6 +225,7 @@ const ScaffolderStudioEditor = ({
     };
   }, []);
   const theme = useTheme();
+  const connectionState = useConnection();
 
   const { id, tab } = useParams();
   const navigate = useNavigate();
@@ -554,6 +568,30 @@ const ScaffolderStudioEditor = ({
     loadPrefab,
     promptForStepPrefabOverrides,
   });
+
+  const perimeterHandleContextValue = useMemo(
+    () => ({
+      selectedNodeId: selectedNode?.id,
+      connectionInProgress: connectionState.inProgress,
+      connectingNodeId: connectionState.inProgress
+        ? connectionState.fromNode.id
+        : undefined,
+      connectingHandleId: connectionState.inProgress
+        ? connectionState.fromHandle.id
+        : undefined,
+      connectingHandleType: connectionState.inProgress
+        ? connectionState.fromHandle.type
+        : undefined,
+      isValidConnection,
+    }),
+    [connectionState, isValidConnection, selectedNode?.id],
+  );
+
+  useEffect(() => {
+    templateLintIssuesStoreRef.current.setIssuesByNodeId(
+      lintState.issuesByNodeId,
+    );
+  }, [lintState.issuesByNodeId]);
 
   const { onNodeDragStop } = useGroupDragDrop({ nodes, setNodes });
 
@@ -1067,46 +1105,60 @@ const ScaffolderStudioEditor = ({
                 '& .react-flow__node': {
                   outline: 'none !important',
                 },
+                '& .react-flow__node:hover .studio-perimeter-handle[data-perimeter-connection-in-progress="false"][data-perimeter-disabled="false"]':
+                  {
+                    '--studio-perimeter-handle-opacity': 1,
+                    '--studio-perimeter-handle-pointer-events': 'all',
+                  },
               }}
             >
               <TemplateLintContext.Provider value={lintState}>
-                <GraphPerformanceContext.Provider
-                  value={graphPerformanceContextValue}
+                <TemplateLintIssuesStoreContext.Provider
+                  value={templateLintIssuesStoreRef.current}
                 >
-                  <ReactFlow
-                    onNodesChange={handleNodesChange}
-                    onViewportChange={handleViewportChange}
-                    edges={displayEdges}
-                    nodes={displayNodes}
-                    connectionRadius={42}
-                    viewport={viewport}
-                    panOnDrag={isPanning}
-                    panOnScroll
-                    zoomOnPinch
-                    zoomOnScroll={false}
-                    nodesDraggable={!isPanning}
-                    elementsSelectable={!isPanning}
-                    selectionOnDrag={!isPanning}
-                    zoomActivationKeyCode={null}
-                    maxZoom={1.5}
-                    minZoom={0.3}
-                    onEdgesChange={handleEdgesChange}
-                    nodeTypes={nodeTypes}
-                    edgeTypes={edgeTypes}
-                    defaultEdgeOptions={defaultEdgeOptions}
-                    onConnect={onConnect}
-                    isValidConnection={isValidConnection}
-                    onConnectStart={onConnectStart}
-                    onConnectEnd={onConnectEnd}
-                    onNodesDelete={handleNodesDelete}
-                    onNodeClick={handleOnNodeClick}
-                    onPaneClick={onPaneClick}
-                    onNodeContextMenu={onNodeContextMenu}
-                    onNodeDragStop={onNodeDragStop}
+                  <GraphPerformanceContext.Provider
+                    value={graphPerformanceContextValue}
                   >
-                    <Background gap={40} />
-                  </ReactFlow>
-                </GraphPerformanceContext.Provider>
+                    <PerimeterHandleContext.Provider
+                      value={perimeterHandleContextValue}
+                    >
+                      <ReactFlow
+                        onNodesChange={handleNodesChange}
+                        onViewportChange={handleViewportChange}
+                        edges={displayEdges}
+                        nodes={displayNodes}
+                        connectionRadius={42}
+                        connectionLineComponent={PerimeterConnectionLine}
+                        viewport={viewport}
+                        panOnDrag={isPanning}
+                        panOnScroll
+                        zoomOnPinch
+                        zoomOnScroll={false}
+                        nodesDraggable={!isPanning}
+                        elementsSelectable={!isPanning}
+                        selectionOnDrag={!isPanning}
+                        zoomActivationKeyCode={null}
+                        maxZoom={1.5}
+                        minZoom={0.3}
+                        onEdgesChange={handleEdgesChange}
+                        nodeTypes={nodeTypes}
+                        edgeTypes={edgeTypes}
+                        defaultEdgeOptions={defaultEdgeOptions}
+                        onConnect={onConnect}
+                        isValidConnection={isValidConnection}
+                        onConnectStart={onConnectStart}
+                        onConnectEnd={onConnectEnd}
+                        onNodesDelete={handleNodesDelete}
+                        onNodeClick={handleOnNodeClick}
+                        onPaneClick={onPaneClick}
+                        onNodeContextMenu={onNodeContextMenu}
+                        onNodeDragStop={onNodeDragStop}
+                      >
+                        <Background gap={40} />
+                      </ReactFlow>
+                    </PerimeterHandleContext.Provider>
+                  </GraphPerformanceContext.Provider>
+                </TemplateLintIssuesStoreContext.Provider>
               </TemplateLintContext.Provider>
               <Box
                 sx={{

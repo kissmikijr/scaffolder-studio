@@ -3,7 +3,7 @@ import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
 import ErrorRoundedIcon from '@mui/icons-material/ErrorRounded';
 import InfoRoundedIcon from '@mui/icons-material/InfoRounded';
 import type { TemplateLintIssue } from '@kissmiklosjr/scaffolder-studio-linter';
-import { useTemplateLintContext } from '../TemplateLintContext';
+import { useNodeLintIssues } from '../TemplateLintContext';
 
 const SEVERITY_ORDER = {
   error: 3,
@@ -107,8 +107,7 @@ export const NodeLintBadge = ({
   left?: number;
 }) => {
   const theme = useTheme();
-  const { issuesByNodeId } = useTemplateLintContext();
-  const issues = issuesByNodeId.get(nodeId) ?? [];
+  const issues = useNodeLintIssues(nodeId);
 
   if (issues.length === 0) {
     return null;
