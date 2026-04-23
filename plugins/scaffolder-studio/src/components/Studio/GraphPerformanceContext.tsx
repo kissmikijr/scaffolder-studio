@@ -3,6 +3,7 @@ import { TemplateOutgoingSlots } from './utils/connectionLimits';
 
 export type GraphPerformanceContextValue = {
   relationshipMode: boolean;
+  relationshipConnectionInProgress: boolean;
   isStepRelated: (stepNodeId: string) => boolean;
   getIncomingConnectionCount: (nodeId: string) => number;
   getOutgoingConnectionCount: (nodeId: string) => number;
@@ -24,6 +25,7 @@ const EMPTY_TEMPLATE_SLOTS: TemplateOutgoingSlots = {
 
 const EMPTY_GRAPH_PERFORMANCE_CONTEXT: GraphPerformanceContextValue = {
   relationshipMode: false,
+  relationshipConnectionInProgress: false,
   isStepRelated: () => false,
   getIncomingConnectionCount: () => 0,
   getOutgoingConnectionCount: () => 0,

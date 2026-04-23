@@ -317,6 +317,7 @@ const PrefabInstanceNode = ({
         position={Position.Top}
         id="top"
         disabled={!canAcceptIncoming}
+        pairedSourceOnSameSide={canAcceptOutgoing}
       />
       <Handle
         nodeId={id}
@@ -324,6 +325,7 @@ const PrefabInstanceNode = ({
         position={Position.Right}
         id="right"
         disabled={!canAcceptIncoming}
+        pairedSourceOnSameSide={canAcceptOutgoing}
       />
       <Handle
         nodeId={id}
@@ -331,6 +333,7 @@ const PrefabInstanceNode = ({
         position={Position.Bottom}
         id="bottom"
         disabled={!canAcceptIncoming}
+        pairedSourceOnSameSide={canAcceptOutgoing}
       />
       <Handle
         nodeId={id}
@@ -338,6 +341,7 @@ const PrefabInstanceNode = ({
         position={Position.Left}
         id="left"
         disabled={!canAcceptIncoming}
+        pairedSourceOnSameSide={canAcceptOutgoing}
       />
 
       <Handle

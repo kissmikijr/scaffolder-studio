@@ -14,7 +14,15 @@ import {
   useConnection,
   useReactFlow,
 } from '@xyflow/react';
-import { Box, Tooltip, Typography, useTheme, Tabs, Tab } from '@mui/material';
+import {
+  Box,
+  Tooltip,
+  Typography,
+  useTheme,
+  Tabs,
+  Tab,
+  alpha,
+} from '@mui/material';
 import { StyledIconButton } from './components/StyledIconButton';
 import type { Edge, Node } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -68,6 +76,7 @@ import {
   useProjectSync,
   useThumbnail,
   useDependencyEdges,
+  isRelationshipSourceHandleId,
   useEditorKeyboardShortcuts,
   useGraphIndexes,
 } from './hooks';
@@ -90,11 +99,17 @@ import {
   getIncomingConnectionCountFromIndex,
   getOutgoingConnectionCountFromIndex,
   getTemplateOutgoingSlotsFromIndex,
+  hasOutgoingCapacity,
 } from './utils/connectionLimits';
 import { elevateSelectedBaseEdges } from './utils/edgeStacking';
 import { collectAssignedStepIds } from './utils/prefabStepIds';
 import { buildZenFocusSets } from './utils/zenMode';
 import PerimeterConnectionLine from './edges/PerimeterConnectionLine';
+import {
+  getRelationshipEdgeStyle,
+  type RelationshipEdgeSourceKind,
+  type RelationshipEdgeVisualState,
+} from './edges/relationshipEdgeStyles';
 
 const SidePanelToggleIcon = ({ collapsed }: { collapsed: boolean }) => (
   <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
@@ -309,10 +324,37 @@ const ScaffolderStudioEditor = ({
       targetColors,
     };
   }, [allRelationshipEdges]);
+  const effectiveSelectedNodeId = useMemo(
+    () => nodes.find(node => node.selected)?.id,
+    [nodes],
+  );
   const graphIndexes = useGraphIndexes(nodes, edges);
+  const selectedNodeHasVisibleOutwardSourceHandle = useMemo(() => {
+    if (!effectiveSelectedNodeId) {
+      return false;
+    }
+
+    const effectiveSelectedNode = nodes.find(
+      node => node.id === effectiveSelectedNodeId,
+    );
+    if (!effectiveSelectedNode) {
+      return false;
+    }
+
+    const outgoingCount = getOutgoingConnectionCountFromIndex(
+      graphIndexes.connectionIndex,
+      effectiveSelectedNode.id,
+    );
+
+    return hasOutgoingCapacity(effectiveSelectedNode.type, outgoingCount);
+  }, [effectiveSelectedNodeId, graphIndexes.connectionIndex, nodes]);
+  const relationshipConnectionInProgress =
+    connectionState.inProgress &&
+    isRelationshipSourceHandleId(connectionState.fromHandle.id);
   const graphPerformanceContextValue = useMemo<GraphPerformanceContextValue>(
     () => ({
       relationshipMode: relationshipVisibilityEnabled,
+      relationshipConnectionInProgress,
       isStepRelated: (stepNodeId: string) => relatedStepNodeIds.has(stepNodeId),
       getIncomingConnectionCount: (nodeId: string) =>
         getIncomingConnectionCountFromIndex(
@@ -348,22 +390,37 @@ const ScaffolderStudioEditor = ({
       relatedStepNodeIds,
       relationshipHandleColorIndex.sourceColors,
       relationshipHandleColorIndex.targetColors,
+      relationshipConnectionInProgress,
       relationshipVisibilityEnabled,
     ],
   );
   const displayEdges = useMemo(() => {
-    const selectedNodeId = selectedNode?.id;
+    const selectedNodeId = effectiveSelectedNodeId;
 
     if (!relationshipVisibilityEnabled) {
-      return elevateSelectedBaseEdges(edges, selectedNodeId);
+      return elevateSelectedBaseEdges(
+        edges,
+        selectedNodeId,
+        selectedNodeHasVisibleOutwardSourceHandle,
+      );
     }
 
     const styledBaseEdges = isZenMode
       ? []
-      : elevateSelectedBaseEdges(edges, selectedNodeId);
+      : elevateSelectedBaseEdges(
+          edges,
+          selectedNodeId,
+          selectedNodeHasVisibleOutwardSourceHandle,
+        );
     const elevatedRelationshipEdges = relationshipEdges.map(edge => {
-      const edgeData = edge.data as { sourceKind?: 'parameter' | 'stepOutput' };
+      const edgeData = edge.data as
+        | {
+            sourceKind?: RelationshipEdgeSourceKind;
+            sourceColor?: string;
+          }
+        | undefined;
       const isParameterRelationshipEdge = edgeData?.sourceKind === 'parameter';
+      let visualState: RelationshipEdgeVisualState = 'default';
 
       if (isZenMode && !zenFocusSets.edgeIds.has(edge.id)) {
         return {
@@ -371,8 +428,18 @@ const ScaffolderStudioEditor = ({
           className: `relationship-edge relationship-edge--background${
             isParameterRelationshipEdge ? ' relationship-edge--parameter' : ''
           }`,
+          style: getRelationshipEdgeStyle({
+            theme,
+            sourceKind: edgeData?.sourceKind,
+            sourceColor: edgeData?.sourceColor,
+            state: 'background',
+          }),
           zIndex: isParameterRelationshipEdge ? 1 : -4,
         };
+      }
+
+      if (isZenMode) {
+        visualState = 'focus';
       }
 
       const isConnectedToSelectedNode =
@@ -384,17 +451,25 @@ const ScaffolderStudioEditor = ({
       }
       if (isConnectedToSelectedNode) {
         relationshipZIndex = 1003;
+        visualState = 'selected';
       }
 
       return {
         ...edge,
-        className: isConnectedToSelectedNode
-          ? `relationship-edge relationship-edge--selected-node${
-              isParameterRelationshipEdge ? ' relationship-edge--parameter' : ''
-            }`
-          : `relationship-edge${
-              isParameterRelationshipEdge ? ' relationship-edge--parameter' : ''
-            }`,
+        className: [
+          'relationship-edge',
+          visualState === 'focus' ? 'relationship-edge--focus' : '',
+          visualState === 'selected' ? 'relationship-edge--selected-node' : '',
+          isParameterRelationshipEdge ? 'relationship-edge--parameter' : '',
+        ]
+          .filter(Boolean)
+          .join(' '),
+        style: getRelationshipEdgeStyle({
+          theme,
+          sourceKind: edgeData?.sourceKind,
+          sourceColor: edgeData?.sourceColor,
+          state: visualState,
+        }),
         zIndex: relationshipZIndex,
       };
     });
@@ -402,10 +477,12 @@ const ScaffolderStudioEditor = ({
     return [...styledBaseEdges, ...elevatedRelationshipEdges];
   }, [
     edges,
+    effectiveSelectedNodeId,
     isZenMode,
     relationshipEdges,
     relationshipVisibilityEnabled,
-    selectedNode?.id,
+    selectedNodeHasVisibleOutwardSourceHandle,
+    theme,
     zenFocusSets.edgeIds,
   ]);
   const displayNodes = useMemo(() => {
@@ -413,7 +490,7 @@ const ScaffolderStudioEditor = ({
       return nodes;
     }
 
-    const selectedNodeId = selectedNode?.id;
+    const selectedNodeId = effectiveSelectedNodeId;
     if (!selectedNodeId) {
       return nodes;
     }
@@ -437,10 +514,10 @@ const ScaffolderStudioEditor = ({
       };
     });
   }, [
+    effectiveSelectedNodeId,
     isZenMode,
     nodes,
     relationshipVisibilityEnabled,
-    selectedNode?.id,
     zenFocusSets.nodeIds,
   ]);
 
@@ -571,7 +648,7 @@ const ScaffolderStudioEditor = ({
 
   const perimeterHandleContextValue = useMemo(
     () => ({
-      selectedNodeId: selectedNode?.id,
+      selectedNodeId: effectiveSelectedNodeId,
       connectionInProgress: connectionState.inProgress,
       connectingNodeId: connectionState.inProgress
         ? connectionState.fromNode.id
@@ -584,7 +661,7 @@ const ScaffolderStudioEditor = ({
         : undefined,
       isValidConnection,
     }),
-    [connectionState, isValidConnection, selectedNode?.id],
+    [connectionState, effectiveSelectedNodeId, isValidConnection],
   );
 
   useEffect(() => {
@@ -1092,7 +1169,23 @@ const ScaffolderStudioEditor = ({
                 '& .react-flow__edge.relationship-edge.relationship-edge--background':
                   {
                     zIndex: -4,
-                    opacity: 0.22,
+                  },
+                '& .react-flow__edge.relationship-edge .react-flow__edge-path':
+                  {
+                    filter:
+                      theme.palette.mode === 'dark'
+                        ? `drop-shadow(0 0 0.6px ${alpha(
+                            theme.palette.common.white,
+                            0.12,
+                          )})`
+                        : 'none',
+                  },
+                '& .react-flow__edge.relationship-edge.relationship-edge--focus .react-flow__edge-path':
+                  {
+                    filter: `drop-shadow(0 0 2px ${alpha(
+                      theme.palette.info.main,
+                      theme.palette.mode === 'dark' ? 0.34 : 0.22,
+                    )})`,
                   },
                 '& .react-flow__edge.relationship-edge.relationship-edge--selected-node':
                   {
@@ -1110,6 +1203,31 @@ const ScaffolderStudioEditor = ({
                     '--studio-perimeter-handle-opacity': 1,
                     '--studio-perimeter-handle-pointer-events': 'all',
                   },
+                '@keyframes studio-perimeter-handle-selected-pulse': {
+                  '0%, 100%': {
+                    filter: `drop-shadow(0 0 0 ${alpha(
+                      theme.palette.info.main,
+                      theme.palette.mode === 'dark' ? 0.12 : 0.08,
+                    )})`,
+                  },
+                  '50%': {
+                    filter: `drop-shadow(0 0 6px ${alpha(
+                      theme.palette.info.main,
+                      theme.palette.mode === 'dark' ? 0.28 : 0.22,
+                    )})`,
+                  },
+                },
+                '& .studio-perimeter-handle[data-perimeter-selected="true"][data-perimeter-visible="true"]':
+                  {
+                    animation:
+                      'studio-perimeter-handle-selected-pulse 1.65s ease-in-out infinite',
+                  },
+                '@media (prefers-reduced-motion: reduce)': {
+                  '& .studio-perimeter-handle[data-perimeter-selected="true"][data-perimeter-visible="true"]':
+                    {
+                      animation: 'none',
+                    },
+                },
               }}
             >
               <TemplateLintContext.Provider value={lintState}>

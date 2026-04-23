@@ -98,6 +98,26 @@ describe('edgeRouting', () => {
         targetPosition: Position.Left,
       }),
     ).toMatchObject({
+      sourceX: 98,
+      sourceY: 40,
+      targetX: 202,
+      targetY: 40,
+    });
+  });
+
+  it('uses per-end offset distances when provided', () => {
+    expect(
+      getAdjustedPerimeterRouteInput({
+        sourceX: 118,
+        sourceY: 40,
+        sourcePosition: Position.Right,
+        sourceOffsetDistance: 18,
+        targetX: 182,
+        targetY: 40,
+        targetPosition: Position.Left,
+        targetOffsetDistance: 18,
+      }),
+    ).toMatchObject({
       sourceX: 100,
       sourceY: 40,
       targetX: 200,

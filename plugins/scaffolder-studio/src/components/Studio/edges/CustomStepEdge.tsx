@@ -22,7 +22,11 @@ const CustomStepEdge = ({
 }: EdgeProps) => {
   const wasStraightRef = useRef(false);
   const edgeData = data as
-    | { routingStrategy?: EdgeRoutingStrategy }
+    | {
+        routingStrategy?: EdgeRoutingStrategy;
+        sourceOffsetDistance?: number;
+        targetOffsetDistance?: number;
+      }
     | undefined;
 
   const { path: edgePath, wasStraight } = getRoutedEdgePath(
@@ -30,9 +34,11 @@ const CustomStepEdge = ({
       sourceX,
       sourceY,
       sourcePosition,
+      sourceOffsetDistance: edgeData?.sourceOffsetDistance,
       targetX,
       targetY,
       targetPosition,
+      targetOffsetDistance: edgeData?.targetOffsetDistance,
     }),
     {
       strategy: edgeData?.routingStrategy ?? DEFAULT_EDGE_ROUTING_STRATEGY,

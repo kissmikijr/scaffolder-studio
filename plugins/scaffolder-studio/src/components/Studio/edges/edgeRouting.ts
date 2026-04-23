@@ -17,9 +17,11 @@ type EdgeRoutingInput = {
   sourceX: number;
   sourceY: number;
   sourcePosition?: Position;
+  sourceOffsetDistance?: number;
   targetX: number;
   targetY: number;
   targetPosition?: Position;
+  targetOffsetDistance?: number;
 };
 
 type EdgeRoutingOptions = {
@@ -37,11 +39,13 @@ export const getAdjustedPerimeterRouteInput = (input: EdgeRoutingInput) => {
     x: input.sourceX,
     y: input.sourceY,
     position: input.sourcePosition,
+    distance: input.sourceOffsetDistance,
   });
   const adjustedTarget = offsetPointTowardNode({
     x: input.targetX,
     y: input.targetY,
     position: input.targetPosition,
+    distance: input.targetOffsetDistance,
   });
 
   return {

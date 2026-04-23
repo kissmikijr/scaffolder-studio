@@ -28,6 +28,7 @@ const renderWithProviders = (
 
   const defaultContextValue: GraphPerformanceContextValue = {
     relationshipMode: false,
+    relationshipConnectionInProgress: false,
     isStepRelated: () => false,
     getIncomingConnectionCount: () => 0,
     getOutgoingConnectionCount: () => 0,
@@ -157,5 +158,25 @@ describe('StepNode', () => {
 
     fireEvent.click(toggleButton);
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('force expands while a relationship connection is being dragged', () => {
+    renderWithProviders(
+      <StepNode
+        {...(defaultProps as any)}
+        data={{
+          ...defaultProps.data,
+          uiState: { ioExpanded: false },
+        }}
+      />,
+      {
+        relationshipMode: true,
+        relationshipConnectionInProgress: true,
+        isStepRelated: () => false,
+      },
+    );
+
+    expect(screen.getByTestId('step-node-io-section')).toBeInTheDocument();
+    expect(screen.getByTestId('step-node-input-row-url')).toBeInTheDocument();
   });
 });

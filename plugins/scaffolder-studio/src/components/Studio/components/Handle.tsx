@@ -22,7 +22,9 @@ import {
   getPerimeterHandleTransform,
   PERIMETER_HANDLE_DIAMETER,
   PERIMETER_HANDLE_EMPHASIS_SCALE,
+  shouldUseSelectedPerimeterOutset,
 } from './perimeterHandles';
+import { getStudioPerimeterHandleInteractionStyle } from './studioHandleStyles';
 
 const NODE_HOVER_GRACE_MS = 140;
 
@@ -35,6 +37,8 @@ export const Handle = forwardRef<
     id?: string;
     nodeId?: string;
     disabled?: boolean;
+    /** Target only: shift outward past the source (along the edge normal) when this node also renders a source on the same side. */
+    pairedSourceOnSameSide?: boolean;
     children?: ReactNode;
   } & HTMLAttributes<HTMLDivElement>
 >(
@@ -46,6 +50,7 @@ export const Handle = forwardRef<
       id,
       nodeId: nodeIdProp,
       disabled = false,
+      pairedSourceOnSameSide = false,
       children,
       onMouseEnter: onMouseEnterProp,
       onMouseLeave: onMouseLeaveProp,
@@ -151,51 +156,70 @@ export const Handle = forwardRef<
       validCandidateType,
     ]);
 
-    const { visible, emphasized } = getPerimeterHandleRenderState({
-      disabled: disabled || hasIncomingConnectionOnHandle,
-      isNodeHovered: isWithinHoverGrace,
-      isNodeSelected:
-        Boolean(resolvedNodeId) &&
-        perimeterHandleContext.selectedNodeId === resolvedNodeId,
-      isConnectionInProgress,
-      isActiveSourceHandle,
-      isValidConnectionTarget,
-      isHoveredHandle: isHovered,
-    });
+    const { visible: computedVisible, emphasized } =
+      getPerimeterHandleRenderState({
+        disabled: disabled || hasIncomingConnectionOnHandle,
+        isNodeHovered: isWithinHoverGrace,
+        isNodeSelected:
+          Boolean(resolvedNodeId) &&
+          perimeterHandleContext.selectedNodeId === resolvedNodeId,
+        isConnectionInProgress,
+        isActiveSourceHandle,
+        isValidConnectionTarget,
+        isHoveredHandle: isHovered,
+      });
+    const isNodeSelected =
+      Boolean(resolvedNodeId) &&
+      perimeterHandleContext.selectedNodeId === resolvedNodeId;
+    const visible = computedVisible;
 
     const accentColor =
       theme.palette.mode === 'light'
         ? theme.palette.primary.main
         : theme.palette.info.light;
     const scale = emphasized ? PERIMETER_HANDLE_EMPHASIS_SCALE : 1;
-    let zIndex = 2100;
+    const shouldUseSelectedOutset =
+      !disabled &&
+      shouldUseSelectedPerimeterOutset({
+        type,
+        isNodeSelected,
+        pairedSourceOnSameSide,
+      });
+    const perimeterTransform = getPerimeterHandleTransform(
+      position,
+      scale,
+      shouldUseSelectedOutset,
+    );
+    const handleTransform = perimeterTransform;
+    let zIndex = 3200;
     if (emphasized) {
-      zIndex = 2500;
+      zIndex = 3600;
     } else if (visible) {
-      zIndex = 2400;
+      zIndex = 3400;
     }
     const sideStyle: CSSProperties = {
       position: 'absolute',
       width: PERIMETER_HANDLE_DIAMETER,
       height: PERIMETER_HANDLE_DIAMETER,
       borderRadius: '999px',
-      border: `1.5px solid ${alpha(accentColor, emphasized ? 0.95 : 0.55)}`,
-      background: emphasized
-        ? alpha(accentColor, 0.7)
-        : alpha(theme.palette.background.paper, 0.92),
+      border: `1.5px solid ${alpha(accentColor, emphasized ? 0.98 : 0.72)}`,
+      background: emphasized ? accentColor : theme.palette.background.paper,
       boxShadow: emphasized
-        ? `0 0 0 3px ${alpha(accentColor, 0.22)}, 0 4px 12px ${alpha(
+        ? `0 0 0 2px ${theme.palette.background.paper}, 0 0 0 4px ${alpha(
             accentColor,
-            0.22,
-          )}`
-        : `0 0 0 1px ${alpha(accentColor, 0.14)}`,
+            0.24,
+          )}, 0 4px 12px ${alpha(accentColor, 0.22)}`
+        : `0 0 0 2px ${theme.palette.background.paper}, 0 0 0 1px ${alpha(
+            accentColor,
+            0.18,
+          )}`,
       opacity: 'var(--studio-perimeter-handle-opacity, 0)',
       zIndex,
       pointerEvents:
         'var(--studio-perimeter-handle-pointer-events, none)' as CSSProperties['pointerEvents'],
       transition:
         'opacity 140ms ease, transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease, border-color 140ms ease',
-      transform: getPerimeterHandleTransform(position, scale),
+      transform: handleTransform,
       ['--studio-perimeter-handle-opacity' as any]: visible ? 1 : 0,
       ['--studio-perimeter-handle-pointer-events' as any]:
         visible && !disabled ? 'all' : 'none',
@@ -234,7 +258,12 @@ export const Handle = forwardRef<
           data-perimeter-connection-in-progress={
             isConnectionInProgress ? 'true' : 'false'
           }
-          style={{ ...sideStyle, ...style }}
+          data-perimeter-selected={isNodeSelected ? 'true' : 'false'}
+          style={{
+            ...sideStyle,
+            ...getStudioPerimeterHandleInteractionStyle(theme, type, position),
+            ...style,
+          }}
           onMouseEnter={event => {
             if (disabled) {
               return;

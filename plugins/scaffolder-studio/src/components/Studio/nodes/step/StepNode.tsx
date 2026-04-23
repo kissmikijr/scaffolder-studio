@@ -64,6 +64,7 @@ const StepNode = ({
   const lintIssues = useNodeLintIssues(id);
   const {
     relationshipMode,
+    relationshipConnectionInProgress,
     isStepRelated,
     getIncomingConnectionCount,
     getOutgoingConnectionCount,
@@ -121,7 +122,8 @@ const StepNode = ({
   const isLightTheme = theme.palette.mode === 'light';
 
   const persistedExpanded = Boolean(data.uiState?.ioExpanded);
-  const isForceExpanded = relationshipMode && isStepRelated(id);
+  const isForceExpanded =
+    relationshipMode && (isStepRelated(id) || relationshipConnectionInProgress);
   const isExpanded = hasIoContent && (persistedExpanded || isForceExpanded);
 
   const ioSectionBackgroundColor = isLightTheme
@@ -777,6 +779,7 @@ const StepNode = ({
               position={Position.Top}
               id="top"
               disabled={!canAcceptIncoming}
+              pairedSourceOnSameSide={canAcceptOutgoing}
               data-testid={`step-node-handle-top-${id}`}
             />
             <Handle
@@ -785,6 +788,7 @@ const StepNode = ({
               position={Position.Right}
               id="right"
               disabled={!canAcceptIncoming}
+              pairedSourceOnSameSide={canAcceptOutgoing}
               data-testid={`step-node-handle-right-${id}`}
             />
             <Handle
@@ -793,6 +797,7 @@ const StepNode = ({
               position={Position.Bottom}
               id="bottom"
               disabled={!canAcceptIncoming}
+              pairedSourceOnSameSide={canAcceptOutgoing}
               data-testid={`step-node-handle-bottom-${id}`}
             />
             <Handle
@@ -801,6 +806,7 @@ const StepNode = ({
               position={Position.Left}
               id="left"
               disabled={!canAcceptIncoming}
+              pairedSourceOnSameSide={canAcceptOutgoing}
               data-testid={`step-node-handle-left-${id}`}
             />
           </>

@@ -4,6 +4,7 @@ import {
   getPerimeterHandleTransform,
   isPerimeterHandleId,
   offsetPointTowardNode,
+  shouldUseSelectedPerimeterOutset,
 } from './perimeterHandles';
 
 describe('perimeterHandles', () => {
@@ -98,5 +99,48 @@ describe('perimeterHandles', () => {
     expect(isPerimeterHandleId('top')).toBe(true);
     expect(isPerimeterHandleId('out:value')).toBe(false);
     expect(getPerimeterHandleTransform(Position.Left)).toContain('- 10px');
+  });
+
+  it('pushes perimeter handles farther out when the node is selected', () => {
+    expect(getPerimeterHandleTransform(Position.Right, 1, true)).toContain(
+      '+ 18px',
+    );
+    expect(getPerimeterHandleTransform(Position.Top, 1, true)).toContain(
+      '- 18px',
+    );
+  });
+
+  it('applies selected outset only to sources', () => {
+    expect(
+      shouldUseSelectedPerimeterOutset({
+        type: 'source',
+        isNodeSelected: true,
+        pairedSourceOnSameSide: false,
+      }),
+    ).toBe(true);
+
+    expect(
+      shouldUseSelectedPerimeterOutset({
+        type: 'target',
+        isNodeSelected: true,
+        pairedSourceOnSameSide: true,
+      }),
+    ).toBe(false);
+
+    expect(
+      shouldUseSelectedPerimeterOutset({
+        type: 'target',
+        isNodeSelected: true,
+        pairedSourceOnSameSide: false,
+      }),
+    ).toBe(false);
+
+    expect(
+      shouldUseSelectedPerimeterOutset({
+        type: 'source',
+        isNodeSelected: false,
+        pairedSourceOnSameSide: true,
+      }),
+    ).toBe(false);
   });
 });

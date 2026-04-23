@@ -2,7 +2,13 @@ import { Position } from '@xyflow/react';
 
 export const PERIMETER_HANDLE_DIAMETER = 14;
 export const PERIMETER_HANDLE_OUTSET = 10;
+export const PERIMETER_HANDLE_SELECTED_EXTRA_OUTSET = 8;
 export const PERIMETER_HANDLE_EMPHASIS_SCALE = 1.14;
+
+export const getPerimeterHandleOutset = (isSelected = false): number =>
+  isSelected
+    ? PERIMETER_HANDLE_OUTSET + PERIMETER_HANDLE_SELECTED_EXTRA_OUTSET
+    : PERIMETER_HANDLE_OUTSET;
 
 const PERIMETER_HANDLE_IDS = new Set(['top', 'right', 'bottom', 'left']);
 
@@ -36,21 +42,34 @@ export const offsetPointTowardNode = ({
   }
 };
 
+/** Selected outset applies only to source handles; targets stay anchored to the node border. */
+export const shouldUseSelectedPerimeterOutset = ({
+  type,
+  isNodeSelected,
+  pairedSourceOnSameSide: _pairedSourceOnSameSide,
+}: {
+  type: 'source' | 'target';
+  isNodeSelected: boolean;
+  pairedSourceOnSameSide: boolean;
+}): boolean => isNodeSelected && type === 'source';
+
 export const getPerimeterHandleTransform = (
   position: Position,
   scale = 1,
+  isSelected = false,
 ): string => {
   const scaleSuffix = scale === 1 ? '' : ` scale(${scale})`;
+  const offset = getPerimeterHandleOutset(isSelected);
 
   switch (position) {
     case Position.Top:
-      return `translate(-50%, calc(-50% - ${PERIMETER_HANDLE_OUTSET}px))${scaleSuffix}`;
+      return `translate(-50%, calc(-50% - ${offset}px))${scaleSuffix}`;
     case Position.Right:
-      return `translate(calc(50% + ${PERIMETER_HANDLE_OUTSET}px), -50%)${scaleSuffix}`;
+      return `translate(calc(50% + ${offset}px), -50%)${scaleSuffix}`;
     case Position.Bottom:
-      return `translate(-50%, calc(50% + ${PERIMETER_HANDLE_OUTSET}px))${scaleSuffix}`;
+      return `translate(-50%, calc(50% + ${offset}px))${scaleSuffix}`;
     case Position.Left:
-      return `translate(calc(-50% - ${PERIMETER_HANDLE_OUTSET}px), -50%)${scaleSuffix}`;
+      return `translate(calc(-50% - ${offset}px), -50%)${scaleSuffix}`;
     default:
       return scale === 1
         ? 'translate(-50%, -50%)'

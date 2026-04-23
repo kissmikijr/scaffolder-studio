@@ -21,7 +21,13 @@ describe('elevateSelectedBaseEdges', () => {
 
   it('raises non-relationship edges connected to the selected node', () => {
     const edges = [
-      makeEdge({ id: 'selected-edge', source: 'property-a', target: 'step-a' }),
+      makeEdge({
+        id: 'selected-edge',
+        source: 'property-a',
+        sourceHandle: 'right',
+        target: 'step-a',
+        targetHandle: 'left',
+      }),
       makeEdge({ id: 'unrelated-edge', source: 'step-b', target: 'step-c' }),
     ];
 
@@ -36,6 +42,51 @@ describe('elevateSelectedBaseEdges', () => {
         id: 'unrelated-edge',
       }),
     ]);
+  });
+
+  it('keeps selected source perimeter endpoints on the border', () => {
+    const edges = [
+      makeEdge({
+        id: 'outgoing-edge',
+        source: 'property-a',
+        sourceHandle: 'right',
+        target: 'step-a',
+        targetHandle: 'left',
+      }),
+    ];
+
+    const result = elevateSelectedBaseEdges(edges, 'property-a', true);
+
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        id: 'outgoing-edge',
+        zIndex: SELECTED_NODE_CONNECTED_EDGE_Z_INDEX,
+      }),
+    );
+  });
+
+  it('moves the selected target endpoint only when outward source handles are visible', () => {
+    const edges = [
+      makeEdge({
+        id: 'incoming-edge',
+        source: 'step-a',
+        sourceHandle: 'right',
+        target: 'property-a',
+        targetHandle: 'left',
+      }),
+    ];
+
+    const result = elevateSelectedBaseEdges(edges, 'property-a', true);
+
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        id: 'incoming-edge',
+        data: expect.objectContaining({
+          targetOffsetDistance: -8,
+        }),
+        zIndex: SELECTED_NODE_CONNECTED_EDGE_Z_INDEX,
+      }),
+    );
   });
 
   it('preserves relationship edges even when they touch the selected node', () => {
@@ -69,7 +120,9 @@ describe('elevateSelectedBaseEdges', () => {
       makeEdge({
         id: 'already-raised',
         source: 'property-a',
+        sourceHandle: 'right',
         target: 'step-a',
+        targetHandle: 'left',
         zIndex: 2000,
       }),
     ];
@@ -80,6 +133,49 @@ describe('elevateSelectedBaseEdges', () => {
       expect.objectContaining({
         id: 'already-raised',
         zIndex: 2000,
+      }),
+    );
+  });
+
+  it('keeps the selected target endpoint on the border when outward source handles are hidden', () => {
+    const edges = [
+      makeEdge({
+        id: 'hidden-target-edge',
+        source: 'step-a',
+        sourceHandle: 'right',
+        target: 'property-a',
+        targetHandle: 'left',
+      }),
+    ];
+
+    const result = elevateSelectedBaseEdges(edges, 'property-a');
+
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        id: 'hidden-target-edge',
+        data: undefined,
+        zIndex: SELECTED_NODE_CONNECTED_EDGE_Z_INDEX,
+      }),
+    );
+  });
+
+  it('does not add endpoint offsets for non-perimeter handles', () => {
+    const edges = [
+      makeEdge({
+        id: 'relationship-edge',
+        source: 'property-a',
+        sourceHandle: 'property-relationship-output',
+        target: 'step-a',
+        targetHandle: 'in:repoUrl',
+      }),
+    ];
+
+    const result = elevateSelectedBaseEdges(edges, 'property-a');
+
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        id: 'relationship-edge',
+        zIndex: SELECTED_NODE_CONNECTED_EDGE_Z_INDEX,
       }),
     );
   });

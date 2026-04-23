@@ -123,6 +123,7 @@ const ParametersNode = ({
             type="target"
             position={Position.Top}
             disabled={!canAcceptIncoming}
+            pairedSourceOnSameSide={canAcceptOutgoing}
           />
           <Handle
             nodeId={id}
@@ -130,6 +131,7 @@ const ParametersNode = ({
             type="target"
             position={Position.Right}
             disabled={!canAcceptIncoming}
+            pairedSourceOnSameSide={canAcceptOutgoing}
           />
           <Handle
             nodeId={id}
@@ -137,6 +139,7 @@ const ParametersNode = ({
             type="target"
             position={Position.Bottom}
             disabled={!canAcceptIncoming}
+            pairedSourceOnSameSide={canAcceptOutgoing}
           />
           <Handle
             nodeId={id}
@@ -144,6 +147,7 @@ const ParametersNode = ({
             type="target"
             position={Position.Left}
             disabled={!canAcceptIncoming}
+            pairedSourceOnSameSide={canAcceptOutgoing}
           />
 
           <Handle

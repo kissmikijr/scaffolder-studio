@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { NodeProps, Position, Node, Handle as FlowHandle } from '@xyflow/react';
 import { Handle } from '../../components/Handle';
+import { getStudioRelationshipHandleBaseStyle } from '../../components/studioHandleStyles';
 import {
   Box,
   useTheme,
@@ -227,6 +228,7 @@ export const PropertyNodeContent = ({
               position={Position.Top}
               id="top"
               disabled={!canAcceptIncoming}
+              pairedSourceOnSameSide={canAcceptOutgoing}
             />
             <Handle
               nodeId={id}
@@ -234,6 +236,7 @@ export const PropertyNodeContent = ({
               position={Position.Right}
               id="right"
               disabled={!canAcceptIncoming}
+              pairedSourceOnSameSide={canAcceptOutgoing}
             />
             <Handle
               nodeId={id}
@@ -241,6 +244,7 @@ export const PropertyNodeContent = ({
               position={Position.Bottom}
               id="bottom"
               disabled={!canAcceptIncoming}
+              pairedSourceOnSameSide={canAcceptOutgoing}
             />
             <Handle
               nodeId={id}
@@ -248,6 +252,7 @@ export const PropertyNodeContent = ({
               position={Position.Left}
               id="left"
               disabled={!canAcceptIncoming}
+              pairedSourceOnSameSide={canAcceptOutgoing}
             />
             <Handle
               nodeId={id}
@@ -271,19 +276,10 @@ export const PropertyNodeContent = ({
                 width: 12,
                 height: 12,
                 borderRadius: '50%',
-                border: `1.5px solid ${
-                  theme.palette.mode === 'light'
-                    ? alpha(theme.palette.common.black, 0.55)
-                    : alpha(theme.palette.common.black, 0.78)
-                }`,
-                backgroundColor: theme.palette.info.light,
+                border: 'none',
                 right: 10,
                 top: '15%',
-                // transform: 'translate(50%, -50%)',
-                cursor: 'crosshair',
-                boxShadow: 'none',
-                zIndex: 4600,
-                pointerEvents: 'all',
+                ...getStudioRelationshipHandleBaseStyle(theme),
               }}
               data-testid={`property-relationship-handle-${id}`}
             />
