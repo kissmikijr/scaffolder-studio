@@ -62,8 +62,19 @@ export const Handle = forwardRef<
     const flowNodeId = useNodeId();
     const nodeId = nodeIdProp ?? flowNodeId;
     const resolvedNodeId = nodeId ?? undefined;
-    const perimeterHandleContext = usePerimeterHandleContext();
-    const connectionState = useConnection();
+    const { selectedNodeId, isValidConnection } = usePerimeterHandleContext();
+    const {
+      inProgress: isConnectionInProgress,
+      fromNode,
+      fromHandle,
+    } = useConnection(state => ({
+      inProgress: state.inProgress,
+      fromNode: state.fromNode,
+      fromHandle: state.fromHandle,
+    }));
+    const fromNodeId = fromNode?.id;
+    const fromHandleId = fromHandle?.id;
+    const fromHandleType = fromHandle?.type;
     const handleConnections = useNodeConnections({
       id: resolvedNodeId,
       handleType: type,
@@ -74,13 +85,12 @@ export const Handle = forwardRef<
     const hasIncomingConnectionOnHandle =
       type === 'target' && handleConnections.length > 0;
     const isNodeHovered =
-      Boolean(resolvedNodeId) &&
-      perimeterHandleContext.selectedNodeId === resolvedNodeId;
+      Boolean(resolvedNodeId) && selectedNodeId === resolvedNodeId;
 
     useEffect(() => {
       let timeoutId: number | undefined;
 
-      if (connectionState.inProgress) {
+      if (isConnectionInProgress) {
         setIsWithinHoverGrace(false);
       } else if (isNodeHovered) {
         setIsWithinHoverGrace(true);
@@ -95,21 +105,20 @@ export const Handle = forwardRef<
           window.clearTimeout(timeoutId);
         }
       };
-    }, [connectionState.inProgress, isHovered, isNodeHovered]);
+    }, [isConnectionInProgress, isHovered, isNodeHovered]);
 
-    const isConnectionInProgress = connectionState.inProgress;
     const isActiveSourceHandle =
       Boolean(resolvedNodeId) &&
       isConnectionInProgress &&
-      connectionState.fromNode.id === resolvedNodeId &&
-      connectionState.fromHandle.id === id &&
-      connectionState.fromHandle.type === type;
+      fromNodeId === resolvedNodeId &&
+      fromHandleId === id &&
+      fromHandleType === type;
 
     let validCandidateType: 'target' | 'source' | null = null;
-    if (connectionState.inProgress) {
-      if (connectionState.fromHandle.type === 'source') {
+    if (isConnectionInProgress) {
+      if (fromHandleType === 'source') {
         validCandidateType = 'target';
-      } else if (connectionState.fromHandle.type === 'target') {
+      } else if (fromHandleType === 'target') {
         validCandidateType = 'source';
       }
     }
@@ -123,35 +132,37 @@ export const Handle = forwardRef<
         !isConnectionInProgress ||
         !validCandidateType ||
         type !== validCandidateType ||
-        !connectionState.fromNode.id ||
-        !connectionState.fromHandle.id
+        !fromNodeId ||
+        !fromHandleId
       ) {
         return false;
       }
 
-      if (connectionState.fromHandle.type === 'source') {
-        return perimeterHandleContext.isValidConnection({
-          source: connectionState.fromNode.id,
-          sourceHandle: connectionState.fromHandle.id,
+      if (fromHandleType === 'source') {
+        return isValidConnection({
+          source: fromNodeId,
+          sourceHandle: fromHandleId,
           target: resolvedNodeId,
           targetHandle: id,
         });
       }
 
-      return perimeterHandleContext.isValidConnection({
+      return isValidConnection({
         source: resolvedNodeId,
         sourceHandle: id,
-        target: connectionState.fromNode.id,
-        targetHandle: connectionState.fromHandle.id,
+        target: fromNodeId,
+        targetHandle: fromHandleId,
       });
     }, [
-      connectionState,
       disabled,
+      fromHandleId,
+      fromHandleType,
+      fromNodeId,
       hasIncomingConnectionOnHandle,
       id,
       isConnectionInProgress,
+      isValidConnection,
       resolvedNodeId,
-      perimeterHandleContext,
       type,
       validCandidateType,
     ]);
@@ -159,18 +170,18 @@ export const Handle = forwardRef<
     const { visible: computedVisible, emphasized } =
       getPerimeterHandleRenderState({
         disabled: disabled || hasIncomingConnectionOnHandle,
+        type,
+        pairedSourceOnSameSide,
         isNodeHovered: isWithinHoverGrace,
         isNodeSelected:
-          Boolean(resolvedNodeId) &&
-          perimeterHandleContext.selectedNodeId === resolvedNodeId,
+          Boolean(resolvedNodeId) && selectedNodeId === resolvedNodeId,
         isConnectionInProgress,
         isActiveSourceHandle,
         isValidConnectionTarget,
         isHoveredHandle: isHovered,
       });
     const isNodeSelected =
-      Boolean(resolvedNodeId) &&
-      perimeterHandleContext.selectedNodeId === resolvedNodeId;
+      Boolean(resolvedNodeId) && selectedNodeId === resolvedNodeId;
     const visible = computedVisible;
 
     const accentColor =

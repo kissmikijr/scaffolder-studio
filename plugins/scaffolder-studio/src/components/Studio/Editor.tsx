@@ -329,25 +329,6 @@ const ScaffolderStudioEditor = ({
     [nodes],
   );
   const graphIndexes = useGraphIndexes(nodes, edges);
-  const selectedNodeHasVisibleOutwardSourceHandle = useMemo(() => {
-    if (!effectiveSelectedNodeId) {
-      return false;
-    }
-
-    const effectiveSelectedNode = nodes.find(
-      node => node.id === effectiveSelectedNodeId,
-    );
-    if (!effectiveSelectedNode) {
-      return false;
-    }
-
-    const outgoingCount = getOutgoingConnectionCountFromIndex(
-      graphIndexes.connectionIndex,
-      effectiveSelectedNode.id,
-    );
-
-    return hasOutgoingCapacity(effectiveSelectedNode.type, outgoingCount);
-  }, [effectiveSelectedNodeId, graphIndexes.connectionIndex, nodes]);
   const relationshipConnectionInProgress =
     connectionState.inProgress &&
     isRelationshipSourceHandleId(connectionState.fromHandle.id);
@@ -396,6 +377,25 @@ const ScaffolderStudioEditor = ({
   );
   const displayEdges = useMemo(() => {
     const selectedNodeId = effectiveSelectedNodeId;
+    const selectedNodeHasVisibleOutwardSourceHandle = Boolean(
+      selectedNodeId &&
+        (() => {
+          const selectedGraphNode = nodes.find(
+            node => node.id === selectedNodeId,
+          );
+          if (!selectedGraphNode?.type) {
+            return false;
+          }
+
+          return hasOutgoingCapacity(
+            selectedGraphNode.type,
+            getOutgoingConnectionCountFromIndex(
+              graphIndexes.connectionIndex,
+              selectedNodeId,
+            ),
+          );
+        })(),
+    );
 
     if (!relationshipVisibilityEnabled) {
       return elevateSelectedBaseEdges(
@@ -478,10 +478,11 @@ const ScaffolderStudioEditor = ({
   }, [
     edges,
     effectiveSelectedNodeId,
+    graphIndexes.connectionIndex,
     isZenMode,
+    nodes,
     relationshipEdges,
     relationshipVisibilityEnabled,
-    selectedNodeHasVisibleOutwardSourceHandle,
     theme,
     zenFocusSets.edgeIds,
   ]);

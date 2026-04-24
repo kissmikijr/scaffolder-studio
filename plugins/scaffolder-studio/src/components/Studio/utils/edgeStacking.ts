@@ -1,13 +1,13 @@
 import type { Edge } from '@xyflow/react';
 import {
-  getPerimeterHandleOutset,
+  PERIMETER_HANDLE_OUTSET,
+  PERIMETER_HANDLE_SELECTED_EXTRA_OUTSET,
   isPerimeterHandleId,
 } from '../components/perimeterHandles';
 
 export const SELECTED_NODE_CONNECTED_EDGE_Z_INDEX = 1004;
-const SELECTED_NODE_TARGET_ENDPOINT_OFFSET = -(
-  getPerimeterHandleOutset(true) - getPerimeterHandleOutset(false)
-);
+const SELECTED_NODE_VISIBLE_SOURCE_TARGET_OFFSET_DISTANCE =
+  PERIMETER_HANDLE_OUTSET - PERIMETER_HANDLE_SELECTED_EXTRA_OUTSET - 12;
 
 const isRelationshipLikeEdge = (edge: Edge): boolean =>
   edge.type === 'relationship' || Boolean((edge.data as any)?.isRelationship);
@@ -34,19 +34,26 @@ export const elevateSelectedBaseEdges = (
     }
 
     const baseZIndex = typeof edge.zIndex === 'number' ? edge.zIndex : 0;
+    const shouldMoveSelectedTargetEndpoint =
+      selectedNodeHasVisibleOutwardSourceHandle &&
+      edge.target === selectedNodeId &&
+      isPerimeterHandleId(edge.targetHandle);
+
+    if (!shouldMoveSelectedTargetEndpoint) {
+      return {
+        ...edge,
+        zIndex: Math.max(baseZIndex, SELECTED_NODE_CONNECTED_EDGE_Z_INDEX),
+      };
+    }
 
     return {
       ...edge,
-      data:
-        edge.target === selectedNodeId &&
-        selectedNodeHasVisibleOutwardSourceHandle &&
-        isPerimeterHandleId(edge.targetHandle)
-          ? {
-              ...(edge.data as Record<string, unknown> | undefined),
-              targetOffsetDistance: SELECTED_NODE_TARGET_ENDPOINT_OFFSET,
-            }
-          : edge.data,
       zIndex: Math.max(baseZIndex, SELECTED_NODE_CONNECTED_EDGE_Z_INDEX),
+      data: {
+        ...(edge.data as Record<string, unknown> | undefined),
+        targetOffsetDistance:
+          SELECTED_NODE_VISIBLE_SOURCE_TARGET_OFFSET_DISTANCE,
+      },
     };
   });
 };

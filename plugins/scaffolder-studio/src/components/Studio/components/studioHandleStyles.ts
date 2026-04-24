@@ -14,11 +14,11 @@ const PERIMETER_HANDLE_Z_INDEX: Record<Position, number> = {
  * Visual/interaction defaults for all studio perimeter {@link Handle} components.
  * Merged in Handle after base perimeter styling; callers can still override via `style`.
  */
-export function getStudioPerimeterHandleInteractionStyle(
+export const getStudioPerimeterHandleInteractionStyle: (
   theme: Theme,
   type: 'source' | 'target',
   position: Position,
-): CSSProperties {
+) => CSSProperties = (theme, type, position) => {
   const shared: CSSProperties = {
     cursor: 'crosshair',
     boxShadow: 'none',
@@ -32,12 +32,12 @@ export function getStudioPerimeterHandleInteractionStyle(
     };
   }
   return shared;
-}
+};
 
 /** Shared chrome for ad-hoc {@link @xyflow/react#Handle} instances (e.g. relationship outputs). */
-export function getStudioRelationshipHandleBaseStyle(
+export const getStudioRelationshipHandleBaseStyle: (
   theme: Theme,
-): CSSProperties {
+) => CSSProperties = theme => {
   return {
     cursor: 'crosshair',
     boxShadow: 'none',
@@ -45,4 +45,4 @@ export function getStudioRelationshipHandleBaseStyle(
     backgroundColor: theme.palette.background.paper,
     zIndex: 4600,
   };
-}
+};

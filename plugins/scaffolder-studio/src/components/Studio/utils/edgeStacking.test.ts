@@ -55,7 +55,7 @@ describe('elevateSelectedBaseEdges', () => {
       }),
     ];
 
-    const result = elevateSelectedBaseEdges(edges, 'property-a', true);
+    const result = elevateSelectedBaseEdges(edges, 'property-a');
 
     expect(result[0]).toEqual(
       expect.objectContaining({
@@ -65,7 +65,7 @@ describe('elevateSelectedBaseEdges', () => {
     );
   });
 
-  it('moves the selected target endpoint only when outward source handles are visible', () => {
+  it('keeps selected target endpoints on the border', () => {
     const edges = [
       makeEdge({
         id: 'incoming-edge',
@@ -76,17 +76,15 @@ describe('elevateSelectedBaseEdges', () => {
       }),
     ];
 
-    const result = elevateSelectedBaseEdges(edges, 'property-a', true);
+    const result = elevateSelectedBaseEdges(edges, 'property-a');
 
     expect(result[0]).toEqual(
       expect.objectContaining({
         id: 'incoming-edge',
-        data: expect.objectContaining({
-          targetOffsetDistance: -8,
-        }),
         zIndex: SELECTED_NODE_CONNECTED_EDGE_Z_INDEX,
       }),
     );
+    expect(result[0]).not.toHaveProperty('data');
   });
 
   it('preserves relationship edges even when they touch the selected node', () => {
@@ -137,7 +135,7 @@ describe('elevateSelectedBaseEdges', () => {
     );
   });
 
-  it('keeps the selected target endpoint on the border when outward source handles are hidden', () => {
+  it('keeps the selected target endpoint on the border when connected to the selected node', () => {
     const edges = [
       makeEdge({
         id: 'hidden-target-edge',
@@ -148,13 +146,37 @@ describe('elevateSelectedBaseEdges', () => {
       }),
     ];
 
-    const result = elevateSelectedBaseEdges(edges, 'property-a');
+    const result = elevateSelectedBaseEdges(edges, 'property-a', false);
 
     expect(result[0]).toEqual(
       expect.objectContaining({
         id: 'hidden-target-edge',
-        data: undefined,
         zIndex: SELECTED_NODE_CONNECTED_EDGE_Z_INDEX,
+      }),
+    );
+    expect(result[0]).not.toHaveProperty('data');
+  });
+
+  it('moves the selected target endpoint outward when the node has a visible selected source handle', () => {
+    const edges = [
+      makeEdge({
+        id: 'selected-target-edge',
+        source: 'step-a',
+        sourceHandle: 'right',
+        target: 'property-a',
+        targetHandle: 'left',
+      }),
+    ];
+
+    const result = elevateSelectedBaseEdges(edges, 'property-a', true);
+
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        id: 'selected-target-edge',
+        zIndex: SELECTED_NODE_CONNECTED_EDGE_Z_INDEX,
+        data: expect.objectContaining({
+          targetOffsetDistance: 2,
+        }),
       }),
     );
   });

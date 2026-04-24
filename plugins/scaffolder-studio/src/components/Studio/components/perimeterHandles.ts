@@ -79,6 +79,8 @@ export const getPerimeterHandleTransform = (
 
 export const getPerimeterHandleRenderState = ({
   disabled,
+  type,
+  pairedSourceOnSameSide,
   isNodeHovered,
   isNodeSelected,
   isConnectionInProgress,
@@ -87,6 +89,8 @@ export const getPerimeterHandleRenderState = ({
   isHoveredHandle,
 }: {
   disabled: boolean;
+  type: 'source' | 'target';
+  pairedSourceOnSameSide: boolean;
   isNodeHovered: boolean;
   isNodeSelected: boolean;
   isConnectionInProgress: boolean;
@@ -103,6 +107,10 @@ export const getPerimeterHandleRenderState = ({
     const emphasized =
       isActiveSourceHandle || (isValidConnectionTarget && isHoveredHandle);
     return { visible, emphasized };
+  }
+
+  if (type === 'target' && pairedSourceOnSameSide) {
+    return { visible: false, emphasized: false };
   }
 
   const visible = isNodeHovered || isNodeSelected;
