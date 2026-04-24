@@ -1,5 +1,9 @@
 import type { Edge } from '@xyflow/react';
 import {
+  PERIMETER_HANDLE_OUTSET,
+  PERIMETER_HANDLE_SELECTED_EXTRA_OUTSET,
+} from '../components/perimeterHandles';
+import {
   elevateSelectedBaseEdges,
   SELECTED_NODE_CONNECTED_EDGE_Z_INDEX,
 } from './edgeStacking';
@@ -11,6 +15,9 @@ const makeEdge = (overrides: Partial<Edge>): Edge =>
     target: 'target',
     ...overrides,
   } as Edge);
+
+const SELECTED_VISIBLE_SOURCE_TARGET_OFFSET_DISTANCE =
+  PERIMETER_HANDLE_OUTSET - PERIMETER_HANDLE_SELECTED_EXTRA_OUTSET - 12;
 
 describe('elevateSelectedBaseEdges', () => {
   it('returns the original edges when nothing is selected', () => {
@@ -175,7 +182,7 @@ describe('elevateSelectedBaseEdges', () => {
         id: 'selected-target-edge',
         zIndex: SELECTED_NODE_CONNECTED_EDGE_Z_INDEX,
         data: expect.objectContaining({
-          targetOffsetDistance: 2,
+          targetOffsetDistance: SELECTED_VISIBLE_SOURCE_TARGET_OFFSET_DISTANCE,
         }),
       }),
     );
