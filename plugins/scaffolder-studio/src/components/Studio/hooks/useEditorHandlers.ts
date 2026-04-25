@@ -851,13 +851,16 @@ export const useEditorHandlers = ({
           currentEdges,
           currentNodes,
         );
-        if (fromHandle?.id === 'output') {
+        if (sourceHandleId === 'left' || sourceHandleId === 'output') {
           if (templateSlots.hasOutput) {
             return;
           }
           handleAddOutputNode({ x, y, sourceHandleId });
           return;
-        } else if (fromHandle?.id === 'parameters') {
+        } else if (
+          sourceHandleId === 'bottom' ||
+          sourceHandleId === 'parameters'
+        ) {
           if (templateSlots.hasParameters) {
             return;
           }
