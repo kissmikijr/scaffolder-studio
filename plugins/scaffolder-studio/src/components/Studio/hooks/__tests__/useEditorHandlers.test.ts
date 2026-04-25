@@ -844,6 +844,83 @@ describe('useEditorHandlers snapping', () => {
     expect(mockHandleAddStepNode).not.toHaveBeenCalled();
   });
 
+  it('allows a property with only an incoming edge to create one outgoing property', () => {
+    const parametersNode: Node<AllNodeData> = {
+      id: 'parameters',
+      type: 'parameters',
+      position: { x: 0, y: 0 },
+      data: {} as any,
+    };
+    const sourceProperty: Node<AllNodeData> = {
+      id: 'source-property',
+      type: 'property',
+      position: { x: 100, y: 100 },
+      data: { name: 'property1', variableType: 'string' } as any,
+    };
+    const incomingEdge: Edge = {
+      id: 'parameters-source-property',
+      source: 'parameters',
+      target: 'source-property',
+      type: 'custom-step',
+    };
+
+    const { result } = setup([parametersNode, sourceProperty], [incomingEdge]);
+    mockHandleAddPropertyNode.mockClear();
+
+    act(() => {
+      result.current.onConnectEnd(
+        { clientX: 320, clientY: 160 } as any,
+        {
+          fromNode: sourceProperty as any,
+          fromHandle: { id: 'right' },
+          toHandle: null,
+        } as any,
+      );
+    });
+
+    expect(mockHandleAddPropertyNode).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not auto-create another property from a property whose outgoing capacity is full', () => {
+    const sourceProperty: Node<AllNodeData> = {
+      id: 'source-property',
+      type: 'property',
+      position: { x: 100, y: 100 },
+      data: { name: 'property1', variableType: 'string' } as any,
+    };
+    const targetProperty: Node<AllNodeData> = {
+      id: 'target-property',
+      type: 'property',
+      position: { x: 300, y: 100 },
+      data: { name: 'property2', variableType: 'string' } as any,
+    };
+    const existingOutgoingEdge: Edge = {
+      id: 'source-property-target-property',
+      source: 'source-property',
+      target: 'target-property',
+      type: 'custom-step',
+    };
+
+    const { result } = setup(
+      [sourceProperty, targetProperty],
+      [existingOutgoingEdge],
+    );
+    mockHandleAddPropertyNode.mockClear();
+
+    act(() => {
+      result.current.onConnectEnd(
+        { clientX: 520, clientY: 160 } as any,
+        {
+          fromNode: sourceProperty as any,
+          fromHandle: { id: 'right' },
+          toHandle: null,
+        } as any,
+      );
+    });
+
+    expect(mockHandleAddPropertyNode).not.toHaveBeenCalled();
+  });
+
   it('does not notify relationship toggle callback for structural connections', () => {
     const sourceStep: Node<AllNodeData> = {
       id: 'source-step',

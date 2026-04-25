@@ -12,7 +12,7 @@ import {
 import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
 import { useNodeLintIssues } from '../../TemplateLintContext';
 import {
-  NodeLintBadge,
+  NodeLintIcon,
   getLintSeverityColor,
   getNodeLintSeverity,
   getNodeLintTooltipTitle,
@@ -92,7 +92,6 @@ const ParametersNode = ({
           }}
           data-interactive="true"
         >
-          <NodeLintBadge nodeId={id} />
           <Box
             sx={{
               position: 'absolute',
@@ -111,10 +110,12 @@ const ParametersNode = ({
               pointerEvents: 'all',
               display: 'flex',
               alignItems: 'center',
+              gap: 0.5,
               justifyContent: 'space-between',
             }}
           >
-            {data.title || 'Parameters Group'}
+            <NodeLintIcon nodeId={id} />
+            <Box component="span">{data.title || 'Parameters Group'}</Box>
           </Box>
 
           <Handle

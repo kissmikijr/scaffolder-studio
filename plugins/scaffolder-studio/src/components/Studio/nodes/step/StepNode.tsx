@@ -21,7 +21,7 @@ import {
 import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
 import { useNodeLintIssues } from '../../TemplateLintContext';
 import {
-  NodeLintBadge,
+  NodeLintIcon,
   getLintSeverityColor,
   getNodeLintSeverity,
   getNodeLintTooltipTitle,
@@ -267,7 +267,6 @@ const StepNode = ({
         data-testid={`step-node-${id}`}
         data-interactive="true"
       >
-        {showLintBadge ? <NodeLintBadge nodeId={id} /> : null}
         <Box
           sx={{
             position: 'absolute',
@@ -285,7 +284,14 @@ const StepNode = ({
             zIndex: 3,
           }}
         >
-          {!disabled && <Box>Step</Box>}
+          {!disabled && (
+            <Box
+              sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+            >
+              {showLintBadge ? <NodeLintIcon nodeId={id} /> : null}
+              <Box component="span">Step</Box>
+            </Box>
+          )}
         </Box>
 
         {hasIoContent ? (

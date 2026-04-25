@@ -8,6 +8,7 @@ import {
   getOutgoingConnectionCountFromIndex,
   getTemplateOutgoingSlotsFromIndex,
   getTemplateOutgoingSlots,
+  hasOutgoingCapacity,
 } from './connectionLimits';
 
 const makeEdge = (overrides: Partial<Edge>): Edge =>
@@ -27,6 +28,39 @@ const makeNode = (id: string, type: string): Node<AllNodeData> =>
   } as Node<AllNodeData>);
 
 describe('connectionLimits', () => {
+  it('treats output nodes as terminal leaves', () => {
+    expect(hasOutgoingCapacity('templateOutput', 0)).toBe(false);
+    expect(hasOutgoingCapacity('templateOutput', 1)).toBe(false);
+  });
+
+  it('treats property outgoing capacity as directed', () => {
+    const edges: Edge[] = [
+      makeEdge({
+        id: 'parameters-to-property',
+        source: 'parameters',
+        target: 'property',
+        type: 'custom-step',
+      }),
+    ];
+
+    expect(countIncomingConnections(edges, 'property')).toBe(1);
+    expect(countOutgoingConnections(edges, 'property')).toBe(0);
+    expect(hasOutgoingCapacity('property', 0)).toBe(true);
+
+    const chainedEdges = [
+      ...edges,
+      makeEdge({
+        id: 'property-to-property',
+        source: 'property',
+        target: 'next-property',
+        type: 'custom-step',
+      }),
+    ];
+
+    expect(countOutgoingConnections(chainedEdges, 'property')).toBe(1);
+    expect(hasOutgoingCapacity('property', 1)).toBe(false);
+  });
+
   it('ignores relationship-like edges in connection counts', () => {
     const edges: Edge[] = [
       makeEdge({

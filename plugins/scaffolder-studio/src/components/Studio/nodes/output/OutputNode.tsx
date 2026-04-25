@@ -16,7 +16,7 @@ import { hasIncomingCapacity } from '../../utils/connectionLimits';
 import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
 import { useNodeLintIssues } from '../../TemplateLintContext';
 import {
-  NodeLintBadge,
+  NodeLintIcon,
   getLintSeverityColor,
   getNodeLintSeverity,
   getNodeLintTooltipTitle,
@@ -154,7 +154,6 @@ const OutputNode = ({
         }}
         data-interactive="true"
       >
-        {showLintBadge ? <NodeLintBadge nodeId={id} /> : null}
         <Box
           sx={{
             position: 'absolute',
@@ -173,9 +172,13 @@ const OutputNode = ({
                 fontSize: '0.75rem',
                 fontWeight: 600,
                 color: 'text.secondary',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.5,
               }}
             >
-              Output
+              {showLintBadge ? <NodeLintIcon nodeId={id} /> : null}
+              <Box component="span">Output</Box>
             </Typography>
           )}
         </Box>

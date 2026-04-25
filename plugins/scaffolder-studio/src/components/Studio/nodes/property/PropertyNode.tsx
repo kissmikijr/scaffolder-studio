@@ -23,7 +23,7 @@ import {
 import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
 import { useNodeLintIssues } from '../../TemplateLintContext';
 import {
-  NodeLintBadge,
+  NodeLintIcon,
   getLintSeverityColor,
   getNodeLintSeverity,
   getNodeLintTooltipTitle,
@@ -96,7 +96,6 @@ export const PropertyNodeContent = ({
         }}
         data-interactive="true"
       >
-        {showLintBadge ? <NodeLintBadge nodeId={id} /> : null}
         {!disabled && (
           <Box
             sx={{
@@ -116,9 +115,13 @@ export const PropertyNodeContent = ({
                   fontSize: '0.75rem',
                   fontWeight: 600,
                   color: 'text.secondary',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.5,
                 }}
               >
-                Property
+                {showLintBadge ? <NodeLintIcon nodeId={id} /> : null}
+                <Box component="span">Property</Box>
               </Typography>
             )}
           </Box>
@@ -228,7 +231,7 @@ export const PropertyNodeContent = ({
               position={Position.Top}
               id="top"
               disabled={!canAcceptIncoming}
-              pairedSourceOnSameSide={canAcceptOutgoing}
+              pairedSourceOnSameSide
             />
             <Handle
               nodeId={id}
@@ -236,7 +239,7 @@ export const PropertyNodeContent = ({
               position={Position.Right}
               id="right"
               disabled={!canAcceptIncoming}
-              pairedSourceOnSameSide={canAcceptOutgoing}
+              pairedSourceOnSameSide
             />
             <Handle
               nodeId={id}
@@ -244,7 +247,7 @@ export const PropertyNodeContent = ({
               position={Position.Bottom}
               id="bottom"
               disabled={!canAcceptIncoming}
-              pairedSourceOnSameSide={canAcceptOutgoing}
+              pairedSourceOnSameSide
             />
             <Handle
               nodeId={id}
@@ -252,7 +255,7 @@ export const PropertyNodeContent = ({
               position={Position.Left}
               id="left"
               disabled={!canAcceptIncoming}
-              pairedSourceOnSameSide={canAcceptOutgoing}
+              pairedSourceOnSameSide
             />
             <Handle
               nodeId={id}

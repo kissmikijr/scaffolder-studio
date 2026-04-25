@@ -97,14 +97,12 @@ export const getNodeLintTooltipTitle = (issues: TemplateLintIssue[]) => {
   );
 };
 
-export const NodeLintBadge = ({
+export const NodeLintIcon = ({
   nodeId,
-  top = -10,
-  left = -10,
+  fontSize = '0.86rem',
 }: {
   nodeId: string;
-  top?: number;
-  left?: number;
+  fontSize?: string;
 }) => {
   const theme = useTheme();
   const issues = useNodeLintIssues(nodeId);
@@ -119,26 +117,20 @@ export const NodeLintBadge = ({
 
   return (
     <Box
-      data-testid={`node-lint-badge-${nodeId}`}
+      component="span"
+      data-testid={`node-lint-icon-${nodeId}`}
       sx={{
-        position: 'absolute',
-        top,
-        left,
-        zIndex: 1000,
-        width: 22,
-        height: 22,
-        borderRadius: '999px',
-        display: 'flex',
+        display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
+        flex: '0 0 auto',
         pointerEvents: 'none',
-        bgcolor: theme.palette.background.paper,
         color: severityColor ?? theme.palette.warning.main,
-        border: `1px solid ${theme.palette.divider}`,
-        boxShadow: theme.shadows[1],
       }}
     >
-      <Icon sx={{ fontSize: '0.82rem' }} />
+      <Icon sx={{ fontSize }} />
     </Box>
   );
 };
+
+export const NodeLintBadge = NodeLintIcon;

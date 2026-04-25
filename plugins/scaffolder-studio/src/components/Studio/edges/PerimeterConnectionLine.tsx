@@ -3,10 +3,7 @@ import {
   getBezierPath,
   Position,
 } from '@xyflow/react';
-import {
-  getRoutedEdgePath,
-  getAdjustedPerimeterRouteInput,
-} from './edgeRouting';
+import { getRoutedEdgePath } from './edgeRouting';
 import { isPerimeterHandleId } from '../components/perimeterHandles';
 
 const PerimeterConnectionLine = ({
@@ -23,16 +20,14 @@ const PerimeterConnectionLine = ({
   const usesPerimeterRouting = isPerimeterHandleId(fromHandle.id);
 
   const path = usesPerimeterRouting
-    ? getRoutedEdgePath(
-        getAdjustedPerimeterRouteInput({
-          sourceX: fromX,
-          sourceY: fromY,
-          sourcePosition: fromPosition,
-          targetX: toX,
-          targetY: toY,
-          targetPosition: toPosition ?? Position.Bottom,
-        }),
-      ).path
+    ? getRoutedEdgePath({
+        sourceX: fromX,
+        sourceY: fromY,
+        sourcePosition: fromPosition,
+        targetX: toX,
+        targetY: toY,
+        targetPosition: toPosition ?? Position.Bottom,
+      }).path
     : getBezierPath({
         sourceX: fromX,
         sourceY: fromY,

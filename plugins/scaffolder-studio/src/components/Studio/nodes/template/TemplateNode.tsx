@@ -16,7 +16,7 @@ import { SELECTED_BORDER_COLOR } from '../../styles';
 import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
 import { useNodeLintIssues } from '../../TemplateLintContext';
 import {
-  NodeLintBadge,
+  NodeLintIcon,
   getLintSeverityColor,
   getNodeLintSeverity,
   getNodeLintTooltipTitle,
@@ -72,7 +72,6 @@ const TemplateNode = ({
         }}
         data-interactive="true"
       >
-        <NodeLintBadge nodeId={id} />
         <Box
           sx={{
             position: 'absolute',
@@ -90,9 +89,13 @@ const TemplateNode = ({
               fontSize: '0.75rem',
               fontWeight: 600,
               color: 'text.secondary',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.5,
             }}
           >
-            Template
+            <NodeLintIcon nodeId={id} />
+            <Box component="span">Template</Box>
           </Typography>
         </Box>
 

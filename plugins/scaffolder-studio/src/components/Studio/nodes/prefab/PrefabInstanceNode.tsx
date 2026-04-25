@@ -26,7 +26,7 @@ import {
 import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
 import { useNodeLintIssues } from '../../TemplateLintContext';
 import {
-  NodeLintBadge,
+  NodeLintIcon,
   getLintSeverityColor,
   getNodeLintSeverity,
   getNodeLintTooltipTitle,
@@ -229,7 +229,6 @@ const PrefabInstanceNode = ({
 
   return (
     <Box>
-      <NodeLintBadge nodeId={id} />
       <Box
         sx={{
           position: 'absolute',
@@ -243,11 +242,20 @@ const PrefabInstanceNode = ({
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           maxWidth: 120,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 0.5,
         }}
       >
-        {isError
-          ? 'Missing Prefab'
-          : `Prefab: ${prefab?.title} v${prefab?.version}`}
+        <NodeLintIcon nodeId={id} />
+        <Box
+          component="span"
+          sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
+        >
+          {isError
+            ? 'Missing Prefab'
+            : `Prefab: ${prefab?.title} v${prefab?.version}`}
+        </Box>
       </Box>
       {!isError && (
         <Box
