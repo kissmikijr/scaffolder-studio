@@ -842,16 +842,43 @@ export const useEditorHandlers = ({
         'touches' in event ? event.touches[0] : event;
 
       const typedFromNode = fromNode as unknown as Node<AllNodeData>;
+      const currentEdges = edgesRef.current;
+      const currentNodes = nodesRef.current;
 
       if (isTemplateNode(typedFromNode)) {
+        const templateSlots = getTemplateOutgoingSlots(
+          typedFromNode.id,
+          currentEdges,
+          currentNodes,
+        );
         if (fromHandle?.id === 'output') {
+          if (templateSlots.hasOutput) {
+            return;
+          }
           handleAddOutputNode({ x, y, sourceHandleId });
           return;
         } else if (fromHandle?.id === 'parameters') {
+          if (templateSlots.hasParameters) {
+            return;
+          }
           handleAddParametersNode({ x, y, node: typedFromNode, fromHandle });
           return;
         }
+        if (templateSlots.hasStep) {
+          return;
+        }
         handleAddStepNode({ x, y, sourceHandleId });
+        return;
+      }
+
+      const sourceEffectiveType = isPrefabNode(typedFromNode)
+        ? (typedFromNode.data as any).refType || typedFromNode.type
+        : typedFromNode.type;
+      const sourceOutgoingCount = countOutgoingConnections(
+        currentEdges,
+        typedFromNode.id,
+      );
+      if (!hasOutgoingCapacity(sourceEffectiveType, sourceOutgoingCount)) {
         return;
       }
 

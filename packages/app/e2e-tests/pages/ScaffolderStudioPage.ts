@@ -813,10 +813,24 @@ export class ScaffolderStudioPage {
     await sourceHandle.scrollIntoViewIfNeeded();
     await targetHandle.scrollIntoViewIfNeeded();
 
-    await sourceHandle.dragTo(targetHandle, {
-      force: true,
-      timeout: 10000,
+    const sourceBox = await sourceHandle.boundingBox();
+    const targetBox = await targetHandle.boundingBox();
+    if (!sourceBox || !targetBox) {
+      throw new Error('Handle bounding box not found');
+    }
+
+    const startX = sourceBox.x + sourceBox.width / 2;
+    const startY = sourceBox.y + sourceBox.height / 2;
+    const endX = targetBox.x + targetBox.width / 2;
+    const endY = targetBox.y + targetBox.height / 2;
+
+    await this.page.mouse.move(startX, startY);
+    await this.page.mouse.down();
+    await this.page.mouse.move(startX + (endX - startX) * 0.2, startY, {
+      steps: 6,
     });
+    await this.page.mouse.move(endX, endY, { steps: 18 });
+    await this.page.mouse.up();
 
     await this.page.waitForTimeout(500);
   }

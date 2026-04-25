@@ -799,6 +799,51 @@ describe('useEditorHandlers snapping', () => {
     expect(mockHandleAddStepNode).not.toHaveBeenCalled();
   });
 
+  it('does not auto-create from a structural source whose outgoing capacity is full', () => {
+    const sourceStep: Node<AllNodeData> = {
+      id: 'source-step',
+      type: 'step',
+      position: { x: 100, y: 100 },
+      data: {
+        type: 'step',
+        stepId: 'build',
+        formData: {},
+        schema: {
+          input: { type: 'object', properties: {} },
+          output: { type: 'object', properties: {} },
+        },
+        onChange: jest.fn(),
+      } as any,
+    };
+    const targetStep: Node<AllNodeData> = {
+      id: 'target-step',
+      type: 'step',
+      position: { x: 300, y: 100 },
+      data: {} as any,
+    };
+    const existingEdge: Edge = {
+      id: 'edge-1',
+      source: 'source-step',
+      target: 'target-step',
+    };
+
+    const { result } = setup([sourceStep, targetStep], [existingEdge]);
+    mockHandleAddStepNode.mockClear();
+
+    act(() => {
+      result.current.onConnectEnd(
+        { clientX: 500, clientY: 160 } as any,
+        {
+          fromNode: sourceStep as any,
+          fromHandle: { id: 'right' },
+          toHandle: null,
+        } as any,
+      );
+    });
+
+    expect(mockHandleAddStepNode).not.toHaveBeenCalled();
+  });
+
   it('does not notify relationship toggle callback for structural connections', () => {
     const sourceStep: Node<AllNodeData> = {
       id: 'source-step',
