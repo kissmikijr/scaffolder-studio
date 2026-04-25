@@ -208,6 +208,18 @@ const EMPTY_RELATIONSHIP_GRAPH: RelationshipGraphResult = {
   relatedStepNodeIds: new Set<string>(),
 };
 
+export const createRelationshipGraphSignature = (
+  nodes: Node<AllNodeData>[],
+): string =>
+  JSON.stringify(
+    nodes.map(node => ({
+      id: node.id,
+      parentId: node.parentId,
+      type: node.type,
+      data: node.data,
+    })),
+  );
+
 export const computeRelationshipGraph = (
   nodes: Node<AllNodeData>[],
 ): RelationshipGraphResult => {
@@ -370,10 +382,20 @@ export const computeDependencyEdges = (nodes: Node<AllNodeData>[]): Edge[] =>
 export const useDependencyEdges = (
   nodes: Node<AllNodeData>[],
   enabled = true,
-): RelationshipGraphResult =>
-  useMemo(() => {
+): RelationshipGraphResult => {
+  const relationshipGraphSignature = useMemo(
+    () => createRelationshipGraphSignature(nodes),
+    [nodes],
+  );
+
+  return useMemo(() => {
     if (!enabled) {
       return EMPTY_RELATIONSHIP_GRAPH;
     }
+
     return computeRelationshipGraph(nodes);
-  }, [enabled, nodes]);
+    // Relationship edges are derived from node content, not layout. Keeping
+    // layout-only drag updates out of this dependency keeps node dragging smooth.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, relationshipGraphSignature]);
+};

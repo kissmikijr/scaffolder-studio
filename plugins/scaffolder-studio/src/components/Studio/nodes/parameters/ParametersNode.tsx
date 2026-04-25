@@ -10,9 +10,9 @@ import {
   hasOutgoingCapacity,
 } from '../../utils/connectionLimits';
 import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
-import { useTemplateLintContext } from '../../TemplateLintContext';
+import { useNodeLintIssues } from '../../TemplateLintContext';
 import {
-  NodeLintBadge,
+  NodeLintIcon,
   getLintSeverityColor,
   getNodeLintSeverity,
   getNodeLintTooltipTitle,
@@ -24,8 +24,7 @@ const ParametersNode = ({
   data,
 }: NodeProps<Node<ParametersNodeData>>) => {
   const theme = useTheme();
-  const { issuesByNodeId } = useTemplateLintContext();
-  const lintIssues = issuesByNodeId.get(id) ?? [];
+  const lintIssues = useNodeLintIssues(id);
   const { getIncomingConnectionCount, getOutgoingConnectionCount } =
     useGraphPerformanceContext();
   const canAcceptIncoming = hasIncomingCapacity(
@@ -40,11 +39,9 @@ const ParametersNode = ({
   const parametersAccent = isLightTheme ? '#14B8A6' : NodeTypeColors.parameters;
   const lintSeverity = getNodeLintSeverity(lintIssues);
   const lintSeverityColor = getLintSeverityColor(theme, lintSeverity);
-  const lintBorderColor =
-    lintSeverityColor ??
-    (selected
-      ? SELECTED_BORDER_COLOR
-      : alpha(parametersAccent, isLightTheme ? 0.55 : 0.8));
+  const borderColor = selected
+    ? SELECTED_BORDER_COLOR
+    : alpha(parametersAccent, isLightTheme ? 0.55 : 0.8);
 
   return (
     <>
@@ -73,7 +70,7 @@ const ParametersNode = ({
             backgroundColor: alpha(parametersAccent, isLightTheme ? 0.12 : 0.1),
             color: theme.palette.text.primary,
             pointerEvents: 'all',
-            border: `2px ${selected ? 'solid' : 'dashed'} ${lintBorderColor}`,
+            border: `2px ${selected ? 'solid' : 'dashed'} ${borderColor}`,
             '&::after':
               lintIssues.length > 0
                 ? {
@@ -95,7 +92,6 @@ const ParametersNode = ({
           }}
           data-interactive="true"
         >
-          <NodeLintBadge nodeId={id} />
           <Box
             sx={{
               position: 'absolute',
@@ -114,56 +110,70 @@ const ParametersNode = ({
               pointerEvents: 'all',
               display: 'flex',
               alignItems: 'center',
+              gap: 0.5,
               justifyContent: 'space-between',
             }}
           >
-            {data.title || 'Parameters Group'}
+            <NodeLintIcon nodeId={id} />
+            <Box component="span">{data.title || 'Parameters Group'}</Box>
           </Box>
 
           <Handle
+            nodeId={id}
             id="top"
             type="target"
             position={Position.Top}
             disabled={!canAcceptIncoming}
+            pairedSourceOnSameSide={canAcceptOutgoing}
           />
           <Handle
+            nodeId={id}
             id="right"
             type="target"
             position={Position.Right}
             disabled={!canAcceptIncoming}
+            pairedSourceOnSameSide={canAcceptOutgoing}
           />
           <Handle
+            nodeId={id}
             id="bottom"
             type="target"
             position={Position.Bottom}
             disabled={!canAcceptIncoming}
+            pairedSourceOnSameSide={canAcceptOutgoing}
           />
           <Handle
+            nodeId={id}
             id="left"
             type="target"
             position={Position.Left}
             disabled={!canAcceptIncoming}
+            pairedSourceOnSameSide={canAcceptOutgoing}
           />
 
           <Handle
+            nodeId={id}
             id="top"
             type="source"
             position={Position.Top}
             disabled={!canAcceptOutgoing}
           />
           <Handle
+            nodeId={id}
             id="right"
             type="source"
             position={Position.Right}
             disabled={!canAcceptOutgoing}
           />
           <Handle
+            nodeId={id}
             id="bottom"
             type="source"
             position={Position.Bottom}
             disabled={!canAcceptOutgoing}
           />
           <Handle
+            nodeId={id}
             id="left"
             type="source"
             position={Position.Left}

@@ -1,7 +1,32 @@
-import { forwardRef, useState, CSSProperties, HTMLAttributes, ReactNode } from 'react';
-import { Handle as FlowHandle, Position } from '@xyflow/react';
+import {
+  forwardRef,
+  useEffect,
+  useMemo,
+  useState,
+  CSSProperties,
+  HTMLAttributes,
+  ReactNode,
+} from 'react';
+import {
+  Handle as FlowHandle,
+  Position,
+  useConnection,
+  useNodeConnections,
+  useNodeId,
+} from '@xyflow/react';
 import { useTheme } from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import { usePerimeterHandleContext } from '../PerimeterHandleContext';
+import {
+  getPerimeterHandleRenderState,
+  getPerimeterHandleTransform,
+  PERIMETER_HANDLE_DIAMETER,
+  PERIMETER_HANDLE_EMPHASIS_SCALE,
+  shouldUseSelectedPerimeterOutset,
+} from './perimeterHandles';
+import { getStudioPerimeterHandleInteractionStyle } from './studioHandleStyles';
+
+const NODE_HOVER_GRACE_MS = 140;
 
 export const Handle = forwardRef<
   HTMLDivElement,
@@ -10,7 +35,10 @@ export const Handle = forwardRef<
     style?: CSSProperties;
     type: 'source' | 'target';
     id?: string;
+    nodeId?: string;
     disabled?: boolean;
+    /** Target only: shift outward past the source (along the edge normal) when this node also renders a source on the same side. */
+    pairedSourceOnSameSide?: boolean;
     children?: ReactNode;
   } & HTMLAttributes<HTMLDivElement>
 >(
@@ -20,7 +48,9 @@ export const Handle = forwardRef<
       type,
       style,
       id,
+      nodeId: nodeIdProp,
       disabled = false,
+      pairedSourceOnSameSide = false,
       children,
       onMouseEnter: onMouseEnterProp,
       onMouseLeave: onMouseLeaveProp,
@@ -29,98 +59,195 @@ export const Handle = forwardRef<
     ref,
   ) => {
     const theme = useTheme();
+    const flowNodeId = useNodeId();
+    const nodeId = nodeIdProp ?? flowNodeId;
+    const resolvedNodeId = nodeId ?? undefined;
+    const { selectedNodeId, isValidConnection } = usePerimeterHandleContext();
+    const {
+      inProgress: isConnectionInProgress,
+      fromNode,
+      fromHandle,
+    } = useConnection(state => ({
+      inProgress: state.inProgress,
+      fromNode: state.fromNode,
+      fromHandle: state.fromHandle,
+    }));
+    const fromNodeId = fromNode?.id;
+    const fromHandleId = fromHandle?.id;
+    const fromHandleType = fromHandle?.type;
+    const handleConnections = useNodeConnections({
+      id: resolvedNodeId,
+      handleType: type,
+      handleId: id,
+    });
     const [isHovered, setIsHovered] = useState(false);
+    const [isWithinHoverGrace, setIsWithinHoverGrace] = useState(false);
+    const hasIncomingConnectionOnHandle =
+      type === 'target' && handleConnections.length > 0;
+    const isNodeHovered =
+      Boolean(resolvedNodeId) && selectedNodeId === resolvedNodeId;
 
-    const sideWideStyle: CSSProperties = {
-      background: 'transparent',
-      border: '1px solid transparent',
-      opacity: 0,
-      zIndex: 2000,
-      pointerEvents: disabled ? 'none' : 'all',
-    };
+    useEffect(() => {
+      let timeoutId: number | undefined;
 
-    const indicatorStyle: CSSProperties = {
+      if (isConnectionInProgress) {
+        setIsWithinHoverGrace(false);
+      } else if (isNodeHovered) {
+        setIsWithinHoverGrace(true);
+      } else if (!isHovered) {
+        timeoutId = window.setTimeout(() => {
+          setIsWithinHoverGrace(false);
+        }, NODE_HOVER_GRACE_MS);
+      }
+
+      return () => {
+        if (timeoutId !== undefined) {
+          window.clearTimeout(timeoutId);
+        }
+      };
+    }, [isConnectionInProgress, isHovered, isNodeHovered]);
+
+    const isActiveSourceHandle =
+      Boolean(resolvedNodeId) &&
+      isConnectionInProgress &&
+      fromNodeId === resolvedNodeId &&
+      fromHandleId === id &&
+      fromHandleType === type;
+
+    let validCandidateType: 'target' | 'source' | null = null;
+    if (isConnectionInProgress) {
+      if (fromHandleType === 'source') {
+        validCandidateType = 'target';
+      } else if (fromHandleType === 'target') {
+        validCandidateType = 'source';
+      }
+    }
+
+    const isValidConnectionTarget = useMemo(() => {
+      if (
+        !resolvedNodeId ||
+        !id ||
+        disabled ||
+        hasIncomingConnectionOnHandle ||
+        !isConnectionInProgress ||
+        !validCandidateType ||
+        type !== validCandidateType ||
+        !fromNodeId ||
+        !fromHandleId
+      ) {
+        return false;
+      }
+
+      if (fromHandleType === 'source') {
+        return isValidConnection({
+          source: fromNodeId,
+          sourceHandle: fromHandleId,
+          target: resolvedNodeId,
+          targetHandle: id,
+        });
+      }
+
+      return isValidConnection({
+        source: resolvedNodeId,
+        sourceHandle: id,
+        target: fromNodeId,
+        targetHandle: fromHandleId,
+      });
+    }, [
+      disabled,
+      fromHandleId,
+      fromHandleType,
+      fromNodeId,
+      hasIncomingConnectionOnHandle,
+      id,
+      isConnectionInProgress,
+      isValidConnection,
+      resolvedNodeId,
+      type,
+      validCandidateType,
+    ]);
+
+    const { visible: computedVisible, emphasized } =
+      getPerimeterHandleRenderState({
+        disabled: disabled || hasIncomingConnectionOnHandle,
+        type,
+        pairedSourceOnSameSide,
+        isNodeHovered: isWithinHoverGrace,
+        isNodeSelected:
+          Boolean(resolvedNodeId) && selectedNodeId === resolvedNodeId,
+        isConnectionInProgress,
+        isActiveSourceHandle,
+        isValidConnectionTarget,
+        isHoveredHandle: isHovered,
+      });
+    const isNodeSelected =
+      Boolean(resolvedNodeId) && selectedNodeId === resolvedNodeId;
+    const visible = computedVisible;
+
+    const accentColor =
+      theme.palette.mode === 'light'
+        ? theme.palette.primary.main
+        : theme.palette.info.light;
+    const scale = emphasized ? PERIMETER_HANDLE_EMPHASIS_SCALE : 1;
+    const shouldUseSelectedOutset =
+      !disabled &&
+      shouldUseSelectedPerimeterOutset({
+        type,
+        isNodeSelected,
+        pairedSourceOnSameSide,
+      });
+    const perimeterTransform = getPerimeterHandleTransform(
+      position,
+      scale,
+      shouldUseSelectedOutset,
+    );
+    const handleTransform = perimeterTransform;
+    let zIndex = 3200;
+    if (emphasized) {
+      zIndex = 3600;
+    } else if (visible) {
+      zIndex = 3400;
+    }
+    const sideStyle: CSSProperties = {
       position: 'absolute',
-      pointerEvents: 'none',
-      zIndex: 1999,
-      background: alpha(theme.palette.primary.main, 0.16),
-      border: `1px solid ${alpha(theme.palette.primary.main, 0.55)}`,
-      boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.18)}`,
-      transition: 'opacity 120ms ease',
+      width: PERIMETER_HANDLE_DIAMETER,
+      height: PERIMETER_HANDLE_DIAMETER,
+      borderRadius: '999px',
+      border: `1.5px solid ${alpha(accentColor, emphasized ? 0.98 : 0.72)}`,
+      background: emphasized ? accentColor : theme.palette.background.paper,
+      boxShadow: emphasized
+        ? `0 0 0 2px ${theme.palette.background.paper}, 0 0 0 4px ${alpha(
+            accentColor,
+            0.24,
+          )}, 0 4px 12px ${alpha(accentColor, 0.22)}`
+        : `0 0 0 2px ${theme.palette.background.paper}, 0 0 0 1px ${alpha(
+            accentColor,
+            0.18,
+          )}`,
+      opacity: 'var(--studio-perimeter-handle-opacity, 0)',
+      zIndex,
+      pointerEvents:
+        'var(--studio-perimeter-handle-pointer-events, none)' as CSSProperties['pointerEvents'],
+      transition:
+        'opacity 140ms ease, transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease, border-color 140ms ease',
+      transform: handleTransform,
+      ['--studio-perimeter-handle-opacity' as any]: visible ? 1 : 0,
+      ['--studio-perimeter-handle-pointer-events' as any]:
+        visible && !disabled ? 'all' : 'none',
     };
 
     switch (position) {
       case Position.Top:
-        Object.assign(sideWideStyle, {
-          width: '100%',
-          height: 12,
-          left: '50%',
-          top: 0,
-          transform: 'translate(-50%, -50%)',
-        });
-        Object.assign(indicatorStyle, {
-          width: 30,
-          height: 14,
-          left: '50%',
-          top: -14,
-          transform: 'translateX(-50%)',
-          borderRadius: '14px 14px 0 0',
-          borderBottom: 'none',
-        });
+        Object.assign(sideStyle, { left: '50%', top: 0 });
         break;
       case Position.Right:
-        Object.assign(sideWideStyle, {
-          width: 12,
-          height: '100%',
-          right: 0,
-          top: '50%',
-          transform: 'translate(50%, -50%)',
-        });
-        Object.assign(indicatorStyle, {
-          width: 14,
-          height: 30,
-          right: -14,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          borderRadius: '0 14px 14px 0',
-          borderLeft: 'none',
-        });
-        break;
-      case Position.Left:
-        Object.assign(sideWideStyle, {
-          width: 12,
-          height: '100%',
-          left: 0,
-          top: '50%',
-          transform: 'translate(-50%, -50%)',
-        });
-        Object.assign(indicatorStyle, {
-          width: 14,
-          height: 30,
-          left: -14,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          borderRadius: '14px 0 0 14px',
-          borderRight: 'none',
-        });
+        Object.assign(sideStyle, { right: 0, top: '50%' });
         break;
       case Position.Bottom:
-        Object.assign(sideWideStyle, {
-          width: '100%',
-          height: 12,
-          left: '50%',
-          bottom: 0,
-          transform: 'translate(-50%, 50%)',
-        });
-        Object.assign(indicatorStyle, {
-          width: 30,
-          height: 14,
-          left: '50%',
-          bottom: -14,
-          transform: 'translateX(-50%)',
-          borderRadius: '0 0 14px 14px',
-          borderTop: 'none',
-        });
+        Object.assign(sideStyle, { left: '50%', bottom: 0 });
+        break;
+      case Position.Left:
+        Object.assign(sideStyle, { left: 0, top: '50%' });
         break;
       default:
         break;
@@ -132,7 +259,22 @@ export const Handle = forwardRef<
           id={id}
           position={position}
           type={type}
-          style={{ ...sideWideStyle, ...style }}
+          className="studio-perimeter-handle"
+          data-perimeter-visible={visible ? 'true' : 'false'}
+          data-perimeter-emphasized={emphasized ? 'true' : 'false'}
+          data-perimeter-disabled={disabled ? 'true' : 'false'}
+          data-perimeter-occupied={
+            hasIncomingConnectionOnHandle ? 'true' : 'false'
+          }
+          data-perimeter-connection-in-progress={
+            isConnectionInProgress ? 'true' : 'false'
+          }
+          data-perimeter-selected={isNodeSelected ? 'true' : 'false'}
+          style={{
+            ...sideStyle,
+            ...getStudioPerimeterHandleInteractionStyle(theme, type, position),
+            ...style,
+          }}
           onMouseEnter={event => {
             if (disabled) {
               return;
@@ -146,7 +288,6 @@ export const Handle = forwardRef<
           }}
           {...props}
         />
-        {isHovered && !disabled && <div style={indicatorStyle} />}
         {children}
       </div>
     );

@@ -367,6 +367,91 @@ export class ScaffolderStudioPage {
     throw lastError;
   }
 
+  getPerimeterHandle(
+    nodeText: string,
+    type: 'source' | 'target',
+    handleId: string,
+  ): Locator {
+    return this.getNodeLocatorByText(nodeText)
+      .locator(
+        `.react-flow__handle.${type}[data-handleid="${handleId}"]:not(.step-node-io-handle)`,
+      )
+      .first();
+  }
+
+  async expectPerimeterHandleVisibleState(
+    nodeText: string,
+    type: 'source' | 'target',
+    handleId: string,
+    expected: boolean,
+  ) {
+    await expect(
+      this.getPerimeterHandle(nodeText, type, handleId),
+    ).toHaveAttribute('data-perimeter-visible', expected ? 'true' : 'false');
+  }
+
+  async expectPerimeterHandleEmphasizedState(
+    nodeText: string,
+    type: 'source' | 'target',
+    handleId: string,
+    expected: boolean,
+  ) {
+    await expect(
+      this.getPerimeterHandle(nodeText, type, handleId),
+    ).toHaveAttribute('data-perimeter-emphasized', expected ? 'true' : 'false');
+  }
+
+  async beginConnectionDragFromHandle(
+    nodeText: string,
+    type: 'source' | 'target',
+    handleId: string,
+    moveBy: { x: number; y: number } = { x: 24, y: 0 },
+  ) {
+    const handle = this.getPerimeterHandle(nodeText, type, handleId);
+    await expect(handle).toBeVisible();
+    await handle.scrollIntoViewIfNeeded();
+    const box = await handle.boundingBox();
+    if (!box) {
+      throw new Error('Handle bounding box not found');
+    }
+
+    const startX = box.x + box.width / 2;
+    const startY = box.y + box.height / 2;
+    await this.page.mouse.move(startX, startY);
+    await this.page.mouse.down();
+    await this.page.mouse.move(startX + moveBy.x, startY + moveBy.y, {
+      steps: 8,
+    });
+  }
+
+  async moveConnectionDragToHandle(
+    nodeText: string,
+    type: 'source' | 'target',
+    handleId: string,
+  ) {
+    const handle = this.getPerimeterHandle(nodeText, type, handleId);
+    await expect(handle).toBeVisible();
+    await handle.scrollIntoViewIfNeeded();
+    const box = await handle.boundingBox();
+    if (!box) {
+      throw new Error('Target handle bounding box not found');
+    }
+
+    await this.page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, {
+      steps: 10,
+    });
+  }
+
+  async endConnectionDrag() {
+    await this.page.mouse.up();
+  }
+
+  async getConnectionPreviewPathD() {
+    const path = this.page.locator('.react-flow__connection-path');
+    await expect(path).toBeVisible();
+    return (await path.getAttribute('d')) ?? '';
+  }
+
   async connectRelationship(
     sourceNodeText: string,
     sourceHandleId: string,
@@ -728,10 +813,24 @@ export class ScaffolderStudioPage {
     await sourceHandle.scrollIntoViewIfNeeded();
     await targetHandle.scrollIntoViewIfNeeded();
 
-    await sourceHandle.dragTo(targetHandle, {
-      force: true,
-      timeout: 10000,
+    const sourceBox = await sourceHandle.boundingBox();
+    const targetBox = await targetHandle.boundingBox();
+    if (!sourceBox || !targetBox) {
+      throw new Error('Handle bounding box not found');
+    }
+
+    const startX = sourceBox.x + sourceBox.width / 2;
+    const startY = sourceBox.y + sourceBox.height / 2;
+    const endX = targetBox.x + targetBox.width / 2;
+    const endY = targetBox.y + targetBox.height / 2;
+
+    await this.page.mouse.move(startX, startY);
+    await this.page.mouse.down();
+    await this.page.mouse.move(startX + (endX - startX) * 0.2, startY, {
+      steps: 6,
     });
+    await this.page.mouse.move(endX, endY, { steps: 18 });
+    await this.page.mouse.up();
 
     await this.page.waitForTimeout(500);
   }

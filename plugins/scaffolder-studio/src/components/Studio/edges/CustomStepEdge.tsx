@@ -4,6 +4,7 @@ import {
   DEFAULT_EDGE_ROUTING_STRATEGY,
   EdgeRoutingStrategy,
   getRoutedEdgePath,
+  getAdjustedPerimeterRouteInput,
 } from './edgeRouting';
 
 const CustomStepEdge = ({
@@ -21,18 +22,24 @@ const CustomStepEdge = ({
 }: EdgeProps) => {
   const wasStraightRef = useRef(false);
   const edgeData = data as
-    | { routingStrategy?: EdgeRoutingStrategy }
+    | {
+        routingStrategy?: EdgeRoutingStrategy;
+        sourceOffsetDistance?: number;
+        targetOffsetDistance?: number;
+      }
     | undefined;
 
   const { path: edgePath, wasStraight } = getRoutedEdgePath(
-    {
+    getAdjustedPerimeterRouteInput({
       sourceX,
       sourceY,
       sourcePosition,
+      sourceOffsetDistance: edgeData?.sourceOffsetDistance,
       targetX,
       targetY,
       targetPosition,
-    },
+      targetOffsetDistance: edgeData?.targetOffsetDistance,
+    }),
     {
       strategy: edgeData?.routingStrategy ?? DEFAULT_EDGE_ROUTING_STRATEGY,
       previousWasStraight: wasStraightRef.current,

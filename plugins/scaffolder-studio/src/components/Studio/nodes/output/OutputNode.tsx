@@ -14,9 +14,9 @@ import { OutputNodeData } from '../../types';
 import { SELECTED_BORDER_COLOR } from '../../styles';
 import { hasIncomingCapacity } from '../../utils/connectionLimits';
 import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
-import { useTemplateLintContext } from '../../TemplateLintContext';
+import { useNodeLintIssues } from '../../TemplateLintContext';
 import {
-  NodeLintBadge,
+  NodeLintIcon,
   getLintSeverityColor,
   getNodeLintSeverity,
   getNodeLintTooltipTitle,
@@ -33,8 +33,7 @@ const OutputNode = ({
   showLintBadge?: boolean;
 }) => {
   const theme = useTheme();
-  const { issuesByNodeId } = useTemplateLintContext();
-  const lintIssues = issuesByNodeId.get(id) ?? [];
+  const lintIssues = useNodeLintIssues(id);
   const { getIncomingConnectionCount } = useGraphPerformanceContext();
   const canAcceptIncoming = hasIncomingCapacity(
     'templateOutput',
@@ -155,7 +154,6 @@ const OutputNode = ({
         }}
         data-interactive="true"
       >
-        {showLintBadge ? <NodeLintBadge nodeId={id} /> : null}
         <Box
           sx={{
             position: 'absolute',
@@ -174,9 +172,13 @@ const OutputNode = ({
                 fontSize: '0.75rem',
                 fontWeight: 600,
                 color: 'text.secondary',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.5,
               }}
             >
-              Output
+              {showLintBadge ? <NodeLintIcon nodeId={id} /> : null}
+              <Box component="span">Output</Box>
             </Typography>
           )}
         </Box>
@@ -185,24 +187,28 @@ const OutputNode = ({
         {!disabled && (
           <>
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Top}
               id="top"
               disabled={!canAcceptIncoming}
             />
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Right}
               id="right"
               disabled={!canAcceptIncoming}
             />
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Bottom}
               id="bottom"
               disabled={!canAcceptIncoming}
             />
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Left}
               id="left"

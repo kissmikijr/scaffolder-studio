@@ -412,6 +412,54 @@ test.describe('Scaffolder Studio', () => {
       .toBe(beforeEdgeCount + 1);
   });
 
+  test('should create valid nodes from template perimeter handles', async ({
+    page,
+  }) => {
+    await listPage.goto();
+    await listPage.createNewTemplate();
+    await editorPage.verifyLoaded();
+    await editorPage.collapseSideContent();
+    await editorPage.fitView();
+
+    await editorPage.dragFromNodeTypeHandleToOffset({
+      nodeType: 'template',
+      handleId: 'right',
+      dx: 260,
+      dy: 0,
+    });
+    await expect
+      .poll(() => editorPage.countNodesByType('step'), { timeout: 10000 })
+      .toBe(1);
+
+    await editorPage.dragFromNodeTypeHandleToOffset({
+      nodeType: 'template',
+      handleId: 'bottom',
+      dx: 0,
+      dy: 260,
+    });
+    await expect
+      .poll(() => editorPage.countNodesByType('parameters'), {
+        timeout: 10000,
+      })
+      .toBe(1);
+
+    await editorPage.dragFromNodeTypeHandleToOffset({
+      nodeType: 'template',
+      handleId: 'left',
+      dx: -300,
+      dy: 0,
+    });
+    await expect
+      .poll(() => editorPage.countNodesByType('templateOutput'), {
+        timeout: 10000,
+      })
+      .toBe(1);
+
+    await expect
+      .poll(() => page.locator('.react-flow__edge').count(), { timeout: 10000 })
+      .toBe(3);
+  });
+
   test('should not create extra step from first step when outgoing capacity is full', async ({
     page,
   }) => {

@@ -25,11 +25,12 @@ const SINGLE_INCOMING_NODE_TYPES = new Set<NodeType>([
   'prefab',
 ]);
 
-const SINGLE_OUTGOING_NODE_TYPES = new Set<NodeType>([
-  'step',
-  'property',
-  'parameters',
-  'prefab',
+const OUTGOING_CAPACITY_BY_NODE_TYPE = new Map<NodeType, number>([
+  ['templateOutput', 0],
+  ['step', 1],
+  ['property', 1],
+  ['parameters', 1],
+  ['prefab', 1],
 ]);
 
 export const isRelationshipLikeEdge = (edge: Edge) => {
@@ -69,10 +70,13 @@ export const hasOutgoingCapacity = (
   nodeType: NodeType,
   outgoingCount: number,
 ) => {
-  if (!SINGLE_OUTGOING_NODE_TYPES.has(nodeType)) {
+  const capacity = OUTGOING_CAPACITY_BY_NODE_TYPE.get(nodeType);
+
+  if (capacity === undefined) {
     return true;
   }
-  return outgoingCount < 1;
+
+  return outgoingCount < capacity;
 };
 
 const createTemplateOutgoingSlots = (): TemplateOutgoingSlots => ({

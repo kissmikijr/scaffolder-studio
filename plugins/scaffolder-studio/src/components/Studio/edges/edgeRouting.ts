@@ -1,4 +1,5 @@
 import { Position, getSmoothStepPath, getStraightPath } from '@xyflow/react';
+import { offsetPointTowardNode } from '../components/perimeterHandles';
 
 export const EDGE_ROUTING_STRATEGIES = {
   ALWAYS_SMOOTH_STEP: 'always-smoothstep',
@@ -16,9 +17,11 @@ type EdgeRoutingInput = {
   sourceX: number;
   sourceY: number;
   sourcePosition?: Position;
+  sourceOffsetDistance?: number;
   targetX: number;
   targetY: number;
   targetPosition?: Position;
+  targetOffsetDistance?: number;
 };
 
 type EdgeRoutingOptions = {
@@ -29,6 +32,29 @@ type EdgeRoutingOptions = {
 type EdgeRoutingResult = {
   path: string;
   wasStraight: boolean;
+};
+
+export const getAdjustedPerimeterRouteInput = (input: EdgeRoutingInput) => {
+  const adjustedSource = offsetPointTowardNode({
+    x: input.sourceX,
+    y: input.sourceY,
+    position: input.sourcePosition,
+    distance: input.sourceOffsetDistance,
+  });
+  const adjustedTarget = offsetPointTowardNode({
+    x: input.targetX,
+    y: input.targetY,
+    position: input.targetPosition,
+    distance: input.targetOffsetDistance,
+  });
+
+  return {
+    ...input,
+    sourceX: adjustedSource.x,
+    sourceY: adjustedSource.y,
+    targetX: adjustedTarget.x,
+    targetY: adjustedTarget.y,
+  };
 };
 
 // The previous edge router switched exactly at 70px and could flicker when dragging.

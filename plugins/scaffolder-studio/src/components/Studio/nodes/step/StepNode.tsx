@@ -19,9 +19,9 @@ import {
   toOutputHandleId,
 } from '../../hooks/useDependencyEdges';
 import { useGraphPerformanceContext } from '../../GraphPerformanceContext';
-import { useTemplateLintContext } from '../../TemplateLintContext';
+import { useNodeLintIssues } from '../../TemplateLintContext';
 import {
-  NodeLintBadge,
+  NodeLintIcon,
   getLintSeverityColor,
   getNodeLintSeverity,
   getNodeLintTooltipTitle,
@@ -61,10 +61,10 @@ const StepNode = ({
   showLintBadge = true,
 }: StepNodeProps) => {
   const theme = useTheme();
-  const { issuesByNodeId } = useTemplateLintContext();
-  const lintIssues = issuesByNodeId.get(id) ?? [];
+  const lintIssues = useNodeLintIssues(id);
   const {
     relationshipMode,
+    relationshipConnectionInProgress,
     isStepRelated,
     getIncomingConnectionCount,
     getOutgoingConnectionCount,
@@ -82,9 +82,7 @@ const StepNode = ({
   );
   const lintSeverity = getNodeLintSeverity(lintIssues);
   const lintSeverityColor = getLintSeverityColor(theme, lintSeverity);
-  const lintBorderColor =
-    lintSeverityColor ??
-    (selected ? SELECTED_BORDER_COLOR : theme.palette.divider);
+  const borderColor = selected ? SELECTED_BORDER_COLOR : theme.palette.divider;
 
   const inputSchemaProperties =
     ((data.schema as any)?.input?.properties as
@@ -124,7 +122,8 @@ const StepNode = ({
   const isLightTheme = theme.palette.mode === 'light';
 
   const persistedExpanded = Boolean(data.uiState?.ioExpanded);
-  const isForceExpanded = relationshipMode && isStepRelated(id);
+  const isForceExpanded =
+    relationshipMode && (isStepRelated(id) || relationshipConnectionInProgress);
   const isExpanded = hasIoContent && (persistedExpanded || isForceExpanded);
 
   const ioSectionBackgroundColor = isLightTheme
@@ -232,7 +231,7 @@ const StepNode = ({
           minWidth: resolvedNodeWidth,
           maxWidth: resolvedNodeWidth,
           borderRadius: '20px',
-          border: `2px solid ${lintBorderColor}`,
+          border: `2px solid ${borderColor}`,
           backgroundColor: theme.palette.background.paper,
           color: theme.palette.text.primary,
           boxShadow: selected ? 3 : 1,
@@ -268,7 +267,6 @@ const StepNode = ({
         data-testid={`step-node-${id}`}
         data-interactive="true"
       >
-        {showLintBadge ? <NodeLintBadge nodeId={id} /> : null}
         <Box
           sx={{
             position: 'absolute',
@@ -286,7 +284,14 @@ const StepNode = ({
             zIndex: 3,
           }}
         >
-          {!disabled && <Box>Step</Box>}
+          {!disabled && (
+            <Box
+              sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+            >
+              {showLintBadge ? <NodeLintIcon nodeId={id} /> : null}
+              <Box component="span">Step</Box>
+            </Box>
+          )}
         </Box>
 
         {hasIoContent ? (
@@ -743,6 +748,7 @@ const StepNode = ({
         {!disabled && (
           <>
             <Handle
+              nodeId={id}
               type="source"
               position={Position.Top}
               id="top"
@@ -750,6 +756,7 @@ const StepNode = ({
               data-testid={`step-node-source-handle-top-${id}`}
             />
             <Handle
+              nodeId={id}
               type="source"
               position={Position.Right}
               id="right"
@@ -757,6 +764,7 @@ const StepNode = ({
               data-testid={`step-node-source-handle-right-${id}`}
             />
             <Handle
+              nodeId={id}
               type="source"
               position={Position.Bottom}
               id="bottom"
@@ -764,6 +772,7 @@ const StepNode = ({
               data-testid={`step-node-source-handle-bottom-${id}`}
             />
             <Handle
+              nodeId={id}
               type="source"
               position={Position.Left}
               id="left"
@@ -771,31 +780,39 @@ const StepNode = ({
               data-testid={`step-node-source-handle-left-${id}`}
             />
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Top}
               id="top"
               disabled={!canAcceptIncoming}
+              pairedSourceOnSameSide={canAcceptOutgoing}
               data-testid={`step-node-handle-top-${id}`}
             />
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Right}
               id="right"
               disabled={!canAcceptIncoming}
+              pairedSourceOnSameSide={canAcceptOutgoing}
               data-testid={`step-node-handle-right-${id}`}
             />
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Bottom}
               id="bottom"
               disabled={!canAcceptIncoming}
+              pairedSourceOnSameSide={canAcceptOutgoing}
               data-testid={`step-node-handle-bottom-${id}`}
             />
             <Handle
+              nodeId={id}
               type="target"
               position={Position.Left}
               id="left"
               disabled={!canAcceptIncoming}
+              pairedSourceOnSameSide={canAcceptOutgoing}
               data-testid={`step-node-handle-left-${id}`}
             />
           </>

@@ -1,5 +1,9 @@
 import { Position } from '@xyflow/react';
-import { EDGE_ROUTING_STRATEGIES, getRoutedEdgePath } from '../edgeRouting';
+import {
+  EDGE_ROUTING_STRATEGIES,
+  getAdjustedPerimeterRouteInput,
+  getRoutedEdgePath,
+} from '../edgeRouting';
 
 const baseInput = {
   sourceX: 0,
@@ -81,5 +85,43 @@ describe('edgeRouting', () => {
 
     expect(result.wasStraight).toBe(false);
     expect(result.path.length).toBeGreaterThan(0);
+  });
+
+  it('adjusts perimeter-handle coordinates back to the node border', () => {
+    expect(
+      getAdjustedPerimeterRouteInput({
+        sourceX: 108,
+        sourceY: 40,
+        sourcePosition: Position.Right,
+        targetX: 192,
+        targetY: 40,
+        targetPosition: Position.Left,
+      }),
+    ).toMatchObject({
+      sourceX: 98,
+      sourceY: 40,
+      targetX: 202,
+      targetY: 40,
+    });
+  });
+
+  it('uses per-end offset distances when provided', () => {
+    expect(
+      getAdjustedPerimeterRouteInput({
+        sourceX: 118,
+        sourceY: 40,
+        sourcePosition: Position.Right,
+        sourceOffsetDistance: 18,
+        targetX: 182,
+        targetY: 40,
+        targetPosition: Position.Left,
+        targetOffsetDistance: 18,
+      }),
+    ).toMatchObject({
+      sourceX: 100,
+      sourceY: 40,
+      targetX: 200,
+      targetY: 40,
+    });
   });
 });

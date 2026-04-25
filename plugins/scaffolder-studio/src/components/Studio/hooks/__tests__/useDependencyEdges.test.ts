@@ -1,4 +1,5 @@
 import {
+  createRelationshipGraphSignature,
   computeDependencyEdges,
   computeRelationshipGraph,
   getClosestHandles,
@@ -143,6 +144,31 @@ describe('getClosestHandles', () => {
 // --- relationship graph ---
 
 describe('computeRelationshipGraph', () => {
+  it('keeps the relationship graph signature stable for layout-only drag changes', () => {
+    const nodes = [
+      makeProperty('p1', 'repoUrl', { x: 0, y: 0 }),
+      makeStep('s1', 'my-step', { url: '${{ parameters.repoUrl }}' }, '', {
+        x: 250,
+        y: 0,
+      }),
+    ];
+    const draggedNodes = nodes.map(node =>
+      node.id === 'p1'
+        ? {
+            ...node,
+            position: { x: 120, y: 80 },
+            dragging: true,
+            measured: { width: 240, height: 120 },
+            selected: true,
+          }
+        : node,
+    );
+
+    expect(createRelationshipGraphSignature(draggedNodes)).toBe(
+      createRelationshipGraphSignature(nodes),
+    );
+  });
+
   it('returns empty when no expression references are found', () => {
     const nodes = [makeProperty('p1', 'foo'), makeStep('s1', 'my-step')];
     expect(computeRelationshipGraph(nodes)).toEqual({

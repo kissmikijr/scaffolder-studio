@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
 import type { Edge, Node } from '@xyflow/react';
 import type { AllNodeData } from '@kissmiklosjr/plugin-scaffolder-studio-common';
 import type {
@@ -39,6 +39,39 @@ const groupIssuesByNodeId = (issues: TemplateLintIssue[]) => {
   return issuesByNodeId;
 };
 
+const areIssueArraysEqual = (
+  previousIssues: TemplateLintIssue[] | undefined,
+  nextIssues: TemplateLintIssue[] | undefined,
+) => {
+  if (previousIssues === nextIssues) {
+    return true;
+  }
+
+  if (!previousIssues || !nextIssues) {
+    return false;
+  }
+
+  if (previousIssues.length !== nextIssues.length) {
+    return false;
+  }
+
+  for (let index = 0; index < previousIssues.length; index += 1) {
+    const previousIssue = previousIssues[index];
+    const nextIssue = nextIssues[index];
+
+    if (
+      previousIssue.id !== nextIssue.id ||
+      previousIssue.nodeId !== nextIssue.nodeId ||
+      previousIssue.severity !== nextIssue.severity ||
+      previousIssue.message !== nextIssue.message
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
 export const useTemplateLintResult = ({
   api,
   templateId,
@@ -51,6 +84,9 @@ export const useTemplateLintResult = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const requestSequenceRef = useRef(0);
+  const previousIssuesByNodeIdRef = useRef<Map<string, TemplateLintIssue[]>>(
+    new Map(),
+  );
   const latestNodesRef = useRef(nodes);
   const latestEdgesRef = useRef(edges);
 
@@ -72,8 +108,10 @@ export const useTemplateLintResult = ({
 
     const requestSequence = requestSequenceRef.current + 1;
     requestSequenceRef.current = requestSequence;
-    setError(null);
-    setIsLoading(true);
+    startTransition(() => {
+      setError(null);
+      setIsLoading(true);
+    });
     const timeoutId = window.setTimeout(() => {
       void api
         .lintTemplate({
@@ -86,19 +124,25 @@ export const useTemplateLintResult = ({
             return;
           }
 
-          setResult(nextResult);
-          setError(null);
+          startTransition(() => {
+            setResult(nextResult);
+            setError(null);
+          });
         })
         .catch(nextError => {
           if (requestSequenceRef.current !== requestSequence) {
             return;
           }
 
-          setError(toLintRequestError(nextError));
+          startTransition(() => {
+            setError(toLintRequestError(nextError));
+          });
         })
         .finally(() => {
           if (requestSequenceRef.current === requestSequence) {
-            setIsLoading(false);
+            startTransition(() => {
+              setIsLoading(false);
+            });
           }
         });
     }, debounceMs);
@@ -108,10 +152,34 @@ export const useTemplateLintResult = ({
     };
   }, [api, contentHash, debounceMs, enabled, templateId]);
 
-  const issuesByNodeId = useMemo(
-    () => groupIssuesByNodeId(result?.issues ?? []),
-    [result],
-  );
+  const issuesByNodeId = useMemo(() => {
+    const nextIssuesByNodeId = groupIssuesByNodeId(result?.issues ?? []);
+    const previousIssuesByNodeId = previousIssuesByNodeIdRef.current;
+    const mergedIssuesByNodeId = new Map<string, TemplateLintIssue[]>();
+    const nodeIds = new Set<string>([
+      ...previousIssuesByNodeId.keys(),
+      ...nextIssuesByNodeId.keys(),
+    ]);
+
+    for (const nodeId of nodeIds) {
+      const previousIssues = previousIssuesByNodeId.get(nodeId);
+      const nextIssues = nextIssuesByNodeId.get(nodeId);
+
+      if (!nextIssues || nextIssues.length === 0) {
+        continue;
+      }
+
+      mergedIssuesByNodeId.set(
+        nodeId,
+        areIssueArraysEqual(previousIssues, nextIssues)
+          ? (previousIssues as TemplateLintIssue[])
+          : nextIssues,
+      );
+    }
+
+    previousIssuesByNodeIdRef.current = mergedIssuesByNodeId;
+    return mergedIssuesByNodeId;
+  }, [result]);
 
   return {
     result,
