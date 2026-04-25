@@ -1,5 +1,17 @@
 # @kissmiklosjr/plugin-scaffolder-studio-backend
 
+## 1.3.0
+
+### Minor Changes
+
+- dad06a8: Add linting to the studio
+
+### Patch Changes
+
+- Updated dependencies [dad06a8]
+- Updated dependencies [dad06a8]
+  - @kissmiklosjr/scaffolder-studio-linter@1.0.0
+
 ## 1.2.0
 
 ### Minor Changes
