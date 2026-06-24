@@ -1,5 +1,17 @@
 # @kissmiklosjr/plugin-scaffolder-studio
 
+## 1.6.0
+
+### Minor Changes
+
+- b87a9f4: bump to backstage 1.51.0
+
+### Patch Changes
+
+- Updated dependencies [b87a9f4]
+  - @kissmiklosjr/scaffolder-studio-linter@1.1.0
+  - @kissmiklosjr/plugin-scaffolder-studio-common@1.4.0
+
 ## 1.5.0
 
 ### Minor Changes

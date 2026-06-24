@@ -1,6 +1,6 @@
 {
   "name": "@kissmiklosjr/scaffolder-studio-linter",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "MIT",
   "description": "Shared template graph linter for scaffolder-studio",
   "main": "src/index.ts",
