@@ -62,19 +62,11 @@ jobs:
       - name: Build all packages
         run: yarn build:all
 
-      - name: Get Playwright version
-        id: playwright-version
-        run: echo "PLAYWRIGHT_VERSION=$(yarn node -p 'require(\"@playwright/test/package.json\").version')" >> $GITHUB_OUTPUT
+      - name: Install Playwright OS dependencies
+        run: yarn playwright install-deps chromium
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.PLAYWRIGHT_VERSION }}
-
-      - name: Install Playwright browsers and OS dependencies
-        run: yarn playwright install --with-deps chromium
+      - name: Verify system Chrome
+        run: google-chrome --version
 
       - name: Prepare Playwright auth cache dir
         run: mkdir -p node_modules/.cache/e2e-auth
