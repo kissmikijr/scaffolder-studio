@@ -38,7 +38,7 @@ jobs:
 
       - name: Get Playwright version
         id: playwright-version
-        run: echo "PLAYWRIGHT_VERSION=$(node -p "require('@playwright/test/package.json').version")" >> $GITHUB_OUTPUT
+        run: echo "PLAYWRIGHT_VERSION=$(yarn node -p 'require(\"@playwright/test/package.json\").version')" >> $GITHUB_OUTPUT
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -47,13 +47,8 @@ jobs:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.PLAYWRIGHT_VERSION }}
 
-      - name: Install Playwright browsers (with deps)
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
-
-      - name: Install Playwright OS dependencies
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+      - name: Install Playwright browsers and OS dependencies
+        run: yarn playwright install --with-deps chromium
 
       - name: Start backend
         run: yarn start-backend &
