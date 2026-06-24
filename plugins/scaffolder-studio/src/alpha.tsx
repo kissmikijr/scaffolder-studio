@@ -3,7 +3,6 @@ import { rootRouteRef } from './routes.ts';
 import {
   ApiBlueprint,
   createFrontendPlugin,
-  NavItemBlueprint,
   PageBlueprint,
 } from '@backstage/frontend-plugin-api';
 import { convertLegacyRouteRefs } from '@backstage/core-compat-api';
@@ -47,16 +46,10 @@ const NfsScaffolderStudioPage = () => {
   return <Router formFields={formFields} />;
 };
 
-const studioNavItem = NavItemBlueprint.make({
-  params: {
-    title: 'Scaffolder Studio',
-    routeRef: rootRouteRef,
-    icon: CreateComponentIcon,
-  },
-});
-
 const studioPage = PageBlueprint.make({
   params: {
+    title: 'Scaffolder Studio',
+    icon: <CreateComponentIcon fontSize="inherit" />,
     path: '/scaffolder-studio',
     routeRef: rootRouteRef,
     noHeader: true,
@@ -113,11 +106,5 @@ export default createFrontendPlugin({
   routes: convertLegacyRouteRefs({
     root: rootRouteRef,
   }),
-  extensions: [
-    studioNavItem,
-    studioPage,
-    visualApi,
-    prefabsApi,
-    prefabsLibraryApi,
-  ],
+  extensions: [studioPage, visualApi, prefabsApi, prefabsLibraryApi],
 });

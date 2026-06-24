@@ -15,12 +15,10 @@ import { Edge, Node } from '@xyflow/react';
 import {
   scaffolderApiRef,
   ScaffolderTaskStatus,
-  useCustomFieldExtensions,
 } from '@backstage/plugin-scaffolder-react';
 import { useApi } from '@backstage/core-plugin-api';
 import { TemplateEntityV1beta3 } from '@backstage/plugin-scaffolder-common';
 import yaml from 'js-yaml';
-import { useOutlet } from 'react-router-dom';
 import {
   DefaultTemplateOutputs,
   Stepper,
@@ -42,6 +40,7 @@ import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { Theme } from '@mui/material/styles';
+import { useFieldExtensions } from '../../../context/FieldExtensionsContext';
 
 // Type definitions for dry run result
 type DryRunLogEntry = {
@@ -199,8 +198,7 @@ export const DryRunView = ({
     useState<boolean>(true);
   const [processedStepsExpanded, setProcessedStepsExpanded] =
     useState<boolean>(true);
-  const outlet = useOutlet();
-  const customFieldExtensions = useCustomFieldExtensions(outlet);
+  const customFieldExtensions = useFieldExtensions();
   const templateNode = nodes.find(n => isTemplateNode(n));
   const fields = useMemo(() => {
     return Object.fromEntries(

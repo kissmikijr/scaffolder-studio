@@ -1,7 +1,10 @@
-import { useMemo } from 'react';
+import { ReactNode, useMemo } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { ConfirmationDialogProvider } from '../Studio/dialogs/ConfirmationDialogContext';
-import { FieldExtensionOptions } from '@backstage/plugin-scaffolder-react';
+import {
+  FieldExtensionOptions,
+  useCustomFieldExtensions,
+} from '@backstage/plugin-scaffolder-react';
 import { FieldExtensionsContext } from '../../context/FieldExtensionsContext';
 import { configApiRef, useApi } from '@backstage/core-plugin-api';
 
@@ -55,11 +58,39 @@ const queryClient = new QueryClient();
 
 export interface UnifiedRouterProps {
   formFields?: Array<FormField>;
+  children?: ReactNode;
 }
 
-const UnifiedRouter = ({ formFields }: UnifiedRouterProps) => {
+type InternalFormField = FieldExtensionOptions & {
+  $$type?: string;
+  version?: string;
+};
+
+const toFieldExtensionOptions = (
+  formField: FormField,
+): FieldExtensionOptions | undefined => {
+  const field = formField as unknown as InternalFormField;
+
+  if (field.$$type && field.$$type !== '@backstage/scaffolder/FormField') {
+    return undefined;
+  }
+
+  if (!field.name || !field.component) {
+    return undefined;
+  }
+
+  return {
+    name: field.name,
+    component: field.component,
+    validation: field.validation,
+    schema: field.schema,
+  };
+};
+
+const UnifiedRouter = ({ formFields, children }: UnifiedRouterProps) => {
   const parentTheme = useTheme();
   const configApi = useApi(configApiRef);
+  const childFieldExtensions = useCustomFieldExtensions(children);
   const isLibraryEnabled =
     configApi.getOptionalBoolean('scaffolder.studio.prefabs.libraryEnabled') ??
     true;
@@ -335,9 +366,13 @@ const UnifiedRouter = ({ formFields }: UnifiedRouterProps) => {
 
   const allFieldExtensions = useMemo(
     () => [
-      ...((formFields as unknown as FieldExtensionOptions<any, any>[]) ?? []),
+      ...childFieldExtensions,
+      ...(formFields?.flatMap(field => {
+        const fieldExtension = toFieldExtensionOptions(field);
+        return fieldExtension ? [fieldExtension] : [];
+      }) ?? []),
     ],
-    [formFields],
+    [childFieldExtensions, formFields],
   );
 
   return (
