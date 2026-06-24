@@ -128,6 +128,12 @@ const routes = (
 );
 ```
 
+The `ScaffolderStudioPage` route supports the same legacy
+`ScaffolderFieldExtensions` child registration pattern as Backstage's
+Scaffolder page. If you are using Backstage's new frontend system, import the
+plugin from `@kissmiklosjr/plugin-scaffolder-studio/alpha`; it loads registered
+Scaffolder form fields through Backstage's `formFieldsApiRef` instead.
+
 ### 4. Add to Sidebar (Optional)
 
 To make the editor easily accessible, you can add a link to the sidebar in `packages/app/src/components/Root/Root.tsx`:

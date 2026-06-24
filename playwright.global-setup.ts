@@ -12,7 +12,9 @@ export default async function globalSetup(config: FullConfig) {
   const baseURL =
     configuredBaseUrl ?? projectBaseUrl ?? 'http://localhost:7008';
 
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({
+    channel: process.env.CI ? 'chrome' : undefined,
+  });
   const context = await browser.newContext();
   const page = await context.newPage();
 

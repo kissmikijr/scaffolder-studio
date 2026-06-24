@@ -1,4 +1,5 @@
 import { createDevApp } from '@backstage/dev-utils';
+import './localMuiDefaults.css';
 import { editorPlugin } from '../src/plugin';
 import {
   scaffolderApiRef,
