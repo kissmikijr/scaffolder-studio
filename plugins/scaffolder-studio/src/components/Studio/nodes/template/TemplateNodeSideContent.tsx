@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState, ChangeEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  ChangeEvent,
+} from 'react';
 import { Grid, TextField, Autocomplete, CircularProgress } from '@mui/material';
 import { TemplateNodeData, VisualTemplateProject } from '../../types';
 import { useNodes } from '@xyflow/react';
@@ -9,8 +16,7 @@ import { templateSchema, TemplateForm } from './schema';
 import { scaffolderVisualApiRef } from '../../../../api/ScaffolderVisualClient';
 import debounce from 'lodash.debounce';
 
-// Maximum number of owners to display in dropdown at once
-const MAX_OWNERS_DISPLAY = 100;
+const OWNER_PAGE_SIZE = 40;
 
 export const TemplateNodeSideContent = ({ id }: { id?: string }) => {
   const nodes = useNodes();
@@ -19,11 +25,12 @@ export const TemplateNodeSideContent = ({ id }: { id?: string }) => {
   const catalogApi = useApi(catalogApiRef);
   const scaffolderVisualApi = useApi(scaffolderVisualApiRef);
 
-  // Owner search state
   const [ownerOptions, setOwnerOptions] = useState<string[]>([]);
   const [ownerSearchQuery, setOwnerSearchQuery] = useState('');
   const [ownerLoading, setOwnerLoading] = useState(false);
-  const [totalOwners, setTotalOwners] = useState(0);
+  const [ownerNextCursor, setOwnerNextCursor] = useState<string | undefined>();
+  const [ownerStale, setOwnerStale] = useState(false);
+  const ownerRequestIdRef = useRef(0);
 
   const [projects, setProjects] = useState<VisualTemplateProject[]>([]);
   useEffect(() => {
@@ -61,48 +68,92 @@ export const TemplateNodeSideContent = ({ id }: { id?: string }) => {
     annotations: annotationsToString(currentData?.annotations || {}),
   });
 
-  // Debounced search for owners
-  const searchOwners = useMemo(
-    () =>
-      debounce(async (query: string) => {
-        setOwnerLoading(true);
-        try {
-          const filter: Record<string, string | string[]> = {
-            kind: ['User', 'Group'],
-          };
-          const res = await catalogApi.getEntities({
-            filter,
-            limit: MAX_OWNERS_DISPLAY,
-          });
-          let ownerRefs = res.items.map(e => stringifyEntityRef(e));
-          if (query) {
-            const lowerQuery = query.toLowerCase();
-            ownerRefs = ownerRefs.filter(ref =>
-              ref.toLowerCase().includes(lowerQuery),
-            );
-          }
-          setTotalOwners(res.items.length);
-          setOwnerOptions(ownerRefs.slice(0, MAX_OWNERS_DISPLAY));
-        } catch {
-          setOwnerOptions([]);
-        } finally {
-          setOwnerLoading(false);
+  const loadOwners = useCallback(
+    async ({
+      query,
+      cursor,
+      append = false,
+    }: {
+      query: string;
+      cursor?: string;
+      append?: boolean;
+    }) => {
+      const requestId = ++ownerRequestIdRef.current;
+      setOwnerLoading(true);
+      setOwnerStale(!append);
+
+      try {
+        const trimmedQuery = query.trim();
+        const res = await catalogApi.queryEntities(
+          cursor
+            ? {
+                cursor,
+                limit: OWNER_PAGE_SIZE,
+                fields: ['kind', 'metadata.name', 'metadata.namespace'],
+              }
+            : {
+                filter: [{ kind: 'user' }, { kind: 'group' }],
+                fullTextFilter: trimmedQuery
+                  ? {
+                      term: trimmedQuery,
+                      fields: ['metadata.name', 'metadata.title'],
+                    }
+                  : undefined,
+                limit: OWNER_PAGE_SIZE,
+                fields: ['kind', 'metadata.name', 'metadata.namespace'],
+                orderFields: [{ field: 'metadata.name', order: 'asc' }],
+                totalItems: 'exclude',
+              },
+        );
+
+        if (requestId !== ownerRequestIdRef.current) {
+          return;
         }
-      }, 300),
+
+        const nextOwnerRefs = res.items.map(e => stringifyEntityRef(e));
+        setOwnerOptions(current =>
+          append ? [...current, ...nextOwnerRefs] : nextOwnerRefs,
+        );
+        setOwnerNextCursor(res.pageInfo.nextCursor);
+      } catch {
+        if (requestId === ownerRequestIdRef.current) {
+          setOwnerOptions([]);
+          setOwnerNextCursor(undefined);
+        }
+      } finally {
+        if (requestId === ownerRequestIdRef.current) {
+          setOwnerLoading(false);
+          setOwnerStale(false);
+        }
+      }
+    },
     [catalogApi],
   );
 
-  // Initial load of owners (empty search)
-  useEffect(() => {
-    searchOwners('');
-  }, [searchOwners]);
+  const debouncedSearchOwners = useMemo(
+    () =>
+      debounce((query: string) => {
+        loadOwners({ query });
+      }, 300),
+    [loadOwners],
+  );
 
-  // Search when query changes
   useEffect(() => {
-    if (ownerSearchQuery) {
-      searchOwners(ownerSearchQuery);
+    debouncedSearchOwners(ownerSearchQuery);
+    return () => debouncedSearchOwners.cancel();
+  }, [debouncedSearchOwners, ownerSearchQuery]);
+
+  const loadNextOwnerPage = useCallback(() => {
+    if (!ownerNextCursor || ownerLoading) {
+      return;
     }
-  }, [ownerSearchQuery, searchOwners]);
+
+    loadOwners({
+      query: ownerSearchQuery,
+      cursor: ownerNextCursor,
+      append: true,
+    });
+  }, [loadOwners, ownerLoading, ownerNextCursor, ownerSearchQuery]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -174,13 +225,17 @@ export const TemplateNodeSideContent = ({ id }: { id?: string }) => {
       }
     };
 
-  // Generate helper text for owner field
   const getOwnerHelperText = () => {
     if (errors.owner) return errors.owner;
-    if (totalOwners > MAX_OWNERS_DISPLAY) {
-      return `Showing ${MAX_OWNERS_DISPLAY} of ${totalOwners}+ owners. Type to search...`;
+    if (ownerStale) {
+      return 'Refreshing matching owners...';
     }
-    return undefined;
+    if (ownerNextCursor) {
+      return `Showing ${ownerOptions.length} owners. Scroll for more.`;
+    }
+    return ownerOptions.length
+      ? `Showing ${ownerOptions.length} matching owners.`
+      : undefined;
   };
 
   if (!id) {
@@ -209,16 +264,24 @@ export const TemplateNodeSideContent = ({ id }: { id?: string }) => {
         value={formValues.owner}
         loading={ownerLoading}
         onInputChange={(_, newVal, reason) => {
-          // Update search query for filtering
-          if (reason === 'input') {
+          if (reason === 'input' || reason === 'clear') {
             setOwnerSearchQuery(newVal);
           }
-          // Update form value
           handleChange('owner')({
             target: { value: newVal },
           } as unknown as ChangeEvent<HTMLInputElement>);
         }}
-        filterOptions={x => x} // Disable built-in filtering, we do it server/client-side
+        filterOptions={x => x}
+        ListboxProps={{
+          onScroll: event => {
+            const listbox = event.currentTarget;
+            const distanceToBottom =
+              listbox.scrollHeight - listbox.scrollTop - listbox.clientHeight;
+            if (distanceToBottom < 80) {
+              loadNextOwnerPage();
+            }
+          },
+        }}
         renderInput={params => (
           <TextField
             error={!!errors.owner}
