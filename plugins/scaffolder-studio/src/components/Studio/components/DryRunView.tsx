@@ -45,12 +45,16 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import ClearIcon from '@mui/icons-material/Clear';
 import { Theme } from '@mui/material/styles';
 import { useFieldExtensions } from '../../../context/FieldExtensionsContext';
 import {
   buildSecretsPayload,
+  clearRememberedDryRunSecretValues,
   collectDryRunSecretFields,
+  getRememberedDryRunSecretValues,
   getMissingRequiredSecrets,
+  rememberDryRunSecretValues,
   SecretField,
 } from './dryRunSecrets';
 
@@ -299,6 +303,16 @@ export const DryRunView = ({
       }),
     [availableActions, templateEntity],
   );
+  const hasSecretValues = useMemo(
+    () => Object.values(secretValues).some(value => value.trim()),
+    [secretValues],
+  );
+
+  useEffect(() => {
+    setSecretValues(getRememberedDryRunSecretValues(templateId));
+    setSecretErrors({});
+    setVisibleSecrets({});
+  }, [templateId]);
 
   // Load saved dry run inputs on mount
   useEffect(() => {
@@ -518,6 +532,13 @@ export const DryRunView = ({
     setSecretsExpanded(prev => !prev);
   }, []);
 
+  const handleClearSecrets = useCallback(() => {
+    clearRememberedDryRunSecretValues(templateId);
+    setSecretValues({});
+    setSecretErrors({});
+    setVisibleSecrets({});
+  }, [templateId]);
+
   const handleProcessedStepsToggle = useCallback(() => {
     setProcessedStepsExpanded(prev => !prev);
   }, []);
@@ -629,9 +650,30 @@ export const DryRunView = ({
                     py: 1,
                   }}
                 >
-                  <Typography variant="body2" color="textSecondary">
-                    Secrets are used for this dry run only and are not saved.
-                  </Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: { xs: 'flex-start', sm: 'center' },
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      gap: 1,
+                    }}
+                  >
+                    <Typography variant="body2" color="textSecondary">
+                      Secrets stay in browser memory for this template until you
+                      refresh, close the tab, or clear them.
+                    </Typography>
+                    <Button
+                      size="small"
+                      variant="text"
+                      startIcon={<ClearIcon fontSize="small" />}
+                      onClick={handleClearSecrets}
+                      disabled={!hasSecretValues}
+                      sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
+                    >
+                      Clear secrets
+                    </Button>
+                  </Box>
                   {secretFields.map(field => {
                     const sourceLabel = getSecretSourceLabel(field);
 
@@ -662,10 +704,17 @@ export const DryRunView = ({
                           }
                           onChange={event => {
                             const nextValue = event.target.value;
-                            setSecretValues(prev => ({
-                              ...prev,
-                              [field.key]: nextValue,
-                            }));
+                            setSecretValues(prev => {
+                              const nextValues = {
+                                ...prev,
+                                [field.key]: nextValue,
+                              };
+                              rememberDryRunSecretValues(
+                                templateId,
+                                nextValues,
+                              );
+                              return nextValues;
+                            });
                             if (nextValue.trim()) {
                               setSecretErrors(prev => ({
                                 ...prev,

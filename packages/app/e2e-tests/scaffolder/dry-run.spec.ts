@@ -222,7 +222,7 @@ test.describe('Dry Run Feature', () => {
     );
   });
 
-  test('should use dry run secrets without persisting them', async ({
+  test('should remember dry run secrets in browser memory until cleared', async ({
     page,
   }) => {
     const id = Math.floor(Math.random() * 100000);
@@ -313,7 +313,15 @@ test.describe('Dry Run Feature', () => {
       'Budapest',
     );
     await expect(page.locator('input#dry-run-secret-githubToken')).toHaveValue(
+      'test-secret-value',
+    );
+
+    await page.getByRole('button', { name: 'Clear secrets' }).click();
+    await expect(page.locator('input#dry-run-secret-githubToken')).toHaveValue(
       '',
     );
+    await expect(
+      page.getByRole('button', { name: 'Clear secrets' }),
+    ).toBeDisabled();
   });
 });

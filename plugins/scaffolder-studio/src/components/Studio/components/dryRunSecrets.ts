@@ -30,6 +30,11 @@ export type SecretField = {
   sources: SecretFieldSource[];
 };
 
+const dryRunSecretValuesByTemplateId = new Map<
+  string,
+  Record<string, string>
+>();
+
 const TEMPLATE_EXPRESSION_PATTERN = /\${{\s*([^}]+?)\s*}}/g;
 const DOT_SECRET_PATTERN = /(?:^|[^\w])secrets\.([A-Za-z_][\w.-]*)/g;
 const BRACKET_SECRET_PATTERN = /secrets\[['"]([^'"]+)['"]\]/g;
@@ -256,4 +261,40 @@ export const buildSecretsPayload = (
     }
     return acc;
   }, {});
+};
+
+export const getRememberedDryRunSecretValues = (templateId?: string) => {
+  if (!templateId) {
+    return {};
+  }
+
+  return { ...(dryRunSecretValuesByTemplateId.get(templateId) ?? {}) };
+};
+
+export const rememberDryRunSecretValues = (
+  templateId: string | undefined,
+  values: Record<string, string>,
+) => {
+  if (!templateId) {
+    return;
+  }
+
+  const rememberedValues = Object.fromEntries(
+    Object.entries(values).filter(([, value]) => value !== ''),
+  );
+
+  if (Object.keys(rememberedValues).length === 0) {
+    dryRunSecretValuesByTemplateId.delete(templateId);
+    return;
+  }
+
+  dryRunSecretValuesByTemplateId.set(templateId, rememberedValues);
+};
+
+export const clearRememberedDryRunSecretValues = (templateId?: string) => {
+  if (!templateId) {
+    return;
+  }
+
+  dryRunSecretValuesByTemplateId.delete(templateId);
 };

@@ -1,8 +1,11 @@
 import {
   buildSecretsPayload,
+  clearRememberedDryRunSecretValues,
   collectDryRunSecretFields,
   formatSecretLabel,
+  getRememberedDryRunSecretValues,
   getMissingRequiredSecrets,
+  rememberDryRunSecretValues,
 } from './dryRunSecrets';
 
 describe('dryRunSecrets', () => {
@@ -191,5 +194,31 @@ describe('dryRunSecrets', () => {
     expect(formatSecretLabel('githubToken')).toBe('Github Token');
     expect(formatSecretLabel('NPM_TOKEN')).toBe('NPM TOKEN');
     expect(formatSecretLabel('npm-token')).toBe('Npm Token');
+  });
+
+  it('remembers dry run secrets in browser memory by template id', () => {
+    rememberDryRunSecretValues('template-a', {
+      githubToken: 'secret-value',
+      emptyToken: '',
+    });
+    rememberDryRunSecretValues('template-b', {
+      githubToken: 'other-secret',
+    });
+
+    expect(getRememberedDryRunSecretValues('template-a')).toEqual({
+      githubToken: 'secret-value',
+    });
+    expect(getRememberedDryRunSecretValues('template-b')).toEqual({
+      githubToken: 'other-secret',
+    });
+
+    clearRememberedDryRunSecretValues('template-a');
+
+    expect(getRememberedDryRunSecretValues('template-a')).toEqual({});
+    expect(getRememberedDryRunSecretValues('template-b')).toEqual({
+      githubToken: 'other-secret',
+    });
+
+    clearRememberedDryRunSecretValues('template-b');
   });
 });
