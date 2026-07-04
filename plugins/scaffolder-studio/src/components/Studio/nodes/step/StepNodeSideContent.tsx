@@ -21,6 +21,8 @@ import { isStepNode } from '../../types';
 import { StepNodeExpressionField } from './StepNodeExpressionField';
 import { fixSchema, normalizeFormDataForSchema } from '../../utils/schemaUtils';
 
+const ACTION_PAGE_SIZE = 50;
+
 const customFields = {
   StringField: ParamAutocompleteStringField as any,
   NumberField: ParamAutocompleteStringField as any,
@@ -215,6 +217,52 @@ export const StepNodeSideContent = ({
     [availableActions],
   );
 
+  const [actionSearch, setActionSearch] = useState('');
+  const [visibleActionCount, setVisibleActionCount] =
+    useState(ACTION_PAGE_SIZE);
+
+  const matchingActions = useMemo(() => {
+    const query = actionSearch.trim().toLowerCase();
+
+    return [...(availableActions || [])]
+      .filter(action => {
+        if (!query) {
+          return true;
+        }
+
+        return (
+          action.id.toLowerCase().includes(query) ||
+          action.description?.toLowerCase().includes(query)
+        );
+      })
+      .sort((a, b) => {
+        const groupA = a.id.split(':')[0] ?? 'Other';
+        const groupB = b.id.split(':')[0] ?? 'Other';
+        return groupA === groupB
+          ? a.id.localeCompare(b.id)
+          : groupA.localeCompare(groupB);
+      });
+  }, [actionSearch, availableActions]);
+
+  const selectedActionValue = selectedAction(currentData?.actionId ?? '');
+
+  const visibleActions = useMemo(() => {
+    const page = matchingActions.slice(0, visibleActionCount);
+    if (
+      selectedActionValue &&
+      !page.some(action => action.id === selectedActionValue.id)
+    ) {
+      return [selectedActionValue, ...page];
+    }
+    return page;
+  }, [matchingActions, selectedActionValue, visibleActionCount]);
+
+  const hasMoreActions = visibleActionCount < matchingActions.length;
+
+  useEffect(() => {
+    setVisibleActionCount(ACTION_PAGE_SIZE);
+  }, [actionSearch]);
+
   const formSchema = useMemo(() => {
     return fixSchema(currentData?.schema?.input) as RJSFSchema;
   }, [currentData?.schema?.input]);
@@ -234,20 +282,35 @@ export const StepNodeSideContent = ({
     >
       <Autocomplete
         disabled={disabled}
-        options={[...(availableActions || [])].sort((a, b) => {
-          const groupA = a.id.split(':')[0] ?? 'Other';
-          const groupB = b.id.split(':')[0] ?? 'Other';
-          return groupA.localeCompare(groupB);
-        })}
+        options={visibleActions}
+        inputValue={actionSearch}
+        onInputChange={(_, nextValue, reason) => {
+          if (reason === 'input' || reason === 'clear') {
+            setActionSearch(nextValue);
+          }
+        }}
+        filterOptions={options => options}
         getOptionLabel={option => option.id}
         groupBy={option => option.id.split(':')[0] ?? 'Other'}
-        value={selectedAction(currentData?.actionId ?? '')}
+        value={selectedActionValue}
         onChange={handleActionChange}
         isOptionEqualToValue={(option, value) => option.id === value.id}
         fullWidth
         size="medium"
         className="nodrag nopan"
         {...styledMenuProps}
+        ListboxProps={{
+          onScroll: event => {
+            const listbox = event.currentTarget;
+            const distanceToBottom =
+              listbox.scrollHeight - listbox.scrollTop - listbox.clientHeight;
+            if (distanceToBottom < 80 && hasMoreActions) {
+              setVisibleActionCount(count =>
+                Math.min(count + ACTION_PAGE_SIZE, matchingActions.length),
+              );
+            }
+          },
+        }}
         slotProps={{
           paper: {
             sx: {
@@ -274,6 +337,14 @@ export const StepNodeSideContent = ({
             label="Select Action"
             placeholder="Start typing..."
             variant="outlined"
+            helperText={
+              hasMoreActions
+                ? `Showing ${Math.min(
+                    visibleActionCount,
+                    matchingActions.length,
+                  )} of ${matchingActions.length} matching actions`
+                : `${matchingActions.length} matching actions`
+            }
             InputLabelProps={{ shrink: true }}
           />
         )}
