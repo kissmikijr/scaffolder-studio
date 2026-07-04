@@ -1,5 +1,13 @@
 # @kissmiklosjr/plugin-permission-backend-module-scaffolder-studio
 
+## 1.2.1
+
+### Patch Changes
+
+- 593bccf: Upgrade Backstage dependencies to 1.52.0.
+- Updated dependencies [593bccf]
+  - @kissmiklosjr/plugin-scaffolder-studio-common@1.4.1
+
 ## 1.2.0
 
 ### Minor Changes

@@ -1,5 +1,15 @@
 # @kissmiklosjr/plugin-scaffolder-studio-backend
 
+## 1.4.1
+
+### Patch Changes
+
+- 593bccf: Upgrade Backstage dependencies to 1.52.0.
+- Updated dependencies [593bccf]
+  - @kissmiklosjr/plugin-catalog-backend-module-scaffolder-studio-provider@1.2.1
+  - @kissmiklosjr/plugin-scaffolder-studio-common@1.4.1
+  - @kissmiklosjr/scaffolder-studio-linter@1.1.1
+
 ## 1.4.0
 
 ### Minor Changes
