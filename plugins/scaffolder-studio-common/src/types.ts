@@ -315,6 +315,11 @@ export type ScaffolderAction = {
       type: string;
       properties: Record<string, unknown>;
     };
+    secrets?: {
+      type?: string;
+      properties?: Record<string, unknown>;
+      required?: string[];
+    };
   };
 };
 
