@@ -8,7 +8,11 @@ import {
   Tooltip,
   Button,
   useTheme,
+  TextField,
+  InputAdornment,
+  Chip,
 } from '@mui/material';
+import IconButton from '@mui/material/IconButton';
 import { StyledIconButton } from './StyledIconButton';
 import { Edge, Node } from '@xyflow/react';
 
@@ -39,8 +43,20 @@ import CheckIcon from '@mui/icons-material/Check';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import ClearIcon from '@mui/icons-material/Clear';
 import { Theme } from '@mui/material/styles';
 import { useFieldExtensions } from '../../../context/FieldExtensionsContext';
+import {
+  buildSecretsPayload,
+  clearRememberedDryRunSecretValues,
+  collectDryRunSecretFields,
+  getRememberedDryRunSecretValues,
+  getMissingRequiredSecrets,
+  rememberDryRunSecretValues,
+  SecretField,
+} from './dryRunSecrets';
 
 // Type definitions for dry run result
 type DryRunLogEntry = {
@@ -108,6 +124,23 @@ type ParameterSchema = {
       'ui:options'?: string;
     }
   >;
+};
+
+const getSecretSourceLabel = (field: SecretField) => {
+  const actionSources = field.sources.filter(source => source.actionId);
+  if (actionSources.length > 0) {
+    const labels = actionSources.map(source => {
+      const stepLabel = source.stepName || source.stepId;
+      return stepLabel ? `${stepLabel} · ${source.actionId}` : source.actionId!;
+    });
+    return `Used by ${Array.from(new Set(labels)).join(', ')}`;
+  }
+
+  if (field.sources.some(source => source.type === 'template-schema')) {
+    return 'Declared by template secret schema';
+  }
+
+  return 'Referenced in template';
 };
 
 const collapsibleHeaderCompactStyles = (theme: Theme) => ({
@@ -196,6 +229,7 @@ export const DryRunView = ({
   const [outputExpanded, setOutputExpanded] = useState<boolean>(true);
   const [dryRunStepperExpanded, setDryRunStepperExpanded] =
     useState<boolean>(true);
+  const [secretsExpanded, setSecretsExpanded] = useState<boolean>(true);
   const [processedStepsExpanded, setProcessedStepsExpanded] =
     useState<boolean>(true);
   const customFieldExtensions = useFieldExtensions();
@@ -210,6 +244,75 @@ export const DryRunView = ({
   const [savedFormData, setSavedFormData] = useState<Record<string, any>>({});
   const [isLoadingInputs, setIsLoadingInputs] = useState(true);
   const stepperContainerRef = useRef<HTMLDivElement | null>(null);
+  const [availableActions, setAvailableActions] = useState<any[]>([]);
+  const [templateEntity, setTemplateEntity] =
+    useState<TemplateEntityV1beta3 | null>(null);
+  const [secretValues, setSecretValues] = useState<Record<string, string>>({});
+  const [visibleSecrets, setVisibleSecrets] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [secretErrors, setSecretErrors] = useState<
+    Record<string, string | undefined>
+  >({});
+
+  const serializeCurrentTemplate = useCallback(async () => {
+    if (!templateNode) {
+      return null;
+    }
+
+    const template = await scaffolderVisualApi.serializeTemplate({
+      nodes,
+      edges,
+      sourceNodeId: templateNode.id,
+    });
+    return yaml.load(template) as TemplateEntityV1beta3;
+  }, [edges, nodes, scaffolderVisualApi, templateNode]);
+
+  useEffect(() => {
+    scaffolderVisualApi
+      .listActions()
+      .then(actions => setAvailableActions(actions))
+      .catch(() => setAvailableActions([]));
+  }, [scaffolderVisualApi]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    serializeCurrentTemplate()
+      .then(template => {
+        if (!cancelled) {
+          setTemplateEntity(template);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setTemplateEntity(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [serializeCurrentTemplate]);
+
+  const secretFields = useMemo(
+    () =>
+      collectDryRunSecretFields({
+        template: templateEntity,
+        actions: availableActions,
+      }),
+    [availableActions, templateEntity],
+  );
+  const hasSecretValues = useMemo(
+    () => Object.values(secretValues).some(value => value.trim()),
+    [secretValues],
+  );
+
+  useEffect(() => {
+    setSecretValues(getRememberedDryRunSecretValues(templateId));
+    setSecretErrors({});
+    setVisibleSecrets({});
+  }, [templateId]);
 
   // Load saved dry run inputs on mount
   useEffect(() => {
@@ -235,6 +338,26 @@ export const DryRunView = ({
     async (values: Record<string, unknown>) => {
       setDryRunResult(null);
       setSelectedLogTab('all'); // Reset tab selection when starting new dry run
+      setSecretErrors({});
+
+      const missingSecrets = getMissingRequiredSecrets(
+        secretFields,
+        secretValues,
+      );
+
+      if (missingSecrets.length > 0) {
+        setSecretErrors(
+          Object.fromEntries(
+            missingSecrets.map(key => [key, 'This secret is required']),
+          ),
+        );
+        window.requestAnimationFrame(() => {
+          document
+            .getElementById(`dry-run-secret-${missingSecrets[0]}`)
+            ?.focus();
+        });
+        return;
+      }
 
       try {
         // Persist inputs before executing dry run so reopen is deterministic.
@@ -247,12 +370,11 @@ export const DryRunView = ({
         }
 
         if (templateNode) {
-          const template = await scaffolderVisualApi.serializeTemplate({
-            nodes,
-            edges,
-            sourceNodeId: templateNode.id,
-          });
-          const parsedTemplate = yaml.load(template) as TemplateEntityV1beta3;
+          const parsedTemplate =
+            templateEntity ?? (await serializeCurrentTemplate());
+          if (!parsedTemplate) {
+            return;
+          }
 
           if (scaffolderApi.dryRun) {
             const result = await scaffolderApi.dryRun({
@@ -261,7 +383,7 @@ export const DryRunView = ({
                 string,
                 string | number | boolean | null
               >,
-              secrets: {},
+              secrets: buildSecretsPayload(secretFields, secretValues),
               directoryContents: [],
             });
             setDryRunResult(result as unknown as DryRunResult);
@@ -275,10 +397,12 @@ export const DryRunView = ({
       }
     },
     [
+      secretFields,
+      secretValues,
       templateId,
+      serializeCurrentTemplate,
+      templateEntity,
       templateNode,
-      nodes,
-      edges,
       scaffolderApi,
       scaffolderVisualApi,
     ],
@@ -404,6 +528,17 @@ export const DryRunView = ({
     setDryRunStepperExpanded(prev => !prev);
   }, []);
 
+  const handleSecretsToggle = useCallback(() => {
+    setSecretsExpanded(prev => !prev);
+  }, []);
+
+  const handleClearSecrets = useCallback(() => {
+    clearRememberedDryRunSecretValues(templateId);
+    setSecretValues({});
+    setSecretErrors({});
+    setVisibleSecrets({});
+  }, [templateId]);
+
   const handleProcessedStepsToggle = useCallback(() => {
     setProcessedStepsExpanded(prev => !prev);
   }, []);
@@ -478,6 +613,198 @@ export const DryRunView = ({
             mx: { xs: 4, sm: 8, md: 32 },
           }}
         >
+          {secretFields.length > 0 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box
+                onClick={handleSecretsToggle}
+                sx={collapsibleHeaderCompactStyles}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="h6">Secrets</Typography>
+                  <Chip
+                    size="small"
+                    label={secretFields.length}
+                    sx={{
+                      height: 20,
+                      fontSize: '0.7rem',
+                      color: theme.palette.text.primary,
+                    }}
+                  />
+                </Box>
+                <StyledIconButton
+                  size="small"
+                  sx={{
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  {secretsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                </StyledIconButton>
+              </Box>
+              <Collapse in={secretsExpanded}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1.5,
+                    py: 1,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: { xs: 'flex-start', sm: 'center' },
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      gap: 1,
+                    }}
+                  >
+                    <Typography variant="body2" color="textSecondary">
+                      Secrets stay in browser memory for this template until you
+                      refresh, close the tab, or clear them.
+                    </Typography>
+                    <Tooltip
+                      title={
+                        hasSecretValues
+                          ? 'Clear remembered secrets'
+                          : 'No secrets to clear'
+                      }
+                    >
+                      <Box
+                        component="span"
+                        sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
+                      >
+                        <IconButton
+                          aria-label="Clear secrets"
+                          size="small"
+                          onClick={handleClearSecrets}
+                          disabled={!hasSecretValues}
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            border: `1px solid ${theme.palette.divider}`,
+                            color: theme.palette.text.secondary,
+                            '&:hover': {
+                              backgroundColor: theme.palette.action.hover,
+                              color: theme.palette.text.primary,
+                            },
+                          }}
+                        >
+                          <ClearIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </Tooltip>
+                  </Box>
+                  {secretFields.map(field => {
+                    const sourceLabel = getSecretSourceLabel(field);
+
+                    return (
+                      <Box
+                        key={field.key}
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: {
+                            xs: '1fr',
+                            md: 'minmax(0, 1fr) auto',
+                          },
+                          gap: 1,
+                          alignItems: 'start',
+                        }}
+                      >
+                        <TextField
+                          id={`dry-run-secret-${field.key}`}
+                          label={field.label}
+                          required={field.required}
+                          type={visibleSecrets[field.key] ? 'text' : 'password'}
+                          value={secretValues[field.key] ?? ''}
+                          error={Boolean(secretErrors[field.key])}
+                          helperText={
+                            secretErrors[field.key] ||
+                            field.description ||
+                            sourceLabel
+                          }
+                          onChange={event => {
+                            const nextValue = event.target.value;
+                            setSecretValues(prev => {
+                              const nextValues = {
+                                ...prev,
+                                [field.key]: nextValue,
+                              };
+                              rememberDryRunSecretValues(
+                                templateId,
+                                nextValues,
+                              );
+                              return nextValues;
+                            });
+                            if (nextValue.trim()) {
+                              setSecretErrors(prev => ({
+                                ...prev,
+                                [field.key]: undefined,
+                              }));
+                            }
+                          }}
+                          fullWidth
+                          size="small"
+                          InputProps={{
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <IconButton
+                                  aria-label={`${
+                                    visibleSecrets[field.key] ? 'Hide' : 'Show'
+                                  } ${field.label}`}
+                                  edge="end"
+                                  size="small"
+                                  onClick={() =>
+                                    setVisibleSecrets(prev => ({
+                                      ...prev,
+                                      [field.key]: !prev[field.key],
+                                    }))
+                                  }
+                                >
+                                  {visibleSecrets[field.key] ? (
+                                    <VisibilityOffIcon fontSize="small" />
+                                  ) : (
+                                    <VisibilityIcon fontSize="small" />
+                                  )}
+                                </IconButton>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 0.5,
+                            minWidth: { md: 180 },
+                            pt: 0.25,
+                          }}
+                        >
+                          <Chip
+                            size="small"
+                            label={field.required ? 'Required' : 'Optional'}
+                            color={field.required ? 'warning' : 'default'}
+                            variant={field.required ? 'filled' : 'outlined'}
+                            sx={{ alignSelf: 'flex-start' }}
+                          />
+                          <Typography
+                            variant="caption"
+                            color="textSecondary"
+                            sx={{
+                              maxWidth: { md: 260 },
+                              overflowWrap: 'anywhere',
+                            }}
+                          >
+                            {sourceLabel}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </Collapse>
+            </Box>
+          )}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Box
               onClick={handleDryRunStepperToggle}

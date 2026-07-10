@@ -221,4 +221,107 @@ test.describe('Dry Run Feature', () => {
       'Budapest',
     );
   });
+
+  test('should remember dry run secrets in browser memory until cleared', async ({
+    page,
+  }) => {
+    const id = Math.floor(Math.random() * 100000);
+    await listPage.goto();
+    await listPage.createNewTemplate();
+    await editorPage.verifyLoaded();
+    await editorPage.addTemplate();
+    await editorPage.selectNode('Template');
+
+    await editorPage.editTemplateNode(
+      `dry-run-secrets-${id}`,
+      'group:roadiehq/engineering',
+      'Dry run secrets',
+    );
+
+    await editorPage.selectNode('Template');
+
+    await editorPage.addParametersNode();
+    await editorPage.configureParametersNode({ title: 'Dry Run Params' });
+
+    await editorPage.collapseSideContent();
+
+    await editorPage.addProperty({ parentNodeText: 'Dry Run Params' });
+
+    await editorPage.configureProperty(
+      'city',
+      'string',
+      'City',
+      'Enter a city name',
+    );
+
+    await editorPage.addStepAndSelectAction('debug:log', 'Template');
+    await editorPage.configureStep('log-message', 'Log Message', {
+      message: 'Hello from dry run',
+    });
+    await editorPage.selectNode('Log Message');
+    await editorPage.toggleNodeYamlEditor();
+    const stepYaml = await editorPage.getNodeYamlContent();
+    const stepYamlWithSecretReference = /^if:/m.test(stepYaml)
+      ? stepYaml.replace(/^if:.*$/m, 'if: "${{ secrets.githubToken }}"')
+      : stepYaml.replace(
+          '\ninput:',
+          '\nif: "${{ secrets.githubToken }}"\ninput:',
+        );
+    await editorPage.editNodeYamlContent(stepYamlWithSecretReference);
+    await editorPage.toggleNodeYamlEditor();
+
+    await editorPage.clickDryRun();
+    await expect(page).toHaveURL(/\/scaffolder-studio\/templates\/.*\/dry-run/);
+    const dryRunUrlMatch = page.url().match(/\/templates\/([^/]+)\/dry-run/);
+    expect(dryRunUrlMatch?.[1]).toBeTruthy();
+    const templateId = dryRunUrlMatch![1];
+
+    const secretInput = page.locator('input#dry-run-secret-githubToken');
+    await expect(
+      page.getByRole('heading', { name: 'Secrets', exact: true }),
+    ).toBeVisible();
+    await expect(secretInput).toBeVisible();
+    await expect(secretInput).toHaveAttribute('type', 'password');
+
+    await page.getByLabel('City').fill('Budapest');
+    await secretInput.fill('test-secret-value');
+
+    await completeDryRunStepper({ page });
+
+    await waitForDryRunResults({ page });
+
+    await page.waitForTimeout(1000);
+    await page.getByRole('button', { name: 'Close dry run' }).click();
+
+    await expect(page).not.toHaveURL(/\/dry-run$/);
+    if (!/\/scaffolder-studio\/templates\/[^/]+\/form$/.test(page.url())) {
+      await page.goto(`/scaffolder-studio/templates/${templateId}/form`);
+    }
+    await expect(page).toHaveURL(
+      new RegExp(`/scaffolder-studio/templates/${templateId}/form$`),
+    );
+    await editorPage.verifyLoaded();
+
+    await editorPage.clickDryRun();
+    await expect(page).toHaveURL(/\/scaffolder-studio\/templates\/.*\/dry-run/);
+    await expect(
+      page.getByRole('heading', { name: 'Template Parameters' }),
+    ).toBeVisible();
+    await ensureDryRunInputStep({ page, fieldLabel: 'City' });
+
+    await expect(page.getByRole('textbox', { name: 'City' })).toHaveValue(
+      'Budapest',
+    );
+    await expect(page.locator('input#dry-run-secret-githubToken')).toHaveValue(
+      'test-secret-value',
+    );
+
+    await page.getByRole('button', { name: 'Clear secrets' }).click();
+    await expect(page.locator('input#dry-run-secret-githubToken')).toHaveValue(
+      '',
+    );
+    await expect(
+      page.getByRole('button', { name: 'Clear secrets' }),
+    ).toBeDisabled();
+  });
 });

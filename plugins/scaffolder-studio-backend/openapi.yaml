@@ -815,6 +815,17 @@ components:
                   type: string
                 properties:
                   $ref: '#/components/schemas/AnyRecord'
+            secrets:
+              type: object
+              properties:
+                type:
+                  type: string
+                properties:
+                  $ref: '#/components/schemas/AnyRecord'
+                required:
+                  type: array
+                  items:
+                    type: string
 
     Publisher:
       type: object

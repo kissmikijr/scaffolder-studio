@@ -36,7 +36,7 @@ export class SchemaPatcher {
   /**
    * Load schema patches from app-config.yaml
    * Example config:
-   * 
+   *
    * scaffolder:
    *   studio:
    *     schemaPatches:
@@ -64,10 +64,14 @@ export class SchemaPatcher {
 
     for (const patchConfig of configPatches) {
       const id = patchConfig.getString('id');
-      const inputType = patchConfig.getOptionalString('patch.input.type') || 'object';
-      const inputProperties = patchConfig.getOptional('patch.input.properties') || {};
-      const outputType = patchConfig.getOptionalString('patch.output.type') || 'object';
-      const outputProperties = patchConfig.getOptional('patch.output.properties') || {};
+      const inputType =
+        patchConfig.getOptionalString('patch.input.type') || 'object';
+      const inputProperties =
+        patchConfig.getOptional('patch.input.properties') || {};
+      const outputType =
+        patchConfig.getOptionalString('patch.output.type') || 'object';
+      const outputProperties =
+        patchConfig.getOptional('patch.output.properties') || {};
 
       patches.push({
         id,
@@ -108,6 +112,7 @@ export class SchemaPatcher {
         return {
           ...action,
           schema: {
+            ...action.schema,
             input: {
               type: action.schema?.input?.type || 'object',
               properties: {
