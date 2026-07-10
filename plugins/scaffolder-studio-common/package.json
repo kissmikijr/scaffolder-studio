@@ -1,6 +1,6 @@
 {
   "name": "@kissmiklosjr/plugin-scaffolder-studio-common",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "license": "MIT",
   "description": "Common functionalities for the scaffolder-studio plugin",
   "main": "src/index.ts",
