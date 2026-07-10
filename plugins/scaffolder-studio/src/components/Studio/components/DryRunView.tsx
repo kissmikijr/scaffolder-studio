@@ -663,16 +663,37 @@ export const DryRunView = ({
                       Secrets stay in browser memory for this template until you
                       refresh, close the tab, or clear them.
                     </Typography>
-                    <Button
-                      size="small"
-                      variant="text"
-                      startIcon={<ClearIcon fontSize="small" />}
-                      onClick={handleClearSecrets}
-                      disabled={!hasSecretValues}
-                      sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
+                    <Tooltip
+                      title={
+                        hasSecretValues
+                          ? 'Clear remembered secrets'
+                          : 'No secrets to clear'
+                      }
                     >
-                      Clear secrets
-                    </Button>
+                      <Box
+                        component="span"
+                        sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
+                      >
+                        <IconButton
+                          aria-label="Clear secrets"
+                          size="small"
+                          onClick={handleClearSecrets}
+                          disabled={!hasSecretValues}
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            border: `1px solid ${theme.palette.divider}`,
+                            color: theme.palette.text.secondary,
+                            '&:hover': {
+                              backgroundColor: theme.palette.action.hover,
+                              color: theme.palette.text.primary,
+                            },
+                          }}
+                        >
+                          <ClearIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </Tooltip>
                   </Box>
                   {secretFields.map(field => {
                     const sourceLabel = getSecretSourceLabel(field);
