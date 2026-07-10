@@ -1,5 +1,16 @@
 # @kissmiklosjr/plugin-scaffolder-studio
 
+## 1.8.0
+
+### Minor Changes
+
+- 97c95b6: Add transient dry-run secret inputs for template and action secret metadata, remembered in browser memory while iterating on the same template.
+
+### Patch Changes
+
+- Updated dependencies [97c95b6]
+  - @kissmiklosjr/plugin-scaffolder-studio-common@1.4.2
+
 ## 1.7.0
 
 ### Minor Changes
